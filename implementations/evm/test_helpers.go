@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/p2pcloud/protocol"
-	"github.com/p2pcloud/protocol/evm/broker"
+	"github.com/p2pcloud/protocol/implementations/evm/broker"
 	"github.com/p2pcloud/protocol/pkg/keyring"
 )
 

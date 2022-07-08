@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/p2pcloud/protocol"
-	"github.com/p2pcloud/protocol/evm/broker"
+	"github.com/p2pcloud/protocol/implementations/evm/broker"
 	"github.com/p2pcloud/protocol/pkg/keyring"
 )
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/p2pcloud/protocol/evm"
+	"github.com/p2pcloud/protocol/implementations/evm"
 	"github.com/sirupsen/logrus"
 )
 
