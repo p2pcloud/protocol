@@ -12,7 +12,7 @@ const container_geth_tools = "ethereum/client-go:alltools-release-1.10"
 const container_basic = "debian:buster"
 
 func CompileContracts() error {
-	contractsDir, err := filepath.Abs("./evm/contracts")
+	contractsDir, err := filepath.Abs("./implementations/evm/contracts")
 	if err != nil {
 		return err
 	}

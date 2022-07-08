@@ -6,8 +6,8 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/p2pcloud/protocol/evm"
-	"github.com/p2pcloud/protocol/evm/wallet"
+	"github.com/p2pcloud/protocol/implementations/evm"
+	"github.com/p2pcloud/protocol/implementations/evm/wallet"
 )
 
 const ChainIDSimulated = 1337

@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
-	"github.com/p2pcloud/protocol/evm"
-	"github.com/p2pcloud/protocol/evm/broker"
+	"github.com/p2pcloud/protocol/implementations/evm"
+	"github.com/p2pcloud/protocol/implementations/evm/broker"
 )
 
 const ChainIDSimulated = 1337
