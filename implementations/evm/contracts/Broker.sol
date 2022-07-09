@@ -82,14 +82,6 @@ contract Broker {
         vmOffers[offerIndex].vmTypeId = vmTypeId;
     }
 
-    // function removeOffer(uint256 offerIndex) public {
-    //     require(
-    //         vmOffers[offerIndex].miner == msg.sender,
-    //         "Only the owner can remove an offer"
-    //     );
-    //     delete vmOffers[offerIndex];
-    // }
-
     function bookVM(uint256 offerIndex, uint256 secs) public returns (uint256) {
         require(
             vmOffers[offerIndex].machinesAvailable > 0,
@@ -106,15 +98,6 @@ contract Broker {
         bookings[nextBookingId] = booking;
         nextBookingId++;
         return nextBookingId - 1;
-    }
-
-    function removeVm(uint256 bookingIndex) public {
-        require(
-            bookings[bookingIndex].user == msg.sender ||
-                bookings[bookingIndex].miner == msg.sender,
-            "Only the user or miner can remove a VM"
-        );
-        delete bookings[bookingIndex];
     }
 
     function findBookingsByUser(address _owner)
