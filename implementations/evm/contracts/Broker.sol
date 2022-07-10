@@ -3,9 +3,13 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 contract Broker {
-    uint256 public communityFee = 5;
+    uint256 public communityFee = 500;
 
     function setCommunityFee(uint256 fee) public {
+        require(
+            msg.sender == communityWallet,
+            "Only the Community owner can update an Fee"
+        );
         communityFee = fee;
     }
 
@@ -16,6 +20,12 @@ contract Broker {
     address public communityWallet;
 
     function setCommunityWallet(address wallet) public {
+        if (communityWallet != address(0)) {
+            require(
+                msg.sender == communityWallet,
+                "Only the Community owner can update an wallet"
+            );
+        }
         communityWallet = wallet;
     }
 
