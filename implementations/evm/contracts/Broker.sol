@@ -3,6 +3,26 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 contract Broker {
+    uint256 public communityFee = 5;
+
+    function setCommunityFee(uint256 fee) public {
+        communityFee = fee;
+    }
+
+    function getCommunityFee() public view returns (uint256) {
+        return communityFee;
+    }
+
+    address public communityWallet;
+
+    function setCommunityWallet(address wallet) public {
+        communityWallet = wallet;
+    }
+
+    function getCommunityWallet() public view returns (address) {
+        return communityWallet;
+    }
+
     struct Booking {
         uint256 index;
         uint256 vmTypeId;
