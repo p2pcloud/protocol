@@ -25,6 +25,12 @@ func TestGetCommunityWallet(t *testing.T) {
 	if loaded != hash {
 		t.Fatalf("hashes are not equal: expected %s, got %s", hash, loaded)
 	}
+
+	address := contr1.GetMyAddress()
+	err = contr1.SetCommunityWalletIfNeeded(address.String())
+	if err == nil || err.Error() != "could not register community wallet: execution reverted: Only the Community owner can update an wallet" {
+		t.Fatalf("Wallet changed %s", err)
+	}
 }
 
 func TestGetCommunityFee(t *testing.T) {
@@ -40,18 +46,22 @@ func TestGetCommunityFee(t *testing.T) {
 	if err == nil || err.Error() != "could not register community fee: execution reverted: Only the Community owner can update an Fee" {
 		t.Fatalf("Fee changed %s", err)
 	}
-	/*
-		// TODO set SetCommunityWalletIfNeeded
-		check(t, err)
-		simChain.Commit()
 
-		contr2 := testInstances[1]
+	address := contr1.GetMyAddress()
+	err = contr1.SetCommunityWalletIfNeeded(address.String())
+	check(t, err)
+	simChain.Commit()
 
-		loaded, err := contr2.GetCommunityFee()
-		check(t, err)
+	err = contr1.SetCommunityFeeIfNeeded(fee)
+	check(t, err)
+	simChain.Commit()
 
-		if loaded.Int64() != fee {
-			t.Fatalf("hashes are not equal: expected %d, got %d", fee, loaded.Int64())
-		}
-	*/
+	contr2 := testInstances[1]
+	loaded, err := contr2.GetCommunityFee()
+	check(t, err)
+
+	if loaded.Int64() != fee {
+		t.Fatalf("hashes are not equal: expected %d, got %d", fee, loaded.Int64())
+	}
+
 }
