@@ -49,11 +49,11 @@ There are 3 actors - miner, user and community. User books and pays for VM. Mine
     - Tasks: [Emit booking event with bookingId, timeUsed, miner, user and vmType fields](https://github.com/P2PCloud/protocol/issues/5)
 1. User aborts booking because of miners misbehaviour. Unused stablecoin gets unlocked. Miner gets paid 1/2 of the price. The rest 1/2 goes into the community. Booking gets deleted.
     - Functions: `reportBooking` 
-    - Events: `bookingReported`
+    - Events: `bookingReported`, `minerPayout`
     - Tasks: [Emit bookingReported event with bookingId, timeUsed, miner, user and vmType fields](https://github.com/P2PCloud/protocol/issues/6)
 1. User aborts booking, but no problems with miner. Unused stablecoin gets unlocked. Miner gets paid 95% of the price. The rest 5% goes into the community. Booking gets deleted.
     - Functions: `stopBooking`
-    - Events: `bookingStopped`
+    - Events: `bookingStopped`, `minerPayout`
     - Tasks: [Emit bookingStopped event with bookingId, timeUsed, miner, user and vmType fields](https://github.com/P2PCloud/protocol/issues/7)
 1. User extends booking. More stablecoin gets locked. New PPS is used. No checks for slot availability.
     - Functions: `extendBooking`
@@ -61,6 +61,7 @@ There are 3 actors - miner, user and community. User books and pays for VM. Mine
 1. User does nothing and booking expires.
 1. Miner claims expired booking. Miner gets paid 95% of the price. The rest 5% goes into the community. Booking gets deleted.
     - Functions: `claimBookingFinished`
+    - Events: `minerPayout`
     - Tasks: [claimBookingFinished function](https://github.com/P2PCloud/protocol/issues/10)
 
 Events are used to calculate miner's reputation.
