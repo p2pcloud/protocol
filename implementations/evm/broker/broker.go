@@ -9,9 +9,23 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/p2pcloud/protocol/implementations/evm/contracts"
 	"github.com/sirupsen/logrus"
+
+	"github.com/Incognida/protocol/implementations/evm/contracts"
+	"github.com/Incognida/protocol/implementations/evm/ledger"
 )
+
+type Wallet interface {
+	GetMyAddress() *common.Address
+	TransferTokens(ctx context.Context, from, to common.Address, amount uint64) error
+	BalanceTokens() (uint64, error)
+}
+
+type OperationRequest struct {
+	Wallet           Wallet
+	ServerAddressHex string
+	Amount           uint64
+}
 
 type Broker struct {
 	backend         bind.ContractBackend
@@ -19,6 +33,7 @@ type Broker struct {
 	contractAddress common.Address
 	session         contracts.BrokerSession
 	privateKey      *ecdsa.PrivateKey
+	ledger          ledger.Ledger
 }
 
 func NewBroker(backend bind.ContractBackend, privateKey *ecdsa.PrivateKey, contractAddressStr string, chanId int64) (*Broker, error) {
@@ -120,4 +135,52 @@ func (b *Broker) RegisterMtlsHashIfNeeded(mtlsHash string) error {
 		return fmt.Errorf("could not register mtls hash: %v", err)
 	}
 	return nil
+}
+
+func (b *Broker) Deposit(ctx context.Context, req *OperationRequest) error {
+	err := req.Wallet.TransferTokens(
+		ctx,
+		*req.Wallet.GetMyAddress(),
+		common.HexToAddress(req.ServerAddressHex),
+		req.Amount,
+	)
+	if err != nil {
+		return fmt.Errorf("could not deposit: %v", err)
+	}
+
+	return b.ledger.Deposit(
+		ctx,
+		ledger.Transaction{
+			Amount: req.Amount,
+			TxType: ledger.DepositTxType,
+		},
+		req.Wallet.GetMyAddress().String(),
+	)
+}
+
+func (b *Broker) Withdraw(ctx context.Context, req *OperationRequest) error {
+	to := req.Wallet.GetMyAddress()
+
+	if err := b.ledger.CheckBalance(ctx, ledger.Transaction{Amount: req.Amount}, to.String()); err != nil {
+		return err
+	}
+
+	err := req.Wallet.TransferTokens(
+		ctx,
+		common.HexToAddress(req.ServerAddressHex),
+		*to,
+		req.Amount,
+	)
+	if err != nil {
+		return fmt.Errorf("could not deposit: %v", err)
+	}
+
+	return b.ledger.Withdraw(
+		ctx,
+		ledger.Transaction{
+			Amount: req.Amount,
+			TxType: ledger.WithdrawTxType,
+		},
+		to.String(),
+	)
 }

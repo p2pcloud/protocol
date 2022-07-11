@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/p2pcloud/protocol/implementations/evm"
 	"github.com/sirupsen/logrus"
+
+	"github.com/Incognida/protocol/implementations/evm"
 )
 
 func main() {

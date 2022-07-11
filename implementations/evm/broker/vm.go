@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/p2pcloud/protocol"
+	"github.com/Incognida/protocol"
 )
 
 func (b *Broker) BookVM(offerIndex, seconds int) error {

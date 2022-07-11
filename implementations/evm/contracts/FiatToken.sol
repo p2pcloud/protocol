@@ -20,7 +20,7 @@ interface IERC20 {
 
 contract FiatToken is IERC20 {
 
-    string public constant name = "USD stablecoin";
+    string public constant name = "USDC clone";
     string public constant symbol = "USDC";
     uint8 public constant decimals = 6;
 

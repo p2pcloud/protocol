@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/p2pcloud/protocol/pkg/keyring"
+	"github.com/Incognida/protocol/pkg/keyring"
 )
 
 func TestEncodeDecode(t *testing.T) {

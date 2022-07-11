@@ -3,9 +3,9 @@ package broker
 import (
 	"math/big"
 
+	"github.com/Incognida/protocol"
+	"github.com/Incognida/protocol/pkg/converters"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/p2pcloud/protocol"
-	"github.com/p2pcloud/protocol/pkg/converters"
 )
 
 func (b *Broker) AddOffer(offer protocol.Offer, callbackUrl string) error {

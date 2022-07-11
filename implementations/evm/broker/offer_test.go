@@ -3,7 +3,7 @@ package broker_test
 import (
 	"testing"
 
-	"github.com/p2pcloud/protocol"
+	"github.com/Incognida/protocol"
 	"github.com/stretchr/testify/require"
 )
 

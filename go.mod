@@ -1,4 +1,4 @@
-module github.com/p2pcloud/protocol
+module github.com/Incognida/protocol
 
 go 1.18
 

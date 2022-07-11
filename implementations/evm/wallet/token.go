@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 
-	"github.com/p2pcloud/protocol/implementations/evm/contracts"
+	"github.com/Incognida/protocol/implementations/evm/contracts"
 )
 
 type Token struct {

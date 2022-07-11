@@ -3,7 +3,7 @@ package keyring_test
 import (
 	"testing"
 
-	"github.com/p2pcloud/protocol/pkg/keyring"
+	"github.com/Incognida/protocol/pkg/keyring"
 	"github.com/stretchr/testify/require"
 )
 
