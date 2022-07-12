@@ -8,8 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Incognida/protocol/implementations/evm"
-	"github.com/Incognida/protocol/implementations/evm/wallet"
+	"github.com/p2pcloud/protocol/implementations/evm"
+	"github.com/p2pcloud/protocol/implementations/evm/wallet"
 )
 
 func getTestInstances(t *testing.T, count int) ([]*wallet.Token, *backends.SimulatedBackend) {
@@ -63,10 +63,11 @@ func TestToken_TransferTokens(t *testing.T) {
 	require.NoError(t, err)
 	fmt.Println(ethBalance)
 
-	err = contr1.TransferTokens(ctx, *contr1.GetMyAddress(), *contr2.GetMyAddress(), 1)
+	err = contr1.TransferTokens(ctx, *contr1.GetMyAddress(), *contr2.GetMyAddress(), 10)
 	require.NoError(t, err)
+	simChain.Commit()
 
-	amount, err = contr1.BalanceTokens()
+	amount, err = contr2.BalanceTokens()
 	require.NoError(t, err)
 	fmt.Println(amount)
 }

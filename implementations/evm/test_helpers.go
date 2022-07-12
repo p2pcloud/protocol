@@ -10,9 +10,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/Incognida/protocol"
-	"github.com/Incognida/protocol/implementations/evm/broker"
-	"github.com/Incognida/protocol/pkg/keyring"
+	"github.com/p2pcloud/protocol"
+	"github.com/p2pcloud/protocol/implementations/evm/broker"
+	"github.com/p2pcloud/protocol/pkg/keyring"
 )
 
 const ChainIDSimulated = 1337

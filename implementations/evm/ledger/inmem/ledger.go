@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/Incognida/protocol/implementations/evm/ledger"
+	"github.com/p2pcloud/protocol/implementations/evm/ledger"
 )
 
 type Ledger struct {
@@ -35,14 +35,13 @@ func (l *Ledger) Deposit(ctx context.Context, transaction ledger.Transaction, us
 	return nil
 }
 
-
 // Withdraw removes free money from user and saves the transaction
 func (l *Ledger) Withdraw(ctx context.Context, transaction ledger.Transaction, user string) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	balance := l.ledger[user]
-	if balance.Free - transaction.Amount < 0 {
+	if balance.Free-transaction.Amount < 0 {
 		return ledger.ErrWithdrawNotAvailable
 	}
 
@@ -54,14 +53,13 @@ func (l *Ledger) Withdraw(ctx context.Context, transaction ledger.Transaction, u
 	return nil
 }
 
-
 // CheckBalance checks whether free money is greater than or equal to transaction amount
 func (l *Ledger) CheckBalance(ctx context.Context, transaction ledger.Transaction, user string) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	balance := l.ledger[user]
-	if balance.Free - transaction.Amount < 0 {
+	if balance.Free-transaction.Amount < 0 {
 		return ledger.ErrWithdrawNotAvailable
 	}
 

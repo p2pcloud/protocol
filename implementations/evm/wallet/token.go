@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
 
-	"github.com/Incognida/protocol/implementations/evm/contracts"
+	"github.com/p2pcloud/protocol/implementations/evm/contracts"
 )
 
 type Token struct {
@@ -96,7 +96,7 @@ func (b *Token) TransferTokens(ctx context.Context, from, to common.Address, amo
 	b.RegenerateSession()
 
 	var (
-		transferFnSignature = []byte("transfer(address,uint256)")
+		transferFnSignature = []byte("transfer(address,uint64)")
 	)
 
 	nonce, err := b.backend.PendingNonceAt(ctx, from)

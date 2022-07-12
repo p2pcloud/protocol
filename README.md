@@ -1,6 +1,6 @@
 # Blockchain logic for P2PCloud
 
-![Badge](https://github.com/Incognida/protocol/actions/workflows/go.yml/badge.svg)
+![Badge](https://github.com/p2pcloud/protocol/actions/workflows/go.yml/badge.svg)
 
 
 ## What is p2pcloud
@@ -39,40 +39,40 @@ There are 3 actors - miner, user and community. User books and pays for VM. Mine
 1. Miner creates offer setting type and price of VM per second
     - Functions: `getMinersOffers`, `updateOffer`, `addOffer`
 1. User sends a stablecoin to the Broker. All stablecoin is split between free and locked states.
-    - Tasks: [Deposit and withdraw steblecoin](https://github.com/Incognida/protocol/issues/1), [Check stablecoin balance](https://github.com/Incognida/protocol/issues/2)
+    - Tasks: [Deposit and withdraw steblecoin](https://github.com/p2pcloud/protocol/issues/1), [Check stablecoin balance](https://github.com/p2pcloud/protocol/issues/2)
     - Functions: `depositCoin`, `checkBalance`, `withdrawCoin`
 1. User gets list of offers
     - Functions: `getAvailableOffers`
 1. User books VM. His stablecoin gets locked. 
     - Functions: `bookVM`
-    - Tasks: [bookVM: Lock pps*time of user's stablecoin and check if user has enough](https://github.com/Incognida/protocol/issues/3), [Emit bookingStarted event](https://github.com/Incognida/protocol/issues/4)
-    - Tasks: [Emit booking event with bookingId, timeUsed, miner, user and vmType fields](https://github.com/Incognida/protocol/issues/5)
+    - Tasks: [bookVM: Lock pps*time of user's stablecoin and check if user has enough](https://github.com/p2pcloud/protocol/issues/3), [Emit bookingStarted event](https://github.com/p2pcloud/protocol/issues/4)
+    - Tasks: [Emit booking event with bookingId, timeUsed, miner, user and vmType fields](https://github.com/p2pcloud/protocol/issues/5)
 1. User aborts booking because of miners misbehaviour. Unused stablecoin gets unlocked. Miner gets paid 1/2 of the price. The rest 1/2 goes into the community. Booking gets deleted.
     - Functions: `reportBooking` 
     - Events: `bookingReported`, `minerPayout`
-    - Tasks: [Emit bookingReported event with bookingId, timeUsed, miner, user and vmType fields](https://github.com/Incognida/protocol/issues/6)
+    - Tasks: [Emit bookingReported event with bookingId, timeUsed, miner, user and vmType fields](https://github.com/p2pcloud/protocol/issues/6)
 1. User aborts booking, but no problems with miner. Unused stablecoin gets unlocked. Miner gets paid 95% of the price. The rest 5% goes into the community. Booking gets deleted.
     - Functions: `stopBooking`
     - Events: `bookingStopped`, `minerPayout`
-    - Tasks: [Emit bookingStopped event with bookingId, timeUsed, miner, user and vmType fields](https://github.com/Incognida/protocol/issues/7)
+    - Tasks: [Emit bookingStopped event with bookingId, timeUsed, miner, user and vmType fields](https://github.com/p2pcloud/protocol/issues/7)
 1. User extends booking. More stablecoin gets locked. New PPS is used. No checks for slot availability.
     - Functions: `extendBooking`
-    - Tasks: [Emit bookingExtended event with bookingId, timeUsed, miner, user and vmType fields](https://github.com/Incognida/protocol/issues/8) [Propose logic of refund in case if extended with different pps booking gets aborted](https://github.com/Incognida/protocol/issues/9)
+    - Tasks: [Emit bookingExtended event with bookingId, timeUsed, miner, user and vmType fields](https://github.com/p2pcloud/protocol/issues/8) [Propose logic of refund in case if extended with different pps booking gets aborted](https://github.com/p2pcloud/protocol/issues/9)
 1. User does nothing and booking expires.
 1. Miner claims expired booking. Miner gets paid 95% of the price. The rest 5% goes into the community. Booking gets deleted.
     - Functions: `claimBookingFinished`
     - Events: `minerPayout`
-    - Tasks: [claimBookingFinished function](https://github.com/Incognida/protocol/issues/10)
+    - Tasks: [claimBookingFinished function](https://github.com/p2pcloud/protocol/issues/10)
 
 Events are used to calculate miner's reputation.
 
 ### Service functions
 1. Stablecoin address. Set is callable only by community contract/wallet.
     - Functions: `setStablecoinAddress`, `getStablecoinAddress`
-    - Tasks: [Set and get stablecoin address](https://github.com/Incognida/protocol/issues/11) [Propose logic of work in case stablecoin address is changed during active vm bookings](https://github.com/Incognida/protocol/issues/12)
+    - Tasks: [Set and get stablecoin address](https://github.com/p2pcloud/protocol/issues/11) [Propose logic of work in case stablecoin address is changed during active vm bookings](https://github.com/p2pcloud/protocol/issues/12)
 1. Community wallet/contract address. Set is callable only by community contract/wallet. Just a regular wallet for now.
     - Functions: `setCommunityContract`, `getCommunityContract`
-    - Tasks: [Set and get community address](https://github.com/Incognida/protocol/issues/13) 
+    - Tasks: [Set and get community address](https://github.com/p2pcloud/protocol/issues/13) 
 1. Community fee. 5% for now.
     - Functions: `setCommunityFee`, `getCommunityFee`
-    - Tasks: [Set and get community fee](https://github.com/Incognida/protocol/issues/14) 
+    - Tasks: [Set and get community fee](https://github.com/p2pcloud/protocol/issues/14) 

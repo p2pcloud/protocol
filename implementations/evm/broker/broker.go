@@ -11,8 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Incognida/protocol/implementations/evm/contracts"
-	"github.com/Incognida/protocol/implementations/evm/ledger"
+	"github.com/p2pcloud/protocol/implementations/evm/contracts"
+	"github.com/p2pcloud/protocol/implementations/evm/ledger"
 )
 
 type Wallet interface {

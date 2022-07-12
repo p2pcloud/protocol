@@ -6,13 +6,13 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/Incognida/protocol/implementations/evm"
-	"github.com/Incognida/protocol/implementations/evm/wallet"
+	"github.com/p2pcloud/protocol/implementations/evm"
+	"github.com/p2pcloud/protocol/implementations/evm/wallet"
 )
 
 const (
 	ChainIDSimulated = 1337
-	GasLimit = 8000000
+	GasLimit         = 8000000
 )
 
 func TestGetbalance(t *testing.T) {
