@@ -6,13 +6,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+
 	"github.com/p2pcloud/protocol"
 	"github.com/p2pcloud/protocol/implementations/evm/broker"
 	"github.com/p2pcloud/protocol/pkg/keyring"
 )
 
 type EVMImplementation struct {
-	broker *broker.Broker
+	broker protocol.BlockchainIface
 }
 
 var _ protocol.BlockchainIface = (*EVMImplementation)(nil)
@@ -43,8 +44,8 @@ func NewEVMImplementation(privateKey string, contractAddress string, rpcEndpoint
 }
 
 func (a *EVMImplementation) DeployContracts() ([]string, error) {
-	address, err := a.broker.Deploy()
-	return []string{address}, err
+	addresses, err := a.broker.DeployContracts()
+	return addresses, err
 }
 
 func (a *EVMImplementation) AddOffer(offer protocol.Offer, callbackUrl string) error {
@@ -93,4 +94,44 @@ func (a *EVMImplementation) GetMyAddress() *common.Address {
 
 func (a *EVMImplementation) GetMinerUrl(address *common.Address) (string, error) {
 	return a.broker.GetMinerUrl(address)
+}
+
+func (a *EVMImplementation) SetMinerUrlIfNeeded(newUrl string) error {
+	return a.broker.SetMinerUrlIfNeeded(newUrl)
+}
+
+func (a *EVMImplementation) GetTime() (int, error) {
+	return a.broker.GetTime()
+}
+
+func (a *EVMImplementation) GetMinersBookings() ([]protocol.VMBooking, error) {
+	return a.broker.GetMinersBookings()
+}
+
+func (a *EVMImplementation) RegenerateSession() error {
+	return a.broker.RegenerateSession()
+}
+
+func (a *EVMImplementation) DepositCoin(amount int64) error {
+	return a.broker.DepositCoin(amount)
+}
+
+func (a *EVMImplementation) WithdrawCoin(amount int64) error {
+	return a.broker.WithdrawCoin(amount)
+}
+
+func (a *EVMImplementation) Balance() (int64, error) {
+	return a.broker.Balance()
+}
+
+func (a *EVMImplementation) TestApprove(to *common.Address, amount int64) error {
+	return a.broker.TestApprove(to, amount)
+}
+
+func (a *EVMImplementation) UserTokenBalance() (int64, error) {
+	return a.broker.UserTokenBalance()
+}
+
+func (a *EVMImplementation) UserAllowance(address common.Address) (int64, error) {
+	return a.broker.UserAllowance(address)
 }

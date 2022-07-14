@@ -37,4 +37,15 @@ type BlockchainIface interface {
 	GetUsersBookings() ([]VMBooking, error)
 	GetMyAddress() *common.Address
 	GetMinerUrl(address *common.Address) (string, error)
+	SetMinerUrlIfNeeded(newUrl string) error
+	GetTime() (int, error)
+	GetMinersBookings() ([]VMBooking, error)
+	DepositCoin(amount int64) error
+	WithdrawCoin(amount int64) error
+	Balance() (int64, error)
+	TestApprove(to *common.Address, amount int64) error
+	UserTokenBalance() (int64, error)
+	UserAllowance(address common.Address) (int64, error)
+
+	RegenerateSession() error
 }

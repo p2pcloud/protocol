@@ -2,6 +2,28 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
+interface IERC20 {
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address account) external view returns (uint256);
+
+    function transfer(address to, uint256 amount) external returns (bool);
+
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool);
+}
+
 contract Broker {
     struct Booking {
         uint256 index;
@@ -30,6 +52,15 @@ contract Broker {
 
     mapping(address => bytes32) minerUrls;
     mapping(address => bytes20) mtlsHashes;
+
+    mapping(address => uint256) deposits;
+    mapping(address => uint256) locked;
+
+    IERC20 token;
+
+    constructor() public {
+        token = IERC20(address(0x772C89b7b306b88A7B72c66535506e5811Ba30dA));
+    }
 
     function SetMtlsHash(bytes20 _signature) public {
         mtlsHashes[msg.sender] = _signature;
@@ -189,5 +220,48 @@ contract Broker {
         for (uint256 i = 0; i < count; i++) {
             filteredOffers[i] = offersTemp[i];
         }
+    }
+
+    function depositCoin(uint256 numTokens) public returns (bool) {
+        if (!token.transferFrom(msg.sender, address(this), numTokens)) {
+            return false;
+        }
+
+        deposits[msg.sender] = deposits[msg.sender] + numTokens;
+        return true;
+    }
+
+    function withdrawCoin(uint256 numTokens) public returns (bool) {
+        require(
+            userBalance() >= numTokens,
+            "insufficient funds to withdraw"
+        );
+
+        if (!token.transfer(msg.sender, numTokens)) {
+            return false;
+        }
+
+        deposits[msg.sender] = deposits[msg.sender] - numTokens;
+        return true;
+    }
+
+    function userBalance() public returns (uint256) {
+        return deposits[msg.sender] - locked[msg.sender];
+    }
+
+    function userTokenBalance() public returns (uint256) {
+        return token.balanceOf(msg.sender);
+    }
+
+    function userAllowance(address to) public returns (uint256) {
+        return token.allowance(msg.sender, to);
+    }
+
+    function userDeposit() public returns (uint256) {
+        return deposits[msg.sender];
+    }
+
+    function testApprove(address to, uint256 amount) public {
+        token.approve(to, amount);
     }
 }

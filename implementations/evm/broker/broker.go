@@ -11,21 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 
+	"github.com/p2pcloud/protocol"
 	"github.com/p2pcloud/protocol/implementations/evm/contracts"
-	"github.com/p2pcloud/protocol/implementations/evm/ledger"
 )
-
-type Wallet interface {
-	GetMyAddress() *common.Address
-	TransferTokens(ctx context.Context, from, to common.Address, amount uint64) error
-	BalanceTokens() (uint64, error)
-}
-
-type OperationRequest struct {
-	Wallet           Wallet
-	ServerAddressHex string
-	Amount           uint64
-}
 
 type Broker struct {
 	backend         bind.ContractBackend
@@ -33,10 +21,11 @@ type Broker struct {
 	contractAddress common.Address
 	session         contracts.BrokerSession
 	privateKey      *ecdsa.PrivateKey
-	ledger          ledger.Ledger
 }
 
-func NewBroker(backend bind.ContractBackend, privateKey *ecdsa.PrivateKey, contractAddressStr string, chanId int64) (*Broker, error) {
+func NewBroker(
+	backend bind.ContractBackend, privateKey *ecdsa.PrivateKey, contractAddressStr string, chanId int64,
+) (protocol.BlockchainIface, error) {
 	if chanId == 0 {
 		return nil, fmt.Errorf("chanId is 0. please set it to a valid value")
 	}
@@ -80,20 +69,20 @@ func (b *Broker) RegenerateSession() error {
 	return nil
 }
 
-func (b *Broker) Deploy() (string, error) {
+func (b *Broker) DeployContracts() ([]string, error) {
 	address, _, _, err := contracts.DeployBroker(
 		b.transactOpts,
 		b.backend,
 	)
 
 	if err != nil {
-		return "", fmt.Errorf("could not deploy broker: %v", err)
+		return nil, fmt.Errorf("could not deploy broker: %v", err)
 	}
 	b.contractAddress = address
 
 	b.RegenerateSession()
 
-	return address.String(), nil
+	return []string{address.String()}, nil
 }
 
 func (b *Broker) GetMyAddress() *common.Address {
@@ -137,50 +126,59 @@ func (b *Broker) RegisterMtlsHashIfNeeded(mtlsHash string) error {
 	return nil
 }
 
-func (b *Broker) Deposit(ctx context.Context, req *OperationRequest) error {
-	err := req.Wallet.TransferTokens(
-		ctx,
-		*req.Wallet.GetMyAddress(),
-		common.HexToAddress(req.ServerAddressHex),
-		req.Amount,
-	)
-	if err != nil {
-		return fmt.Errorf("could not deposit: %v", err)
-	}
+func (b *Broker) DepositCoin(amount int64) error {
+	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
 
-	return b.ledger.Deposit(
-		ctx,
-		ledger.Transaction{
-			Amount: req.Amount,
-			TxType: ledger.DepositTxType,
-		},
-		req.Wallet.GetMyAddress().String(),
-	)
+	_, err := b.session.DepositCoin(new(big.Int).Mul(usdc, big.NewInt(amount)))
+
+	return err
 }
 
-func (b *Broker) Withdraw(ctx context.Context, req *OperationRequest) error {
-	to := req.Wallet.GetMyAddress()
+func (b *Broker) WithdrawCoin(amount int64) error {
+	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
 
-	if err := b.ledger.CheckBalance(ctx, ledger.Transaction{Amount: req.Amount}, to.String()); err != nil {
-		return err
-	}
+	_, err := b.session.WithdrawCoin(new(big.Int).Mul(usdc, big.NewInt(amount)))
 
-	err := req.Wallet.TransferTokens(
-		ctx,
-		common.HexToAddress(req.ServerAddressHex),
-		*to,
-		req.Amount,
-	)
+	return err
+}
+
+func (b *Broker) Balance() (int64, error) {
+	tx, err := b.session.UserBalance()
 	if err != nil {
-		return fmt.Errorf("could not deposit: %v", err)
+		return 0, err
 	}
 
-	return b.ledger.Withdraw(
-		ctx,
-		ledger.Transaction{
-			Amount: req.Amount,
-			TxType: ledger.WithdrawTxType,
-		},
-		to.String(),
-	)
+	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
+
+	return new(big.Int).Div(tx.Value(), usdc).Int64(), nil
+}
+
+func (b *Broker) TestApprove(to *common.Address, amount int64) error {
+	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
+
+	_, err := b.session.TestApprove(*to, new(big.Int).Mul(usdc, big.NewInt(amount)))
+
+	return err
+}
+
+func (b *Broker) UserTokenBalance() (int64, error) {
+	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
+
+	tx, err := b.session.UserTokenBalance()
+	if err != nil {
+		return 0, err
+	}
+
+	return new(big.Int).Div(tx.Value(), usdc).Int64(), nil
+}
+
+func (b *Broker) UserAllowance(address common.Address) (int64, error) {
+	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
+
+	tx, err := b.session.UserAllowance(address)
+	if err != nil {
+		return 0, err
+	}
+
+	return new(big.Int).Div(tx.Value(), usdc).Int64(), nil
 }

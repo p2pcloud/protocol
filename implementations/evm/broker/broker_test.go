@@ -1,6 +1,7 @@
 package broker_test
 
 import (
+	"github.com/p2pcloud/protocol"
 	"strings"
 	"testing"
 
@@ -11,7 +12,7 @@ import (
 
 const ChainIDSimulated = 1337
 
-func getTestInstances(t *testing.T, count int) ([]*broker.Broker, *backends.SimulatedBackend) {
+func getTestInstances(t *testing.T, count int) ([]protocol.BlockchainIface, *backends.SimulatedBackend) {
 	blockchainSim, err := evm.NewSimulatedBlockchainEnv()
 	if err != nil {
 		t.Fatal(err)
@@ -25,19 +26,19 @@ func getTestInstances(t *testing.T, count int) ([]*broker.Broker, *backends.Simu
 	if err != nil {
 		t.Fatal(err)
 	}
-	contractAddress, err := contract0.Deploy()
+	contractAddress, err := contract0.DeployContracts()
 	if err != nil {
 		t.Fatal(err)
 	}
 	blockchainSim.Backend.Commit()
 
-	result := make([]*broker.Broker, 0)
+	result := make([]protocol.BlockchainIface, 0)
 	for i := 0; i < count; i++ {
 		pk, err := blockchainSim.GetNextPrivateKey()
 		if err != nil {
 			t.Fatal(err)
 		}
-		contract, err := broker.NewBroker(blockchainSim.Backend, pk, contractAddress, ChainIDSimulated)
+		contract, err := broker.NewBroker(blockchainSim.Backend, pk, contractAddress[0], ChainIDSimulated)
 		if err != nil {
 			t.Fatal(err)
 		}
