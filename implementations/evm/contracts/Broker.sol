@@ -245,19 +245,19 @@ contract Broker {
         return true;
     }
 
-    function userBalance() public returns (uint256) {
+    function userBalance() public view returns (uint256) {
         return deposits[msg.sender] - locked[msg.sender];
     }
 
-    function userTokenBalance() public returns (uint256) {
+    function userTokenBalance() public view returns (uint256) {
         return token.balanceOf(msg.sender);
     }
 
-    function userAllowance(address to) public returns (uint256) {
+    function userAllowance(address to) public view returns (uint256) {
         return token.allowance(msg.sender, to);
     }
 
-    function userDeposit() public returns (uint256) {
+    function userDeposit() public view returns (uint256) {
         return deposits[msg.sender];
     }
 

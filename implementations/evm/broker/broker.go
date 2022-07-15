@@ -143,14 +143,14 @@ func (b *Broker) WithdrawCoin(amount int64) error {
 }
 
 func (b *Broker) Balance() (int64, error) {
-	tx, err := b.session.UserBalance()
+	amount, err := b.session.UserBalance()
 	if err != nil {
 		return 0, err
 	}
 
 	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
 
-	return new(big.Int).Div(tx.Value(), usdc).Int64(), nil
+	return new(big.Int).Div(amount, usdc).Int64(), nil
 }
 
 func (b *Broker) TestApprove(to *common.Address, amount int64) error {
@@ -164,12 +164,12 @@ func (b *Broker) TestApprove(to *common.Address, amount int64) error {
 func (b *Broker) UserTokenBalance() (int64, error) {
 	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
 
-	tx, err := b.session.UserTokenBalance()
+	amount, err := b.session.UserTokenBalance()
 	if err != nil {
 		return 0, err
 	}
 
-	return new(big.Int).Div(tx.Value(), usdc).Int64(), nil
+	return new(big.Int).Div(amount, usdc).Int64(), nil
 }
 
 func (b *Broker) UserAllowance(address common.Address) (int64, error) {
@@ -180,5 +180,5 @@ func (b *Broker) UserAllowance(address common.Address) (int64, error) {
 		return 0, err
 	}
 
-	return new(big.Int).Div(tx.Value(), usdc).Int64(), nil
+	return new(big.Int).Div(tx, usdc).Int64(), nil
 }
