@@ -17,8 +17,10 @@ import (
 
 const ChainIDSimulated = 1337
 
-func NewSimulatedBackend(backend bind.ContractBackend, contractAddressStr string, privateKey *ecdsa.PrivateKey) (protocol.BlockchainIface, error) {
-	b, err := broker.NewBroker(backend, privateKey, contractAddressStr, ChainIDSimulated)
+func NewSimulatedBackend(
+	backend bind.ContractBackend, contractAddressStr string, privateKey *ecdsa.PrivateKey, tokenAddress common.Address,
+) (protocol.BrokerIface, error) {
+	b, err := broker.NewBroker(backend, privateKey, contractAddressStr, ChainIDSimulated, tokenAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -30,8 +32,10 @@ func NewSimulatedBackend(backend bind.ContractBackend, contractAddressStr string
 	}, nil
 }
 
-func NewSimulatedBlockchain(backend bind.ContractBackend, contractAddressStr string, privateKey *ecdsa.PrivateKey) (protocol.BlockchainIface, error) {
-	b, err := broker.NewBroker(backend, privateKey, contractAddressStr, ChainIDSimulated)
+func NewSimulatedBlockchain(
+	backend bind.ContractBackend, contractAddressStr string, privateKey *ecdsa.PrivateKey, tokenAddress common.Address,
+) (protocol.BrokerIface, error) {
+	b, err := broker.NewBroker(backend, privateKey, contractAddressStr, ChainIDSimulated, tokenAddress)
 	if err != nil {
 		return nil, err
 	}

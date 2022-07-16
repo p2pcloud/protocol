@@ -14,7 +14,7 @@ func check(t *testing.T, err error) {
 }
 
 func TestAddOffer(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
+	testInstances, simChain := getTestInstances(t, 0, 2)
 	defer simChain.Close()
 
 	contract1 := testInstances[0]
@@ -62,7 +62,7 @@ func assertEqual(t *testing.T, a, b interface{}) {
 }
 
 func TestUrlUpdate(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
+	testInstances, simChain := getTestInstances(t, 0, 2)
 	defer simChain.Close()
 
 	contract := testInstances[0]
@@ -128,7 +128,7 @@ func TestUrlUpdate(t *testing.T) {
 // }
 
 func TestUpdateOffer(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
+	testInstances, simChain := getTestInstances(t, 0, 2)
 	defer simChain.Close()
 
 	contract1 := testInstances[0]

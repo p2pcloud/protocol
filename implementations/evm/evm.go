@@ -3,22 +3,27 @@ package evm
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/p2pcloud/protocol"
 	"github.com/p2pcloud/protocol/implementations/evm/broker"
+	"github.com/p2pcloud/protocol/implementations/evm/stablecoin"
 	"github.com/p2pcloud/protocol/pkg/keyring"
 )
 
 type EVMImplementation struct {
-	broker protocol.BlockchainIface
+	broker     protocol.BrokerIface
+	stableCoin protocol.StableCoinIface
 }
 
 var _ protocol.BlockchainIface = (*EVMImplementation)(nil)
 
-func NewEVMImplementation(privateKey string, contractAddress string, rpcEndpoint string, chanId int64) (*EVMImplementation, error) {
+func NewEVMImplementation(
+	privateKey string, contractAddress, tokenAddress, rpcEndpoint string, chanId, decimals int64,
+) (*EVMImplementation, error) {
 	privateKeyDecoded, err := keyring.DecodePrivateKey(privateKey)
 	if err != nil {
 		return nil, err
@@ -33,12 +38,21 @@ func NewEVMImplementation(privateKey string, contractAddress string, rpcEndpoint
 		return nil, fmt.Errorf("could not connect to web3 at \"%s\": %v", rpcEndpoint, err)
 	}
 
-	myBroker, err := broker.NewBroker(web3Client, privateKeyDecoded, contractAddress, chanId)
+	ta := common.HexToAddress(strings.ToLower(tokenAddress))
+
+	myBroker, err := broker.NewBroker(web3Client, privateKeyDecoded, contractAddress, chanId, ta)
 	if err != nil {
 		return nil, err
 	}
+
 	return &EVMImplementation{
 		broker: myBroker,
+		stableCoin: stablecoin.New(&stablecoin.Params{
+			Decimals: decimals,
+			Backend:  web3Client,
+			Session:  myBroker.GetStableCoinSession(),
+			Commit:   func() {},
+		}),
 	}, nil
 
 }
@@ -62,6 +76,10 @@ func (a *EVMImplementation) UpdateOffer(offer protocol.Offer) error {
 
 func (a *EVMImplementation) GetPrivateKey() *ecdsa.PrivateKey {
 	return a.broker.GetPrivateKey()
+}
+
+func (a *EVMImplementation) ContractAddress() common.Address {
+	return a.broker.ContractAddress()
 }
 
 func (a *EVMImplementation) GetMtlsHash(address *common.Address) (string, error) {
@@ -112,26 +130,26 @@ func (a *EVMImplementation) RegenerateSession() error {
 	return a.broker.RegenerateSession()
 }
 
+func (a *EVMImplementation) GetStableCoinSession() protocol.StableCoinSessionIface {
+	return a.broker.GetStableCoinSession()
+}
+
 func (a *EVMImplementation) DepositCoin(amount int64) error {
-	return a.broker.DepositCoin(amount)
+	return a.stableCoin.DepositCoin(amount)
 }
 
 func (a *EVMImplementation) WithdrawCoin(amount int64) error {
-	return a.broker.WithdrawCoin(amount)
+	return a.stableCoin.WithdrawCoin(amount)
 }
 
 func (a *EVMImplementation) Balance() (int64, error) {
-	return a.broker.Balance()
-}
-
-func (a *EVMImplementation) TestApprove(to *common.Address, amount int64) error {
-	return a.broker.TestApprove(to, amount)
+	return a.stableCoin.Balance()
 }
 
 func (a *EVMImplementation) UserTokenBalance() (int64, error) {
-	return a.broker.UserTokenBalance()
+	return a.stableCoin.UserTokenBalance()
 }
 
 func (a *EVMImplementation) UserAllowance(address common.Address) (int64, error) {
-	return a.broker.UserAllowance(address)
+	return a.stableCoin.UserAllowance(address)
 }

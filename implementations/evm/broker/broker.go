@@ -19,13 +19,18 @@ type Broker struct {
 	backend         bind.ContractBackend
 	transactOpts    *bind.TransactOpts
 	contractAddress common.Address
+	tokenAddress    common.Address
 	session         contracts.BrokerSession
 	privateKey      *ecdsa.PrivateKey
 }
 
 func NewBroker(
-	backend bind.ContractBackend, privateKey *ecdsa.PrivateKey, contractAddressStr string, chanId int64,
-) (protocol.BlockchainIface, error) {
+	backend bind.ContractBackend,
+	privateKey *ecdsa.PrivateKey,
+	contractAddressStr string,
+	chanId int64,
+	tokenAddress common.Address,
+) (protocol.BrokerIface, error) {
 	if chanId == 0 {
 		return nil, fmt.Errorf("chanId is 0. please set it to a valid value")
 	}
@@ -40,6 +45,7 @@ func NewBroker(
 		transactOpts:    transactOpts,
 		contractAddress: common.HexToAddress(contractAddressStr),
 		privateKey:      privateKey,
+		tokenAddress:    tokenAddress,
 	}
 
 	b.RegenerateSession()
@@ -49,6 +55,10 @@ func NewBroker(
 
 func (b *Broker) GetPrivateKey() *ecdsa.PrivateKey {
 	return b.privateKey
+}
+
+func (b *Broker) ContractAddress() common.Address {
+	return b.contractAddress
 }
 
 func (b *Broker) RegenerateSession() error {
@@ -73,6 +83,7 @@ func (b *Broker) DeployContracts() ([]string, error) {
 	address, _, _, err := contracts.DeployBroker(
 		b.transactOpts,
 		b.backend,
+		b.tokenAddress,
 	)
 
 	if err != nil {
@@ -126,59 +137,6 @@ func (b *Broker) RegisterMtlsHashIfNeeded(mtlsHash string) error {
 	return nil
 }
 
-func (b *Broker) DepositCoin(amount int64) error {
-	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
-
-	_, err := b.session.DepositCoin(new(big.Int).Mul(usdc, big.NewInt(amount)))
-
-	return err
-}
-
-func (b *Broker) WithdrawCoin(amount int64) error {
-	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
-
-	_, err := b.session.WithdrawCoin(new(big.Int).Mul(usdc, big.NewInt(amount)))
-
-	return err
-}
-
-func (b *Broker) Balance() (int64, error) {
-	amount, err := b.session.UserBalance()
-	if err != nil {
-		return 0, err
-	}
-
-	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
-
-	return new(big.Int).Div(amount, usdc).Int64(), nil
-}
-
-func (b *Broker) TestApprove(to *common.Address, amount int64) error {
-	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
-
-	_, err := b.session.TestApprove(*to, new(big.Int).Mul(usdc, big.NewInt(amount)))
-
-	return err
-}
-
-func (b *Broker) UserTokenBalance() (int64, error) {
-	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
-
-	amount, err := b.session.UserTokenBalance()
-	if err != nil {
-		return 0, err
-	}
-
-	return new(big.Int).Div(amount, usdc).Int64(), nil
-}
-
-func (b *Broker) UserAllowance(address common.Address) (int64, error) {
-	usdc := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil)
-
-	tx, err := b.session.UserAllowance(address)
-	if err != nil {
-		return 0, err
-	}
-
-	return new(big.Int).Div(tx, usdc).Int64(), nil
+func (b *Broker) GetStableCoinSession() protocol.StableCoinSessionIface {
+	return &b.session
 }

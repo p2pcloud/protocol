@@ -1,28 +1,51 @@
 package broker_test
 
 import (
-	"github.com/p2pcloud/protocol"
 	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
+
+	"github.com/p2pcloud/protocol"
 	"github.com/p2pcloud/protocol/implementations/evm"
 	"github.com/p2pcloud/protocol/implementations/evm/broker"
+	"github.com/p2pcloud/protocol/implementations/evm/token"
 )
 
 const ChainIDSimulated = 1337
 
-func getTestInstances(t *testing.T, count int) ([]protocol.BlockchainIface, *backends.SimulatedBackend) {
+func getTestInstances(t *testing.T, supply int64, count int) ([]protocol.BrokerIface, *backends.SimulatedBackend) {
 	blockchainSim, err := evm.NewSimulatedBlockchainEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	tokenPk, err := blockchainSim.GetNextPrivateKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tkn := token.NewToken(&token.Params{
+		Decimals:   6,
+		Backend:    blockchainSim.Backend,
+		PrivateKey: tokenPk,
+		ChainID:    ChainIDSimulated,
+		Commit:     blockchainSim.Backend.Commit,
+	})
+
 	pk, err := blockchainSim.GetNextPrivateKey()
 	if err != nil {
 		t.Fatal(err)
 	}
-	contract0, err := broker.NewBroker(blockchainSim.Backend, pk, "", ChainIDSimulated)
+
+	tokenAddress, err := tkn.DeployContract(supply)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	contract0, err := broker.NewBroker(
+		blockchainSim.Backend, pk, "", ChainIDSimulated, *tokenAddress,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,13 +55,15 @@ func getTestInstances(t *testing.T, count int) ([]protocol.BlockchainIface, *bac
 	}
 	blockchainSim.Backend.Commit()
 
-	result := make([]protocol.BlockchainIface, 0)
+	result := make([]protocol.BrokerIface, 0)
 	for i := 0; i < count; i++ {
 		pk, err := blockchainSim.GetNextPrivateKey()
 		if err != nil {
 			t.Fatal(err)
 		}
-		contract, err := broker.NewBroker(blockchainSim.Backend, pk, contractAddress[0], ChainIDSimulated)
+		contract, err := broker.NewBroker(
+			blockchainSim.Backend, pk, contractAddress[0], ChainIDSimulated, *tokenAddress,
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -48,7 +73,7 @@ func getTestInstances(t *testing.T, count int) ([]protocol.BlockchainIface, *bac
 }
 
 func TestGetMtlsHash(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
+	testInstances, simChain := getTestInstances(t, 0, 2)
 	defer simChain.Close()
 
 	contr1 := testInstances[0]

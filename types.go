@@ -2,6 +2,9 @@ package protocol
 
 import (
 	"crypto/ecdsa"
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -23,12 +26,30 @@ type VMBooking struct {
 	BookedTill int
 }
 
-type BlockchainIface interface {
+type StableCoinIface interface {
+	DepositCoin(amount int64) error
+	WithdrawCoin(amount int64) error
+	Balance() (int64, error)
+	UserTokenBalance() (int64, error)
+	UserAllowance(address common.Address) (int64, error)
+}
+
+type StableCoinSessionIface interface {
+	DepositCoin(numTokens *big.Int) (*types.Transaction, error)
+	WithdrawCoin(numTokens *big.Int) (*types.Transaction, error)
+	UserBalance() (*big.Int, error)
+	UserAllowance(to common.Address) (*big.Int, error)
+	UserTokenBalance() (*big.Int, error)
+	TestApprove(to common.Address, amount *big.Int) (*types.Transaction, error)
+}
+
+type BrokerIface interface {
 	DeployContracts() ([]string, error)
 	AddOffer(offer Offer, callbackUrl string) error
 	GetMyOffers() ([]Offer, error)
 	UpdateOffer(offer Offer) error
 	GetPrivateKey() *ecdsa.PrivateKey
+	ContractAddress() common.Address
 	GetMtlsHash(*common.Address) (string, error)
 	GetBooking(index int) (*VMBooking, error)
 	RegisterMtlsHashIfNeeded(mtlsHash string) error
@@ -40,12 +61,12 @@ type BlockchainIface interface {
 	SetMinerUrlIfNeeded(newUrl string) error
 	GetTime() (int, error)
 	GetMinersBookings() ([]VMBooking, error)
-	DepositCoin(amount int64) error
-	WithdrawCoin(amount int64) error
-	Balance() (int64, error)
-	TestApprove(to *common.Address, amount int64) error
-	UserTokenBalance() (int64, error)
-	UserAllowance(address common.Address) (int64, error)
 
 	RegenerateSession() error
+	GetStableCoinSession() StableCoinSessionIface
+}
+
+type BlockchainIface interface {
+	BrokerIface
+	StableCoinIface
 }

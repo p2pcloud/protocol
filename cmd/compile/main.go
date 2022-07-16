@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	err := evm.CompileContracts()
+	err := evm.CompileContracts(true)
 	if err != nil {
 		panic(err)
 	}

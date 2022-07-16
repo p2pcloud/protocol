@@ -7,8 +7,6 @@ interface IERC20 {
 
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
-    function totalSupply() external view returns (uint256);
-
     function balanceOf(address account) external view returns (uint256);
 
     function transfer(address to, uint256 amount) external returns (bool);
@@ -58,8 +56,8 @@ contract Broker {
 
     IERC20 token;
 
-    constructor() public {
-        token = IERC20(address(0x772C89b7b306b88A7B72c66535506e5811Ba30dA));
+    constructor(IERC20 t) public {
+        token = t;
     }
 
     function SetMtlsHash(bytes20 _signature) public {

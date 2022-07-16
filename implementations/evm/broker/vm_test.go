@@ -8,7 +8,7 @@ import (
 )
 
 func TestBookingNotFound(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
+	testInstances, simChain := getTestInstances(t, 0, 2)
 	defer simChain.Close()
 
 	minerContr := testInstances[0]
@@ -41,7 +41,7 @@ func TestBookingNotFound(t *testing.T) {
 }
 
 func TestGetBooking(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
+	testInstances, simChain := getTestInstances(t, 0, 2)
 	defer simChain.Close()
 
 	minerContr := testInstances[0]
@@ -75,7 +75,7 @@ func TestGetBooking(t *testing.T) {
 }
 
 func TestBook(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
+	testInstances, simChain := getTestInstances(t, 0, 2)
 	defer simChain.Close()
 
 	minerContr := testInstances[0]
