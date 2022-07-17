@@ -1,16 +1,29 @@
 package stablecoin_test
 
 import (
+	"os"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/stretchr/testify/require"
 
 	"github.com/p2pcloud/protocol/implementations/evm"
 	"github.com/p2pcloud/protocol/implementations/evm/stablecoin"
 )
 
-func TestStableCoin_DepositCoin(t *testing.T) {
-	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+func TestIntegrationStableCoin_DepositCoin(t *testing.T) {
+	ganacheJsonKeys := os.Getenv("GANACHE_KEYS")
+	ganacheRPCEndpoint := os.Getenv("GANACHE_RPC_ENDPOINT")
+
+	if ganacheJsonKeys == "" || ganacheRPCEndpoint == "" {
+		t.Skip()
+	}
+
+	web3Client, err := ethclient.Dial(ganacheRPCEndpoint)
+	require.NoError(t, err)
+
+	helper, err := evm.NewGanacheBCHelper(5, ganacheJsonKeys)
+	require.NoError(t, err)
 
 	userIdx := 0
 
@@ -19,8 +32,8 @@ func TestStableCoin_DepositCoin(t *testing.T) {
 		5,
 		*evm.NewGifts(map[int]int64{userIdx: 3},
 			map[int]int64{userIdx: 3}),
-		blockchain.Origin.Backend,
-		blockchain,
+		web3Client,
+		helper,
 	)
 	require.NoError(t, err)
 
@@ -49,8 +62,19 @@ func TestStableCoin_DepositCoin(t *testing.T) {
 	require.Equal(t, int64(2), balance)
 }
 
-func TestStableCoin_WithdrawCoin(t *testing.T) {
-	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+func TestIntegrationStableCoin_WithdrawCoin(t *testing.T) {
+	ganacheJsonKeys := os.Getenv("GANACHE_KEYS")
+	ganacheRPCEndpoint := os.Getenv("GANACHE_RPC_ENDPOINT")
+
+	if ganacheJsonKeys == "" || ganacheRPCEndpoint == "" {
+		t.Skip()
+	}
+
+	web3Client, err := ethclient.Dial(ganacheRPCEndpoint)
+	require.NoError(t, err)
+
+	helper, err := evm.NewGanacheBCHelper(5, ganacheJsonKeys)
+	require.NoError(t, err)
 
 	userIdx := 0
 
@@ -59,8 +83,8 @@ func TestStableCoin_WithdrawCoin(t *testing.T) {
 		5,
 		*evm.NewGifts(map[int]int64{userIdx: 3},
 			map[int]int64{userIdx: 3}),
-		blockchain.Origin.Backend,
-		blockchain,
+		web3Client,
+		helper,
 	)
 	require.NoError(t, err)
 

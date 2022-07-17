@@ -150,6 +150,6 @@ func (a *EVMImplementation) UserTokenBalance() (int64, error) {
 	return a.stableCoin.UserTokenBalance()
 }
 
-func (a *EVMImplementation) UserAllowance(address common.Address) (int64, error) {
-	return a.stableCoin.UserAllowance(address)
+func (a *EVMImplementation) UserAllowance() (int64, error) {
+	return a.stableCoin.UserAllowance()
 }

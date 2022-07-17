@@ -31,16 +31,15 @@ type StableCoinIface interface {
 	WithdrawCoin(amount int64) error
 	Balance() (int64, error)
 	UserTokenBalance() (int64, error)
-	UserAllowance(address common.Address) (int64, error)
+	UserAllowance() (int64, error)
 }
 
 type StableCoinSessionIface interface {
 	DepositCoin(numTokens *big.Int) (*types.Transaction, error)
 	WithdrawCoin(numTokens *big.Int) (*types.Transaction, error)
 	UserBalance() (*big.Int, error)
-	UserAllowance(to common.Address) (*big.Int, error)
+	UserAllowance() (*big.Int, error)
 	UserTokenBalance() (*big.Int, error)
-	TestApprove(to common.Address, amount *big.Int) (*types.Transaction, error)
 }
 
 type BrokerIface interface {

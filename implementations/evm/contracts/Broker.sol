@@ -251,15 +251,7 @@ contract Broker {
         return token.balanceOf(msg.sender);
     }
 
-    function userAllowance(address to) public view returns (uint256) {
-        return token.allowance(msg.sender, to);
-    }
-
-    function userDeposit() public view returns (uint256) {
-        return deposits[msg.sender];
-    }
-
-    function testApprove(address to, uint256 amount) public {
-        token.approve(to, amount);
+    function userAllowance() public view returns (uint256) {
+        return token.allowance(msg.sender, address(this));
     }
 }

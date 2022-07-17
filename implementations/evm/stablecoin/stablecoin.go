@@ -5,8 +5,6 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/p2pcloud/protocol"
 )
 
@@ -27,6 +25,10 @@ type Params struct {
 }
 
 func New(params *Params) *StableCoin {
+	if params.Commit == nil {
+		params.Commit = func() {}
+	}
+
 	return &StableCoin{
 		coin:    new(big.Int).Exp(big.NewInt(10), big.NewInt(params.Decimals), nil),
 		backend: params.Backend,
@@ -69,8 +71,8 @@ func (s *StableCoin) UserTokenBalance() (int64, error) {
 	return new(big.Int).Div(amount, s.coin).Int64(), nil
 }
 
-func (s *StableCoin) UserAllowance(address common.Address) (int64, error) {
-	amount, err := s.session.UserAllowance(address)
+func (s *StableCoin) UserAllowance() (int64, error) {
+	amount, err := s.session.UserAllowance()
 	if err != nil {
 		return 0, err
 	}
