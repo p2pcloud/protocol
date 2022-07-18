@@ -8,6 +8,8 @@ import (
 )
 
 func (b *Broker) BookVM(offerIndex, seconds int) error {
+	defer b.commit()
+
 	_, err := b.session.BookVM(big.NewInt(int64(offerIndex)), big.NewInt(int64(seconds)))
 	return err
 }

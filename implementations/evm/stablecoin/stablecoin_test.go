@@ -17,7 +17,7 @@ func TestStableCoin_DepositCoin(t *testing.T) {
 	p, err := evm.InitializeTestInstances(
 		2,
 		5,
-		*evm.NewGifts(map[int]int64{userIdx: 3},
+		evm.NewGifts(map[int]int64{userIdx: 3},
 			map[int]int64{userIdx: 3}),
 		blockchain.Origin.Backend,
 		blockchain,
@@ -57,7 +57,7 @@ func TestStableCoin_WithdrawCoin(t *testing.T) {
 	p, err := evm.InitializeTestInstances(
 		2,
 		5,
-		*evm.NewGifts(map[int]int64{userIdx: 3},
+		evm.NewGifts(map[int]int64{userIdx: 3},
 			map[int]int64{userIdx: 3}),
 		blockchain.Origin.Backend,
 		blockchain,

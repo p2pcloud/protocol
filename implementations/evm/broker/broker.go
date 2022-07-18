@@ -22,6 +22,7 @@ type Broker struct {
 	tokenAddress    common.Address
 	session         contracts.BrokerSession
 	privateKey      *ecdsa.PrivateKey
+	commit          func()
 }
 
 func NewBroker(
@@ -30,9 +31,14 @@ func NewBroker(
 	contractAddressStr string,
 	chanId int64,
 	tokenAddress common.Address,
+	commit func(),
 ) (protocol.BrokerIface, error) {
 	if chanId == 0 {
 		return nil, fmt.Errorf("chanId is 0. please set it to a valid value")
+	}
+
+	if commit == nil {
+		commit = func() {}
 	}
 
 	transactOpts, err := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(chanId))
@@ -46,6 +52,7 @@ func NewBroker(
 		contractAddress: common.HexToAddress(contractAddressStr),
 		privateKey:      privateKey,
 		tokenAddress:    tokenAddress,
+		commit:          commit,
 	}
 
 	b.RegenerateSession()
@@ -80,6 +87,8 @@ func (b *Broker) RegenerateSession() error {
 }
 
 func (b *Broker) DeployContracts() ([]string, error) {
+	defer b.commit()
+
 	address, _, _, err := contracts.DeployBroker(
 		b.transactOpts,
 		b.backend,
@@ -110,6 +119,8 @@ func (b *Broker) GetMtlsHash(address *common.Address) (string, error) {
 }
 
 func (b *Broker) RegisterMtlsHashIfNeeded(mtlsHash string) error {
+	defer b.commit()
+
 	logrus.WithField("mtlsHash", mtlsHash).Debug("RegisterMtlsHashIfNeeded called")
 	oldMtlsHash, err := b.GetMtlsHash(b.GetMyAddress())
 	if err != nil {

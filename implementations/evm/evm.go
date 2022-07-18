@@ -40,7 +40,7 @@ func NewEVMImplementation(
 
 	ta := common.HexToAddress(strings.ToLower(tokenAddress))
 
-	myBroker, err := broker.NewBroker(web3Client, privateKeyDecoded, contractAddress, chanId, ta)
+	myBroker, err := broker.NewBroker(web3Client, privateKeyDecoded, contractAddress, chanId, ta, func() {})
 	if err != nil {
 		return nil, err
 	}

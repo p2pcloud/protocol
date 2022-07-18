@@ -9,6 +9,8 @@ import (
 )
 
 func (b *Broker) AddOffer(offer protocol.Offer, callbackUrl string) error {
+	defer b.commit()
+
 	err := b.SetMinerUrlIfNeeded(callbackUrl)
 	if err != nil {
 		return err
@@ -64,6 +66,8 @@ func (b *Broker) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, error) {
 // }
 
 func (b *Broker) UpdateOffer(offer protocol.Offer) error {
+	defer b.commit()
+
 	_, err := b.session.UpdateOffer(
 		big.NewInt(int64(offer.Index)),
 		big.NewInt(int64(offer.PPS)),
@@ -83,6 +87,8 @@ func (b *Broker) GetMinerUrl(address *common.Address) (string, error) {
 }
 
 func (b *Broker) SetMinerUrlIfNeeded(newUrl string) error {
+	defer b.commit()
+
 	oldUrl, err := b.GetMinerUrl(&b.transactOpts.From)
 	if err != nil {
 		return err

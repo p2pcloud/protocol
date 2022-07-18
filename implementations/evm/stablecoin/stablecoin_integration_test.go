@@ -12,17 +12,15 @@ import (
 )
 
 func TestIntegrationStableCoin_DepositCoin(t *testing.T) {
-	ganacheJsonKeys := os.Getenv("GANACHE_KEYS")
 	ganacheRPCEndpoint := os.Getenv("GANACHE_RPC_ENDPOINT")
-
-	if ganacheJsonKeys == "" || ganacheRPCEndpoint == "" {
+	if ganacheRPCEndpoint == "" {
 		t.Skip()
 	}
 
 	web3Client, err := ethclient.Dial(ganacheRPCEndpoint)
 	require.NoError(t, err)
 
-	helper, err := evm.NewGanacheBCHelper(5, ganacheJsonKeys)
+	helper, err := evm.NewGanacheBCHelper(5)
 	require.NoError(t, err)
 
 	userIdx := 0
@@ -30,7 +28,7 @@ func TestIntegrationStableCoin_DepositCoin(t *testing.T) {
 	p, err := evm.InitializeTestInstances(
 		2,
 		5,
-		*evm.NewGifts(map[int]int64{userIdx: 3},
+		evm.NewGifts(map[int]int64{userIdx: 3},
 			map[int]int64{userIdx: 3}),
 		web3Client,
 		helper,
@@ -63,17 +61,15 @@ func TestIntegrationStableCoin_DepositCoin(t *testing.T) {
 }
 
 func TestIntegrationStableCoin_WithdrawCoin(t *testing.T) {
-	ganacheJsonKeys := os.Getenv("GANACHE_KEYS")
 	ganacheRPCEndpoint := os.Getenv("GANACHE_RPC_ENDPOINT")
-
-	if ganacheJsonKeys == "" || ganacheRPCEndpoint == "" {
+	if ganacheRPCEndpoint == "" {
 		t.Skip()
 	}
 
 	web3Client, err := ethclient.Dial(ganacheRPCEndpoint)
 	require.NoError(t, err)
 
-	helper, err := evm.NewGanacheBCHelper(5, ganacheJsonKeys)
+	helper, err := evm.NewGanacheBCHelper(5)
 	require.NoError(t, err)
 
 	userIdx := 0
@@ -81,7 +77,7 @@ func TestIntegrationStableCoin_WithdrawCoin(t *testing.T) {
 	p, err := evm.InitializeTestInstances(
 		2,
 		5,
-		*evm.NewGifts(map[int]int64{userIdx: 3},
+		evm.NewGifts(map[int]int64{userIdx: 3},
 			map[int]int64{userIdx: 3}),
 		web3Client,
 		helper,

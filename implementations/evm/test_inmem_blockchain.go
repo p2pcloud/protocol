@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
@@ -17,10 +18,34 @@ import (
 
 const ChainIDSimulated = 1337
 
+type InMemBlockChain struct {
+	Origin *SimulatedBlockchainEnv
+}
+
+func (b *InMemBlockChain) GetNextPrivateKey() (*ecdsa.PrivateKey, error) {
+	return b.Origin.GetNextPrivateKey()
+}
+
+func (b *InMemBlockChain) Commit() {
+	b.Origin.Backend.Commit()
+}
+
+func NewWrappedSimulatedBlockchainEnv(t *testing.T) *InMemBlockChain {
+	bc, err := NewSimulatedBlockchainEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return &InMemBlockChain{Origin: bc}
+}
+
 func NewSimulatedBackend(
-	backend bind.ContractBackend, contractAddressStr string, privateKey *ecdsa.PrivateKey, tokenAddress common.Address,
+	backend bind.ContractBackend, contractAddressStr string, privateKey *ecdsa.PrivateKey,
+	tokenAddress common.Address, commit func(),
 ) (protocol.BrokerIface, error) {
-	b, err := broker.NewBroker(backend, privateKey, contractAddressStr, ChainIDSimulated, tokenAddress)
+	b, err := broker.NewBroker(
+		backend, privateKey, contractAddressStr, ChainIDSimulated, tokenAddress, commit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -33,9 +58,10 @@ func NewSimulatedBackend(
 }
 
 func NewSimulatedBlockchain(
-	backend bind.ContractBackend, contractAddressStr string, privateKey *ecdsa.PrivateKey, tokenAddress common.Address,
+	backend bind.ContractBackend, contractAddressStr string,
+	privateKey *ecdsa.PrivateKey, tokenAddress common.Address, commit func(),
 ) (protocol.BrokerIface, error) {
-	b, err := broker.NewBroker(backend, privateKey, contractAddressStr, ChainIDSimulated, tokenAddress)
+	b, err := broker.NewBroker(backend, privateKey, contractAddressStr, ChainIDSimulated, tokenAddress, commit)
 	if err != nil {
 		return nil, err
 	}
