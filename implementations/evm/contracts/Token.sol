@@ -9,8 +9,7 @@ contract Token is ERC20 {
         _mint(msg.sender, initialSupply);
     }
 
-    function transferForTests(address from, address to, uint256 amount) public returns (bool) {
-        _transfer(from, to, amount);
-        return true;
+    function decimals() public view virtual override returns (uint8) {
+        return 6;
     }
 }

@@ -6,13 +6,11 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/p2pcloud/protocol"
-	"github.com/p2pcloud/protocol/implementations/evm/broker"
+
 	"github.com/p2pcloud/protocol/pkg/keyring"
 )
 
@@ -37,40 +35,6 @@ func NewWrappedSimulatedBlockchainEnv(t *testing.T) *InMemBlockChain {
 	}
 
 	return &InMemBlockChain{Origin: bc}
-}
-
-func NewSimulatedBackend(
-	backend bind.ContractBackend, contractAddressStr string, privateKey *ecdsa.PrivateKey,
-	tokenAddress common.Address, commit func(),
-) (protocol.BrokerIface, error) {
-	b, err := broker.NewBroker(
-		backend, privateKey, contractAddressStr, ChainIDSimulated, tokenAddress, commit,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	b.RegenerateSession()
-
-	return &EVMImplementation{
-		broker: b,
-	}, nil
-}
-
-func NewSimulatedBlockchain(
-	backend bind.ContractBackend, contractAddressStr string,
-	privateKey *ecdsa.PrivateKey, tokenAddress common.Address, commit func(),
-) (protocol.BrokerIface, error) {
-	b, err := broker.NewBroker(backend, privateKey, contractAddressStr, ChainIDSimulated, tokenAddress, commit)
-	if err != nil {
-		return nil, err
-	}
-
-	b.RegenerateSession()
-
-	return &EVMImplementation{
-		broker: b,
-	}, nil
 }
 
 type SimulatedBlockchainEnv struct {

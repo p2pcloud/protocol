@@ -15,6 +15,8 @@ interface IERC20 {
 
     function approve(address spender, uint256 amount) external returns (bool);
 
+    function decimals() external view returns (uint8);
+
     function transferFrom(
         address from,
         address to,
@@ -55,10 +57,6 @@ contract Broker {
     mapping(address => uint256) locked;
 
     IERC20 token;
-
-    constructor(IERC20 t) public {
-        token = t;
-    }
 
     function SetMtlsHash(bytes20 _signature) public {
         mtlsHashes[msg.sender] = _signature;
@@ -218,6 +216,20 @@ contract Broker {
         for (uint256 i = 0; i < count; i++) {
             filteredOffers[i] = offersTemp[i];
         }
+    }
+
+    function setStablecoinAddress(IERC20 t) public returns (bool) {
+        token = t;
+
+        return false;
+    }
+
+    function getStablecoinAddress() public view returns (IERC20) {
+        return token;
+    }
+
+    function getCoinDecimals() public view returns (uint8) {
+        return token.decimals();
     }
 
     function depositCoin(uint256 numTokens) public returns (bool) {

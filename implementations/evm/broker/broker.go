@@ -5,7 +5,9 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -19,10 +21,14 @@ type Broker struct {
 	backend         bind.ContractBackend
 	transactOpts    *bind.TransactOpts
 	contractAddress common.Address
-	tokenAddress    common.Address
 	session         contracts.BrokerSession
 	privateKey      *ecdsa.PrivateKey
 	commit          func()
+	updateCh        chan<- common.Address
+
+	mu                *sync.Mutex
+	decimals          uint8
+	stableCoinAddress *common.Address
 }
 
 func NewBroker(
@@ -30,8 +36,8 @@ func NewBroker(
 	privateKey *ecdsa.PrivateKey,
 	contractAddressStr string,
 	chanId int64,
-	tokenAddress common.Address,
 	commit func(),
+	updCh chan<- common.Address,
 ) (protocol.BrokerIface, error) {
 	if chanId == 0 {
 		return nil, fmt.Errorf("chanId is 0. please set it to a valid value")
@@ -51,8 +57,9 @@ func NewBroker(
 		transactOpts:    transactOpts,
 		contractAddress: common.HexToAddress(contractAddressStr),
 		privateKey:      privateKey,
-		tokenAddress:    tokenAddress,
 		commit:          commit,
+		mu:              &sync.Mutex{},
+		updateCh:        updCh,
 	}
 
 	b.RegenerateSession()
@@ -92,7 +99,6 @@ func (b *Broker) DeployContracts() ([]string, error) {
 	address, _, _, err := contracts.DeployBroker(
 		b.transactOpts,
 		b.backend,
-		b.tokenAddress,
 	)
 
 	if err != nil {
@@ -148,6 +154,134 @@ func (b *Broker) RegisterMtlsHashIfNeeded(mtlsHash string) error {
 	return nil
 }
 
-func (b *Broker) GetStableCoinSession() protocol.StableCoinSessionIface {
-	return &b.session
+func (b *Broker) DepositCoin(coins float64) error {
+	defer b.commit()
+
+	if err := b.setDecimals(); err != nil {
+		return err
+	}
+
+	_, err := b.session.DepositCoin(b.coinsToAmount(coins))
+
+	return err
+}
+
+func (b *Broker) WithdrawCoin(coins float64) error {
+	defer b.commit()
+
+	if err := b.setDecimals(); err != nil {
+		return err
+	}
+
+	_, err := b.session.WithdrawCoin(b.coinsToAmount(coins))
+
+	return err
+}
+
+func (b *Broker) Balance() (float64, error) {
+	if err := b.setDecimals(); err != nil {
+		return 0, err
+	}
+
+	amount, err := b.session.UserBalance()
+	if err != nil {
+		return 0, err
+	}
+
+	return b.amountToCoins(amount), nil
+}
+
+func (b *Broker) UserTokenBalance() (float64, error) {
+	if err := b.setDecimals(); err != nil {
+		return 0, err
+	}
+
+	amount, err := b.session.UserTokenBalance()
+	if err != nil {
+		return 0, err
+	}
+
+	return b.amountToCoins(amount), nil
+}
+
+func (b *Broker) UserAllowance() (float64, error) {
+	if err := b.setDecimals(); err != nil {
+		return 0, err
+	}
+
+	amount, err := b.session.UserAllowance()
+	if err != nil {
+		return 0, err
+	}
+
+	return b.amountToCoins(amount), nil
+}
+
+func (b *Broker) SetStablecoinAddress(address common.Address) error {
+	_, err := b.session.SetStablecoinAddress(address)
+	if err != nil {
+		return err
+	}
+	b.commit()
+
+	decimals, err := b.session.GetCoinDecimals()
+	if err != nil {
+		return err
+	}
+
+	select {
+	case b.updateCh <- address:
+	default:
+		logrus.WithField("updated", address.Hex()).Error("failed to send to upd ch")
+	}
+
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	b.stableCoinAddress = nil
+	b.decimals = decimals
+
+	return nil
+}
+
+func (b *Broker) GetStablecoinAddress() (common.Address, error) {
+	if b.stableCoinAddress != nil {
+		return *b.stableCoinAddress, nil
+	}
+
+	addr, err := b.session.GetStablecoinAddress()
+	if err != nil {
+		return [20]byte{}, err
+	}
+
+	b.stableCoinAddress = &addr
+
+	return addr, nil
+}
+
+func (b *Broker) setDecimals() error {
+	if b.decimals > 0 {
+		return nil
+	}
+
+	decimals, err := b.session.GetCoinDecimals()
+	if err != nil {
+		return err
+	}
+
+	b.decimals = decimals
+
+	return nil
+}
+
+func (b *Broker) amountToCoins(amount *big.Int) float64 {
+	coin := math.Pow(10, float64(b.decimals))
+
+	return float64(amount.Int64()) / coin
+}
+
+func (b *Broker) coinsToAmount(coins float64) *big.Int {
+	coinsInt := int64(coins * math.Pow(10, float64(b.decimals)))
+
+	return big.NewInt(coinsInt)
 }

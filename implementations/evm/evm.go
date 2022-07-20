@@ -3,26 +3,59 @@ package evm
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/p2pcloud/protocol"
 	"github.com/p2pcloud/protocol/implementations/evm/broker"
-	"github.com/p2pcloud/protocol/implementations/evm/stablecoin"
+	"github.com/p2pcloud/protocol/implementations/evm/token"
 	"github.com/p2pcloud/protocol/pkg/keyring"
 )
 
 type EVMImplementation struct {
-	broker     protocol.BrokerIface
-	stableCoin protocol.StableCoinIface
+	backend bind.ContractBackend
+	broker  protocol.BrokerIface
+	token   protocol.TokenIface
 }
 
-var _ protocol.BlockchainIface = (*EVMImplementation)(nil)
+func (a *EVMImplementation) DepositCoin(coins float64) error {
+	if err := a.token.Approve(a.broker.ContractAddress(), coins); err != nil {
+		return err
+	}
+
+	return a.broker.DepositCoin(coins)
+}
+
+func (a *EVMImplementation) WithdrawCoin(coins float64) error {
+	return a.broker.WithdrawCoin(coins)
+}
+
+func (a *EVMImplementation) Balance() (float64, error) {
+	return a.broker.Balance()
+}
+
+func (a *EVMImplementation) UserTokenBalance() (float64, error) {
+	return a.broker.UserTokenBalance()
+}
+
+func (a *EVMImplementation) UserAllowance() (float64, error) {
+	return a.broker.UserAllowance()
+}
+
+func (a *EVMImplementation) SetStablecoinAddress(address common.Address) error {
+	return a.broker.SetStablecoinAddress(address)
+}
+
+func (a *EVMImplementation) GetStablecoinAddress() (common.Address, error) {
+	return a.broker.GetStablecoinAddress()
+}
+
+var _ protocol.BrokerIface = (*EVMImplementation)(nil)
 
 func NewEVMImplementation(
-	privateKey string, contractAddress, tokenAddress, rpcEndpoint string, chanId, decimals int64,
+	privateKey string, contractAddress, rpcEndpoint string, chanId int64,
 ) (*EVMImplementation, error) {
 	privateKeyDecoded, err := keyring.DecodePrivateKey(privateKey)
 	if err != nil {
@@ -38,21 +71,32 @@ func NewEVMImplementation(
 		return nil, fmt.Errorf("could not connect to web3 at \"%s\": %v", rpcEndpoint, err)
 	}
 
-	ta := common.HexToAddress(strings.ToLower(tokenAddress))
+	updCh := make(chan common.Address, 1)
 
-	myBroker, err := broker.NewBroker(web3Client, privateKeyDecoded, contractAddress, chanId, ta, func() {})
+	myBroker, err := broker.NewBroker(web3Client, privateKeyDecoded, contractAddress, chanId, func() {}, updCh)
 	if err != nil {
+		return nil, err
+	}
+
+	tokenAddr, err := myBroker.GetStablecoinAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	tkn := token.NewToken(&token.Params{
+		Backend:            web3Client,
+		PrivateKey:         myBroker.GetPrivateKey(),
+		ContractAddressStr: tokenAddr.Hex(),
+		ChainID:            chanId,
+		UpdCh:              updCh,
+	})
+	if err = tkn.StartUp(); err != nil {
 		return nil, err
 	}
 
 	return &EVMImplementation{
 		broker: myBroker,
-		stableCoin: stablecoin.New(&stablecoin.Params{
-			Decimals: decimals,
-			Backend:  web3Client,
-			Session:  myBroker.GetStableCoinSession(),
-			Commit:   func() {},
-		}),
+		token:  tkn,
 	}, nil
 
 }
@@ -124,32 +168,4 @@ func (a *EVMImplementation) GetTime() (int, error) {
 
 func (a *EVMImplementation) GetMinersBookings() ([]protocol.VMBooking, error) {
 	return a.broker.GetMinersBookings()
-}
-
-func (a *EVMImplementation) RegenerateSession() error {
-	return a.broker.RegenerateSession()
-}
-
-func (a *EVMImplementation) GetStableCoinSession() protocol.StableCoinSessionIface {
-	return a.broker.GetStableCoinSession()
-}
-
-func (a *EVMImplementation) DepositCoin(amount int64) error {
-	return a.stableCoin.DepositCoin(amount)
-}
-
-func (a *EVMImplementation) WithdrawCoin(amount int64) error {
-	return a.stableCoin.WithdrawCoin(amount)
-}
-
-func (a *EVMImplementation) Balance() (int64, error) {
-	return a.stableCoin.Balance()
-}
-
-func (a *EVMImplementation) UserTokenBalance() (int64, error) {
-	return a.stableCoin.UserTokenBalance()
-}
-
-func (a *EVMImplementation) UserAllowance() (int64, error) {
-	return a.stableCoin.UserAllowance()
 }

@@ -6,40 +6,59 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/p2pcloud/protocol"
 	"github.com/p2pcloud/protocol/implementations/evm/contracts"
+	"github.com/sirupsen/logrus"
+	"math"
 	"math/big"
+	"sync"
 )
 
 type Token struct {
-	coin            *big.Int
-	backend         bind.ContractBackend
-	transactOpts    *bind.TransactOpts
-	contractAddress common.Address
-	Session         contracts.TokenSession
-	privateKey      *ecdsa.PrivateKey
+	coin         *big.Int
+	backend      bind.ContractBackend
+	transactOpts *bind.TransactOpts
+	session      contracts.TokenSession
+	privateKey   *ecdsa.PrivateKey
 
 	commit func()
+	upd    <-chan common.Address
+
+	mu              *sync.Mutex
+	decimals        uint8
+	contractAddress common.Address
 }
 
 type Params struct {
-	Decimals           int64
+	Decimals           *uint8
 	Backend            bind.ContractBackend
 	PrivateKey         *ecdsa.PrivateKey
 	ContractAddressStr string
 	ChainID            int64
 	Commit             func()
+	UpdCh              <-chan common.Address
 }
 
-func NewToken(params *Params) *Token {
+func NewToken(params *Params) protocol.TokenIface {
+	commit := func() {}
+	if params.Commit != nil {
+		commit = params.Commit
+	}
+
 	transactOpts, _ := bind.NewKeyedTransactorWithChainID(params.PrivateKey, big.NewInt(params.ChainID))
 
 	b := &Token{
-		coin:            new(big.Int).Exp(big.NewInt(10), big.NewInt(params.Decimals), nil),
 		backend:         params.Backend,
 		transactOpts:    transactOpts,
 		contractAddress: common.HexToAddress(params.ContractAddressStr),
 		privateKey:      params.PrivateKey,
-		commit:          params.Commit,
+		commit:          commit,
+		mu:              &sync.Mutex{},
+		upd:             params.UpdCh,
+	}
+
+	if params.Decimals != nil {
+		b.decimals = *params.Decimals
 	}
 
 	return b
@@ -53,21 +72,22 @@ func (t *Token) GetContractAddress() common.Address {
 	return t.contractAddress
 }
 
-func (t *Token) DeployContract(initialSupply int64) (*common.Address, error) {
+func (t *Token) DeployContract(initialSupply float64) (*common.Address, error) {
 	defer t.commit()
-
 	address, _, _, err := contracts.DeployToken(
 		t.transactOpts,
 		t.backend,
-		new(big.Int).Mul(big.NewInt(initialSupply), t.coin),
+		t.coinsToAmount(initialSupply),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("could not deploy token: %v", err)
 	}
-	t.contractAddress = address
 
-	t.RegenerateSession()
+	t.commit()
+
+	if err = t.updateToken(address); err != nil {
+		return nil, err
+	}
 
 	return &address, nil
 }
@@ -78,7 +98,7 @@ func (t *Token) RegenerateSession() error {
 		return err
 	}
 
-	t.Session = contracts.TokenSession{
+	t.session = contracts.TokenSession{
 		Contract:     instance,
 		TransactOpts: *t.transactOpts,
 		CallOpts: bind.CallOpts{
@@ -90,30 +110,82 @@ func (t *Token) RegenerateSession() error {
 	return nil
 }
 
-func (t *Token) Balance(address common.Address) (int64, error) {
-	balance, err := t.Session.BalanceOf(address)
+func (t *Token) BalanceOf(address common.Address) (float64, error) {
+	amount, err := t.session.BalanceOf(address)
 	if err != nil {
 		return 0, err
 	}
 
-	return new(big.Int).Div(balance, t.coin).Int64(), nil
+	return t.amountToCoins(amount), nil
 }
 
-func (t *Token) TransferForTests(from, to common.Address, amount int64) error {
+func (t *Token) Transfer(to common.Address, coins float64) error {
 	defer t.commit()
 
-	_, err := t.Session.TransferForTests(
-		from, to,
-		new(big.Int).Mul(big.NewInt(amount), t.coin),
-	)
+	_, err := t.session.Transfer(to, t.coinsToAmount(coins))
 
 	return err
 }
 
-func (t *Token) TestApprove(to common.Address, amount int64) error {
+func (t *Token) Approve(to common.Address, coins float64) error {
 	defer t.commit()
 
-	_, err := t.Session.Approve(to, new(big.Int).Mul(big.NewInt(amount), t.coin))
+	_, err := t.session.Approve(to, t.coinsToAmount(coins))
 
 	return err
+}
+
+func (t *Token) Allowance(from, address common.Address) (float64, error) {
+	amount, err := t.session.Allowance(from, address)
+	if err != nil {
+		return 0, err
+	}
+
+	return t.amountToCoins(amount), nil
+}
+
+func (t *Token) amountToCoins(amount *big.Int) float64 {
+	coin := math.Pow(10, float64(t.decimals))
+
+	return float64(amount.Int64()) / coin
+}
+
+func (t *Token) coinsToAmount(coins float64) *big.Int {
+	coinsInt := int64(coins * math.Pow(10, float64(t.decimals)))
+
+	return big.NewInt(coinsInt)
+}
+
+func (t *Token) StartUp() error {
+	return t.updateToken(t.contractAddress)
+}
+
+func (t *Token) asyncUpdate() {
+	for {
+		select {
+		case addr := <-t.upd:
+			if err := t.updateToken(addr); err != nil {
+				logrus.WithField("updated", addr.Hex()).Error("failed update token")
+			}
+		}
+	}
+}
+
+func (t *Token) updateToken(contractAddr common.Address) error {
+	t.mu.Lock()
+	t.contractAddress = contractAddr
+	t.mu.Unlock()
+
+	t.RegenerateSession()
+
+	decimals, err := t.session.Decimals()
+	if err != nil {
+		return err
+	}
+
+	t.mu.Lock()
+	t.decimals = decimals
+	t.mu.Unlock()
+
+	return nil
 }

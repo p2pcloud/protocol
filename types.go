@@ -2,9 +2,6 @@ package protocol
 
 import (
 	"crypto/ecdsa"
-	"math/big"
-
-	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -26,22 +23,6 @@ type VMBooking struct {
 	BookedTill int
 }
 
-type StableCoinIface interface {
-	DepositCoin(amount int64) error
-	WithdrawCoin(amount int64) error
-	Balance() (int64, error)
-	UserTokenBalance() (int64, error)
-	UserAllowance() (int64, error)
-}
-
-type StableCoinSessionIface interface {
-	DepositCoin(numTokens *big.Int) (*types.Transaction, error)
-	WithdrawCoin(numTokens *big.Int) (*types.Transaction, error)
-	UserBalance() (*big.Int, error)
-	UserAllowance() (*big.Int, error)
-	UserTokenBalance() (*big.Int, error)
-}
-
 type BrokerIface interface {
 	DeployContracts() ([]string, error)
 	AddOffer(offer Offer, callbackUrl string) error
@@ -60,12 +41,20 @@ type BrokerIface interface {
 	SetMinerUrlIfNeeded(newUrl string) error
 	GetTime() (int, error)
 	GetMinersBookings() ([]VMBooking, error)
-
-	RegenerateSession() error
-	GetStableCoinSession() StableCoinSessionIface
+	DepositCoin(coins float64) error
+	WithdrawCoin(coins float64) error
+	Balance() (float64, error)
+	UserTokenBalance() (float64, error)
+	UserAllowance() (float64, error)
+	SetStablecoinAddress(address common.Address) error
+	GetStablecoinAddress() (common.Address, error)
 }
 
-type BlockchainIface interface {
-	BrokerIface
-	StableCoinIface
+type TokenIface interface {
+	BalanceOf(address common.Address) (float64, error)
+	Transfer(to common.Address, coins float64) error
+	Approve(to common.Address, coins float64) error
+	Allowance(from, address common.Address) (float64, error)
+
+	StartUp() error
 }
