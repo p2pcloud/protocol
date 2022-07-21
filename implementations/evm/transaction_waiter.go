@@ -75,7 +75,7 @@ func (t *TransactionWaiter) waitForTx(ctx context.Context, hash common.Hash) (bo
 	}
 
 	if pending {
-		return pending, nil
+		return false, nil
 	}
 
 	receipt, err := t.getTxReceipt(ctx, hash)
