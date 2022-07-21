@@ -19,10 +19,9 @@ jobs:
       run: go run ./cmd/compile/
 
     - name: Ganache server
-      run: docker run -p 8545:8545 docker://trufflesuite/ganache-cli:v6.12.2 -a 10 --seed 123 -b 0.3
+      uses: ./.github/actions/ganache
 
     - name: Test
-      uses: ./.github/actions/ganache
       env:
         GANACHE_RPC_ENDPOINT: "http://localhost:8545"
       run: go test -v ./...
