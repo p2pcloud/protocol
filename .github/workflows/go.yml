@@ -19,7 +19,7 @@ jobs:
       run: go run ./cmd/compile/
 
     - name: Ganache server
-      run: docker run -p 8545:8545 trufflesuite/ganache-cli:v6.12.2 -a 10 --seed 123 -b 0.3
+      run: docker run -p 8545:8545 docker://trufflesuite/ganache-cli:v6.12.2 -a 10 --seed 123 -b 0.3
 
     - name: Test
       env:
