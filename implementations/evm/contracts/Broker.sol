@@ -58,6 +58,9 @@ contract Broker {
 
     IERC20 token;
 
+    address community;
+    uint256 communityFee;
+
     function SetMtlsHash(bytes20 _signature) public {
         mtlsHashes[msg.sender] = _signature;
     }
@@ -219,6 +222,11 @@ contract Broker {
     }
 
     function setStablecoinAddress(IERC20 t) public returns (bool) {
+        require(
+            msg.sender == community,
+            "only community contract can set stablecoin"
+        );
+
         token = t;
 
         return false;
@@ -265,5 +273,33 @@ contract Broker {
 
     function userAllowance() public view returns (uint256) {
         return token.allowance(msg.sender, address(this));
+    }
+
+    function setCommunityContract(address communityAddress) public returns (bool) {
+        community = communityAddress;
+        return false;
+    }
+
+    function getCommunityContract() public view returns (address) {
+        return community;
+    }
+
+    function setCommunityFee(uint256 fee) public returns (bool) {
+        require(
+            fee > 0 && fee < 101,
+            "community fee should be in range of 1 to 100"
+        );
+
+        require(
+            msg.sender == community,
+            "only community contract can set fee"
+        );
+
+        communityFee = fee;
+        return false;
+    }
+
+    function getCommunityFee() public view returns (uint256) {
+        return communityFee;
     }
 }

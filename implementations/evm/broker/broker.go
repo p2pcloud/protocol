@@ -257,6 +257,37 @@ func (b *Broker) GetStablecoinAddress() (common.Address, error) {
 	return addr, nil
 }
 
+func (b *Broker) SetCommunityContract(address common.Address) error {
+	tx, err := b.session.SetCommunityContract(address)
+	if err != nil {
+		return err
+	}
+
+	return b.waitForTx(tx.Hash())
+}
+
+func (b *Broker) GetCommunityContract() (common.Address, error) {
+	return b.session.GetCommunityContract()
+}
+
+func (b *Broker) SetCommunityFee(fee int64) error {
+	tx, err := b.session.SetCommunityFee(big.NewInt(fee))
+	if err != nil {
+		return err
+	}
+
+	return b.waitForTx(tx.Hash())
+}
+
+func (b *Broker) GetCommunityFee() (int64, error) {
+	fee, err := b.session.GetCommunityFee()
+	if err != nil {
+		return 0, err
+	}
+
+	return fee.Int64(), nil
+}
+
 func (b *Broker) setDecimals() error {
 	if b.decimals > 0 {
 		return nil

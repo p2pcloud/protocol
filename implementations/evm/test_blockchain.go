@@ -75,11 +75,11 @@ func (s *GanacheBCHelper) GetPrivateKeyByIndexStr(index int) string {
 }
 
 func (s *GanacheBCHelper) GetUserPrivateKeyByIndex(index int) *ecdsa.PrivateKey {
-	return s.privateKeys[index+2]
+	return s.privateKeys[index+3]
 }
 
 func (s *GanacheBCHelper) GetUserPrivateKeyByIndexStr(index int) string {
-	return s.pksString[index+2]
+	return s.pksString[index+3]
 }
 
 func (s *GanacheBCHelper) WaitForTx(hash common.Hash) error {
@@ -100,6 +100,7 @@ type TestInstances struct {
 	DeployerToken       *token.Token
 	DeployerBroker      protocol.BrokerIface
 	BrokerDeployAddress *common.Address
+	CommunityAccount    protocol.BrokerIface
 	Contracts           []protocol.BrokerIface
 	BcHelper            BlockChainHelper
 	Backend             bind.ContractBackend
@@ -181,7 +182,6 @@ func (g *Gifts) initialUsersTokens(p *TestInstances) error {
 		); err != nil {
 			return err
 		}
-
 	}
 
 	return nil
@@ -201,6 +201,14 @@ func InitializeTestInstances(
 	}
 
 	if err := instantiateToken(p); err != nil {
+		return nil, err
+	}
+
+	if err := instantiateBroker(p); err != nil {
+		return nil, err
+	}
+
+	if err := instantiateCommunity(p); err != nil {
 		return nil, err
 	}
 
@@ -243,7 +251,7 @@ func instantiateToken(p *TestInstances) error {
 	return nil
 }
 
-func instantiateUsers(p *TestInstances) error {
+func instantiateBroker(p *TestInstances) error {
 	pk, err := p.BcHelper.GetNextPrivateKey()
 	if err != nil {
 		return err
@@ -256,25 +264,27 @@ func instantiateUsers(p *TestInstances) error {
 		return err
 	}
 
-	addresses, err := deployContract.DeployContracts()
+	_, err = deployContract.DeployContracts()
 	if err != nil {
 		return err
 	}
-	contractAddressStr := addresses[0]
 
-	if err = deployContract.SetStablecoinAddress(p.DeployerToken.GetContractAddress()); err != nil {
-		return err
-	}
+	p.DeployerBroker = deployContract
 
+	return nil
+}
+
+func instantiateUsers(p *TestInstances) error {
 	userContracts := make([]protocol.BrokerIface, 0)
 	for i := 0; i < p.Count; i++ {
-		pk, err = p.BcHelper.GetNextPrivateKey()
+		pk, err := p.BcHelper.GetNextPrivateKey()
 		if err != nil {
 			return err
 		}
 
 		userContract, err := broker.NewBroker(
-			p.Backend, pk, contractAddressStr, ChainIDSimulated, p.BcHelper.WaitForTx, p.UpdateCh,
+			p.Backend, pk, p.DeployerBroker.ContractAddress().Hex(),
+			ChainIDSimulated, p.BcHelper.WaitForTx, p.UpdateCh,
 		)
 		if err != nil {
 			return err
@@ -284,7 +294,41 @@ func instantiateUsers(p *TestInstances) error {
 	}
 
 	p.Contracts = userContracts
-	p.DeployerBroker = deployContract
+
+	return nil
+}
+
+func instantiateCommunity(p *TestInstances) error {
+	communityPk, err := p.BcHelper.GetNextPrivateKey()
+	if err != nil {
+		return err
+	}
+
+	if err = p.DeployerBroker.SetCommunityContract(crypto.PubkeyToAddress(communityPk.PublicKey)); err != nil {
+		return err
+	}
+
+	communityContract, err := broker.NewBroker(
+		p.Backend, communityPk, p.DeployerBroker.ContractAddress().Hex(),
+		ChainIDSimulated, p.BcHelper.WaitForTx, make(chan common.Address, 1),
+	)
+	if err != nil {
+		return err
+	}
+
+	if err = communityContract.(*broker.Broker).RegenerateSession(); err != nil {
+		return err
+	}
+
+	if err = communityContract.SetCommunityFee(CommunityFee); err != nil {
+		return err
+	}
+
+	if err = communityContract.SetStablecoinAddress(p.DeployerToken.GetContractAddress()); err != nil {
+		return err
+	}
+
+	p.CommunityAccount = communityContract
 
 	return nil
 }

@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"crypto/ecdsa"
-
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -48,6 +47,10 @@ type BrokerIface interface {
 	UserAllowance() (float64, error)
 	SetStablecoinAddress(address common.Address) error
 	GetStablecoinAddress() (common.Address, error)
+	SetCommunityContract(address common.Address) error
+	GetCommunityContract() (common.Address, error)
+	SetCommunityFee(fee int64) error
+	GetCommunityFee() (int64, error)
 }
 
 type TokenIface interface {

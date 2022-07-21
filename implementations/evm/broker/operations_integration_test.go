@@ -284,8 +284,6 @@ func TestWithdrawCoinIntegration(t *testing.T) {
 }
 
 func TestGetStablecoinAddressIntegration(t *testing.T) {
-	communityIdx := 0
-
 	rpcEndpoint := os.Getenv("GANACHE_RPC_ENDPOINT")
 	if rpcEndpoint == "" {
 		t.Skip()
@@ -303,8 +301,6 @@ func TestGetStablecoinAddressIntegration(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	comm := ti.Contracts[communityIdx]
-
 	newTokenPk, err := blockchain.GetNextPrivateKey()
 	require.NoError(t, err)
 
@@ -319,9 +315,9 @@ func TestGetStablecoinAddressIntegration(t *testing.T) {
 	newTokenAddr, err := tkn.(*token.Token).DeployContract(0)
 	require.NoError(t, err)
 
-	require.NoError(t, comm.SetStablecoinAddress(*newTokenAddr))
+	require.NoError(t, ti.CommunityAccount.SetStablecoinAddress(*newTokenAddr))
 
-	got, err := comm.GetStablecoinAddress()
+	got, err := ti.CommunityAccount.GetStablecoinAddress()
 	require.NoError(t, err)
 	require.Equal(t, *newTokenAddr, got)
 }

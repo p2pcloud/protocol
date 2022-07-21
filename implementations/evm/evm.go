@@ -175,3 +175,19 @@ func (a *EVMImplementation) SetStablecoinAddress(address common.Address) error {
 func (a *EVMImplementation) GetStablecoinAddress() (common.Address, error) {
 	return a.broker.GetStablecoinAddress()
 }
+
+func (a *EVMImplementation) SetCommunityContract(address common.Address) error {
+	return a.broker.SetCommunityContract(address)
+}
+
+func (a *EVMImplementation) GetCommunityContract() (common.Address, error) {
+	return a.broker.GetCommunityContract()
+}
+
+func (a *EVMImplementation) SetCommunityFee(fee int64) error {
+	return a.broker.SetCommunityFee(fee)
+}
+
+func (a *EVMImplementation) GetCommunityFee() (int64, error) {
+	return a.broker.GetCommunityFee()
+}

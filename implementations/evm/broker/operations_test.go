@@ -296,20 +296,12 @@ func TestWithdrawCoin(t *testing.T) {
 }
 
 func TestGetStablecoinAddress(t *testing.T) {
-	communityIdx := 0
-
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
-	testInstances, err := evm.InitializeTestInstances(
-		2, 6, evm.NewGifts(map[int]float64{
-			communityIdx: 1.5,
-		}, map[int]float64{
-			communityIdx: 1.5,
-		}),
+	ti, err := evm.InitializeTestInstances(
+		2, 6, nil,
 		blockchain.Origin.Backend, blockchain,
 	)
 	require.NoError(t, err)
-
-	comm := testInstances.Contracts[0]
 
 	newTokenPk, err := blockchain.GetNextPrivateKey()
 	require.NoError(t, err)
@@ -325,9 +317,9 @@ func TestGetStablecoinAddress(t *testing.T) {
 	newTokenAddr, err := tkn.(*token.Token).DeployContract(0)
 	require.NoError(t, err)
 
-	require.NoError(t, comm.SetStablecoinAddress(*newTokenAddr))
+	require.NoError(t, ti.CommunityAccount.SetStablecoinAddress(*newTokenAddr))
 
-	got, err := comm.GetStablecoinAddress()
+	got, err := ti.CommunityAccount.GetStablecoinAddress()
 	require.NoError(t, err)
 	require.Equal(t, *newTokenAddr, got)
 }
