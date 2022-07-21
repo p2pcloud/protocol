@@ -76,10 +76,10 @@ func TestDepositCoinIntegration(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			contract := ti.Contracts[0]
+			contract := ti.Contracts[userIdx]
 
 			user, err := evm.NewEVMImplementation(
-				blockchain.GetUserPrivateKeyByIndexStr(userIdx),
+				blockchain.GetPrivateKeyString(contract.GetPrivateKey()),
 				contract.ContractAddress().Hex(),
 				rpcEndpoint,
 				evm.ChainIDSimulated,
@@ -251,7 +251,7 @@ func TestWithdrawCoinIntegration(t *testing.T) {
 			contract := ti.Contracts[0]
 
 			user, err := evm.NewEVMImplementation(
-				blockchain.GetUserPrivateKeyByIndexStr(userIdx),
+				blockchain.GetPrivateKeyString(contract.GetPrivateKey()),
 				contract.ContractAddress().Hex(),
 				rpcEndpoint,
 				evm.ChainIDSimulated,
