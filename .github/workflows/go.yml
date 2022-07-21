@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       ganache:
-        image: 'Dockerfile'
+        image: docker://incognida13/ganache:v1.0.0
         ports:
           - 8545
 
