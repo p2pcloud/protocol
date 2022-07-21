@@ -24,8 +24,10 @@ func (b *InMemBlockChain) GetNextPrivateKey() (*ecdsa.PrivateKey, error) {
 	return b.Origin.GetNextPrivateKey()
 }
 
-func (b *InMemBlockChain) Commit() {
+func (b *InMemBlockChain) WaitForTx(_ common.Hash) error {
 	b.Origin.Backend.Commit()
+
+	return nil
 }
 
 func NewWrappedSimulatedBlockchainEnv(t *testing.T) *InMemBlockChain {

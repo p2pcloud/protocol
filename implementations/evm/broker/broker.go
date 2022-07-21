@@ -23,7 +23,7 @@ type Broker struct {
 	contractAddress common.Address
 	session         contracts.BrokerSession
 	privateKey      *ecdsa.PrivateKey
-	commit          func()
+	waitForTx       func(hash common.Hash) error
 	updateCh        chan<- common.Address
 
 	mu                *sync.Mutex
@@ -36,15 +36,11 @@ func NewBroker(
 	privateKey *ecdsa.PrivateKey,
 	contractAddressStr string,
 	chanId int64,
-	commit func(),
+	waitForTx func(hash common.Hash) error,
 	updCh chan<- common.Address,
 ) (protocol.BrokerIface, error) {
 	if chanId == 0 {
 		return nil, fmt.Errorf("chanId is 0. please set it to a valid value")
-	}
-
-	if commit == nil {
-		commit = func() {}
 	}
 
 	transactOpts, err := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(chanId))
@@ -57,7 +53,7 @@ func NewBroker(
 		transactOpts:    transactOpts,
 		contractAddress: common.HexToAddress(contractAddressStr),
 		privateKey:      privateKey,
-		commit:          commit,
+		waitForTx:       waitForTx,
 		mu:              &sync.Mutex{},
 		updateCh:        updCh,
 	}
@@ -94,9 +90,7 @@ func (b *Broker) RegenerateSession() error {
 }
 
 func (b *Broker) DeployContracts() ([]string, error) {
-	defer b.commit()
-
-	address, _, _, err := contracts.DeployBroker(
+	address, tx, _, err := contracts.DeployBroker(
 		b.transactOpts,
 		b.backend,
 	)
@@ -108,7 +102,7 @@ func (b *Broker) DeployContracts() ([]string, error) {
 
 	b.RegenerateSession()
 
-	return []string{address.String()}, nil
+	return []string{address.String()}, b.waitForTx(tx.Hash())
 }
 
 func (b *Broker) GetMyAddress() *common.Address {
@@ -125,8 +119,6 @@ func (b *Broker) GetMtlsHash(address *common.Address) (string, error) {
 }
 
 func (b *Broker) RegisterMtlsHashIfNeeded(mtlsHash string) error {
-	defer b.commit()
-
 	logrus.WithField("mtlsHash", mtlsHash).Debug("RegisterMtlsHashIfNeeded called")
 	oldMtlsHash, err := b.GetMtlsHash(b.GetMyAddress())
 	if err != nil {
@@ -147,35 +139,38 @@ func (b *Broker) RegisterMtlsHashIfNeeded(mtlsHash string) error {
 
 	copy(bytes20[:], hashBytes)
 
-	_, err = b.session.SetMtlsHash(bytes20)
+	tx, err := b.session.SetMtlsHash(bytes20)
 	if err != nil {
 		return fmt.Errorf("could not register mtls hash: %v", err)
 	}
-	return nil
+
+	return b.waitForTx(tx.Hash())
 }
 
 func (b *Broker) DepositCoin(coins float64) error {
-	defer b.commit()
-
 	if err := b.setDecimals(); err != nil {
 		return err
 	}
 
-	_, err := b.session.DepositCoin(b.coinsToAmount(coins))
+	tx, err := b.session.DepositCoin(b.coinsToAmount(coins))
+	if err != nil {
+		return err
+	}
 
-	return err
+	return b.waitForTx(tx.Hash())
 }
 
 func (b *Broker) WithdrawCoin(coins float64) error {
-	defer b.commit()
-
 	if err := b.setDecimals(); err != nil {
 		return err
 	}
 
-	_, err := b.session.WithdrawCoin(b.coinsToAmount(coins))
+	tx, err := b.session.WithdrawCoin(b.coinsToAmount(coins))
+	if err != nil {
+		return err
+	}
 
-	return err
+	return b.waitForTx(tx.Hash())
 }
 
 func (b *Broker) Balance() (float64, error) {
@@ -218,11 +213,14 @@ func (b *Broker) UserAllowance() (float64, error) {
 }
 
 func (b *Broker) SetStablecoinAddress(address common.Address) error {
-	_, err := b.session.SetStablecoinAddress(address)
+	tx, err := b.session.SetStablecoinAddress(address)
 	if err != nil {
 		return err
 	}
-	b.commit()
+
+	if err = b.waitForTx(tx.Hash()); err != nil {
+		return err
+	}
 
 	decimals, err := b.session.GetCoinDecimals()
 	if err != nil {

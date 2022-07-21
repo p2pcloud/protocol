@@ -3,10 +3,10 @@ module github.com/p2pcloud/protocol
 go 1.18
 
 require (
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/ethereum/go-ethereum v1.10.20
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.0
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 )
 
 require (
@@ -36,6 +36,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

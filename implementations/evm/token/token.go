@@ -21,8 +21,8 @@ type Token struct {
 	session      contracts.TokenSession
 	privateKey   *ecdsa.PrivateKey
 
-	commit func()
-	upd    <-chan common.Address
+	waitForTx func(common.Hash) error
+	upd       <-chan common.Address
 
 	mu              *sync.Mutex
 	decimals        uint8
@@ -35,16 +35,11 @@ type Params struct {
 	PrivateKey         *ecdsa.PrivateKey
 	ContractAddressStr string
 	ChainID            int64
-	Commit             func()
+	WaitForTx          func(common.Hash) error
 	UpdCh              <-chan common.Address
 }
 
 func NewToken(params *Params) protocol.TokenIface {
-	commit := func() {}
-	if params.Commit != nil {
-		commit = params.Commit
-	}
-
 	transactOpts, _ := bind.NewKeyedTransactorWithChainID(params.PrivateKey, big.NewInt(params.ChainID))
 
 	b := &Token{
@@ -52,7 +47,7 @@ func NewToken(params *Params) protocol.TokenIface {
 		transactOpts:    transactOpts,
 		contractAddress: common.HexToAddress(params.ContractAddressStr),
 		privateKey:      params.PrivateKey,
-		commit:          commit,
+		waitForTx:       params.WaitForTx,
 		mu:              &sync.Mutex{},
 		upd:             params.UpdCh,
 	}
@@ -73,8 +68,7 @@ func (t *Token) GetContractAddress() common.Address {
 }
 
 func (t *Token) DeployContract(initialSupply float64) (*common.Address, error) {
-	defer t.commit()
-	address, _, _, err := contracts.DeployToken(
+	address, tx, _, err := contracts.DeployToken(
 		t.transactOpts,
 		t.backend,
 		t.coinsToAmount(initialSupply),
@@ -83,7 +77,9 @@ func (t *Token) DeployContract(initialSupply float64) (*common.Address, error) {
 		return nil, fmt.Errorf("could not deploy token: %v", err)
 	}
 
-	t.commit()
+	if err = t.waitForTx(tx.Hash()); err != nil {
+		return nil, err
+	}
 
 	if err = t.updateToken(address); err != nil {
 		return nil, err
@@ -120,19 +116,21 @@ func (t *Token) BalanceOf(address common.Address) (float64, error) {
 }
 
 func (t *Token) Transfer(to common.Address, coins float64) error {
-	defer t.commit()
+	tx, err := t.session.Transfer(to, t.coinsToAmount(coins))
+	if err != nil {
+		return err
+	}
 
-	_, err := t.session.Transfer(to, t.coinsToAmount(coins))
-
-	return err
+	return t.waitForTx(tx.Hash())
 }
 
 func (t *Token) Approve(to common.Address, coins float64) error {
-	defer t.commit()
+	tx, err := t.session.Approve(to, t.coinsToAmount(coins))
+	if err != nil {
+		return err
+	}
 
-	_, err := t.session.Approve(to, t.coinsToAmount(coins))
-
-	return err
+	return t.waitForTx(tx.Hash())
 }
 
 func (t *Token) Allowance(from, address common.Address) (float64, error) {

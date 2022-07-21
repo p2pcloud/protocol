@@ -3,6 +3,7 @@ package evm
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,38 +19,6 @@ type EVMImplementation struct {
 	backend bind.ContractBackend
 	broker  protocol.BrokerIface
 	token   protocol.TokenIface
-}
-
-func (a *EVMImplementation) DepositCoin(coins float64) error {
-	if err := a.token.Approve(a.broker.ContractAddress(), coins); err != nil {
-		return err
-	}
-
-	return a.broker.DepositCoin(coins)
-}
-
-func (a *EVMImplementation) WithdrawCoin(coins float64) error {
-	return a.broker.WithdrawCoin(coins)
-}
-
-func (a *EVMImplementation) Balance() (float64, error) {
-	return a.broker.Balance()
-}
-
-func (a *EVMImplementation) UserTokenBalance() (float64, error) {
-	return a.broker.UserTokenBalance()
-}
-
-func (a *EVMImplementation) UserAllowance() (float64, error) {
-	return a.broker.UserAllowance()
-}
-
-func (a *EVMImplementation) SetStablecoinAddress(address common.Address) error {
-	return a.broker.SetStablecoinAddress(address)
-}
-
-func (a *EVMImplementation) GetStablecoinAddress() (common.Address, error) {
-	return a.broker.GetStablecoinAddress()
 }
 
 var _ protocol.BrokerIface = (*EVMImplementation)(nil)
@@ -73,7 +42,11 @@ func NewEVMImplementation(
 
 	updCh := make(chan common.Address, 1)
 
-	myBroker, err := broker.NewBroker(web3Client, privateKeyDecoded, contractAddress, chanId, func() {}, updCh)
+	txWaiter := NewTransactionWaiter(web3Client, time.Minute)
+
+	myBroker, err := broker.NewBroker(
+		web3Client, privateKeyDecoded, contractAddress, chanId, txWaiter.WaitForTx, updCh,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -89,6 +62,7 @@ func NewEVMImplementation(
 		ContractAddressStr: tokenAddr.Hex(),
 		ChainID:            chanId,
 		UpdCh:              updCh,
+		WaitForTx:          txWaiter.WaitForTx,
 	})
 	if err = tkn.StartUp(); err != nil {
 		return nil, err
@@ -168,4 +142,36 @@ func (a *EVMImplementation) GetTime() (int, error) {
 
 func (a *EVMImplementation) GetMinersBookings() ([]protocol.VMBooking, error) {
 	return a.broker.GetMinersBookings()
+}
+
+func (a *EVMImplementation) DepositCoin(coins float64) error {
+	if err := a.token.Approve(a.broker.ContractAddress(), coins); err != nil {
+		return err
+	}
+
+	return a.broker.DepositCoin(coins)
+}
+
+func (a *EVMImplementation) WithdrawCoin(coins float64) error {
+	return a.broker.WithdrawCoin(coins)
+}
+
+func (a *EVMImplementation) Balance() (float64, error) {
+	return a.broker.Balance()
+}
+
+func (a *EVMImplementation) UserTokenBalance() (float64, error) {
+	return a.broker.UserTokenBalance()
+}
+
+func (a *EVMImplementation) UserAllowance() (float64, error) {
+	return a.broker.UserAllowance()
+}
+
+func (a *EVMImplementation) SetStablecoinAddress(address common.Address) error {
+	return a.broker.SetStablecoinAddress(address)
+}
+
+func (a *EVMImplementation) GetStablecoinAddress() (common.Address, error) {
+	return a.broker.GetStablecoinAddress()
 }

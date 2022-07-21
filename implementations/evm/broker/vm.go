@@ -8,10 +8,12 @@ import (
 )
 
 func (b *Broker) BookVM(offerIndex, seconds int) error {
-	defer b.commit()
+	tx, err := b.session.BookVM(big.NewInt(int64(offerIndex)), big.NewInt(int64(seconds)))
+	if err != nil {
+		return err
+	}
 
-	_, err := b.session.BookVM(big.NewInt(int64(offerIndex)), big.NewInt(int64(seconds)))
-	return err
+	return b.waitForTx(tx.Hash())
 }
 
 func (b *Broker) GetUsersBookings() ([]protocol.VMBooking, error) {

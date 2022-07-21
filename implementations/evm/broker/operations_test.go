@@ -320,7 +320,7 @@ func TestGetStablecoinAddress(t *testing.T) {
 		Backend:    blockchain.Origin.Backend,
 		PrivateKey: newTokenPk,
 		ChainID:    evm.ChainIDSimulated,
-		Commit:     blockchain.Commit,
+		WaitForTx:  blockchain.WaitForTx,
 	})
 	newTokenAddr, err := tkn.(*token.Token).DeployContract(0)
 	require.NoError(t, err)

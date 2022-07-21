@@ -66,7 +66,7 @@ func TestDepositCoinIntegration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			blockchain, err := evm.NewGanacheBCHelper(1)
+			blockchain, err := evm.NewGanacheBCHelper(1, web3Client)
 			require.NoError(t, err)
 
 			userIdx := 0
@@ -239,7 +239,7 @@ func TestWithdrawCoinIntegration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			blockchain, err := evm.NewGanacheBCHelper(1)
+			blockchain, err := evm.NewGanacheBCHelper(1, web3Client)
 			require.NoError(t, err)
 
 			ti, err := evm.InitializeTestInstances(
@@ -294,7 +294,7 @@ func TestGetStablecoinAddressIntegration(t *testing.T) {
 	web3Client, err := ethclient.Dial(rpcEndpoint)
 	require.NoError(t, err)
 
-	blockchain, err := evm.NewGanacheBCHelper(1)
+	blockchain, err := evm.NewGanacheBCHelper(1, web3Client)
 	require.NoError(t, err)
 
 	ti, err := evm.InitializeTestInstances(
@@ -314,7 +314,7 @@ func TestGetStablecoinAddressIntegration(t *testing.T) {
 		Backend:    web3Client,
 		PrivateKey: newTokenPk,
 		ChainID:    evm.ChainIDSimulated,
-		Commit:     blockchain.Commit,
+		WaitForTx:  blockchain.WaitForTx,
 	})
 	newTokenAddr, err := tkn.(*token.Token).DeployContract(0)
 	require.NoError(t, err)

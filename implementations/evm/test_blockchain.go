@@ -3,10 +3,12 @@ package evm
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/p2pcloud/protocol"
 	"github.com/p2pcloud/protocol/implementations/evm/broker"
@@ -18,9 +20,10 @@ type GanacheBCHelper struct {
 	privateKeys  []*ecdsa.PrivateKey
 	pksString    []string
 	nextKeyIndex int
+	waitForTx    func(common.Hash) error
 }
 
-func NewGanacheBCHelper(count int) (*GanacheBCHelper, error) {
+func NewGanacheBCHelper(count int, web3client *ethclient.Client) (*GanacheBCHelper, error) {
 	result := make([]*ecdsa.PrivateKey, 0, count)
 
 	// ganache seed 123, mnemonic phrase:
@@ -50,6 +53,7 @@ func NewGanacheBCHelper(count int) (*GanacheBCHelper, error) {
 	return &GanacheBCHelper{
 		privateKeys: result,
 		pksString:   pks,
+		waitForTx:   NewTransactionWaiter(web3client, time.Minute).WaitForTx,
 	}, nil
 }
 
@@ -78,11 +82,13 @@ func (s *GanacheBCHelper) GetUserPrivateKeyByIndexStr(index int) string {
 	return s.pksString[index+2]
 }
 
-func (s *GanacheBCHelper) Commit() {}
+func (s *GanacheBCHelper) WaitForTx(hash common.Hash) error {
+	return s.waitForTx(hash)
+}
 
 type BlockChainHelper interface {
 	GetNextPrivateKey() (*ecdsa.PrivateKey, error)
-	Commit()
+	WaitForTx(common.Hash) error
 }
 
 type TestInstances struct {
@@ -137,7 +143,7 @@ func (g *Gifts) initialUserAllowances(p *TestInstances) error {
 			PrivateKey:         user.GetPrivateKey(),
 			ContractAddressStr: p.DeployerToken.GetContractAddress().Hex(),
 			ChainID:            ChainIDSimulated,
-			Commit:             p.BcHelper.Commit,
+			WaitForTx:          p.BcHelper.WaitForTx,
 		}).(*token.Token)
 
 		if err := userToken.RegenerateSession(); err != nil {
@@ -163,7 +169,7 @@ func (g *Gifts) initialUsersTokens(p *TestInstances) error {
 		PrivateKey:         p.DeployerToken.GetPrivateKey(),
 		ContractAddressStr: p.DeployerToken.GetContractAddress().Hex(),
 		ChainID:            ChainIDSimulated,
-		Commit:             p.BcHelper.Commit,
+		WaitForTx:          p.BcHelper.WaitForTx,
 	}).(*token.Token)
 	if err := tkn.RegenerateSession(); err != nil {
 		return err
@@ -224,7 +230,7 @@ func instantiateToken(p *TestInstances) error {
 		Backend:    p.Backend,
 		PrivateKey: tokenPk,
 		ChainID:    ChainIDSimulated,
-		Commit:     p.BcHelper.Commit,
+		WaitForTx:  p.BcHelper.WaitForTx,
 		UpdCh:      p.UpdateCh,
 	}).(*token.Token)
 
@@ -244,7 +250,7 @@ func instantiateUsers(p *TestInstances) error {
 	}
 
 	deployContract, err := broker.NewBroker(
-		p.Backend, pk, "", ChainIDSimulated, p.BcHelper.Commit, p.UpdateCh,
+		p.Backend, pk, "", ChainIDSimulated, p.BcHelper.WaitForTx, p.UpdateCh,
 	)
 	if err != nil {
 		return err
@@ -268,7 +274,7 @@ func instantiateUsers(p *TestInstances) error {
 		}
 
 		userContract, err := broker.NewBroker(
-			p.Backend, pk, contractAddressStr, ChainIDSimulated, p.BcHelper.Commit, p.UpdateCh,
+			p.Backend, pk, contractAddressStr, ChainIDSimulated, p.BcHelper.WaitForTx, p.UpdateCh,
 		)
 		if err != nil {
 			return err
