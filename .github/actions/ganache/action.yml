@@ -1,5 +1,0 @@
-name: 'ganache'
-description: 'Ganache server for integration tests'
-runs:
-    using: 'docker'
-    image: 'Dockerfile'

@@ -7,6 +7,12 @@ on:
 jobs:
   integration_test:
     runs-on: ubuntu-latest
+    services:
+      ganache:
+        image: 'Dockerfile'
+        ports:
+          - 8545
+
     steps:
     - uses: actions/checkout@v2
 
@@ -17,9 +23,6 @@ jobs:
 
     - name: Compile contract
       run: go run ./cmd/compile/
-
-    - name: Ganache server
-      uses: ./.github/actions/ganache
 
     - name: Test
       env:
