@@ -42,6 +42,8 @@ contract Broker {
         uint256 vmTypeId;
     }
 
+    event BookingStarted(uint256 index, address indexed miner, address indexed user, uint256 vmTypeId);
+
     uint256 public constant version = 1;
 
     mapping(uint256 => VMOffer) vmOffers;
@@ -118,9 +120,14 @@ contract Broker {
 
     function bookVM(uint256 offerIndex, uint256 secs) public returns (uint256) {
         require(
-            vmOffers[offerIndex].machinesAvailable > 0,
-            "No machines available"
+            vmOffers[offerIndex].machinesAvailable > 0 &&
+            secs > 0 &&
+            userBalance() >= vmOffers[offerIndex].pricePerSecond * secs,
+            "No machines available OR secs should be positive OR user does not have required amount to book machine"
         );
+
+        locked[msg.sender] += vmOffers[offerIndex].pricePerSecond * secs;
+
         Booking memory booking = Booking(
             nextBookingId,
             vmOffers[offerIndex].vmTypeId,
@@ -131,6 +138,9 @@ contract Broker {
         );
         bookings[nextBookingId] = booking;
         nextBookingId++;
+
+        emit BookingStarted(booking.index, booking.miner, booking.user, booking.vmTypeId);
+
         return nextBookingId - 1;
     }
 
@@ -295,13 +305,9 @@ contract Broker {
 
     function setCommunityFee(uint256 fee) public returns (bool) {
         require(
-            fee > 0 && fee < 101,
-            "community fee should be in range of 1 to 100"
-        );
-
-        require(
+            fee > 0 && fee < 101 &&
             msg.sender == community,
-            "only community contract can set fee"
+            "community fee should be in range of 1 to 100"
         );
 
         communityFee = fee;

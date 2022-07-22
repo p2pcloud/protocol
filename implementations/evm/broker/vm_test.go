@@ -14,8 +14,13 @@ func TestBookingNotFound(t *testing.T) {
 	communityPk, err := blockchain.GetNextPrivateKey()
 	require.NoError(t, err)
 
+	gifts := evm.NewGifts(
+		map[int]float64{1: 1000},
+		map[int]float64{1: 1000},
+	)
+
 	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
+		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 
@@ -29,6 +34,8 @@ func TestBookingNotFound(t *testing.T) {
 		Availablility: 1,
 	}, "https://hello.world")
 	require.NoError(t, err)
+
+	require.NoError(t, userContr.DepositCoin(1000))
 
 	offers, err := userContr.GetAvailableOffers(3)
 	require.NoError(t, err)
@@ -52,8 +59,13 @@ func TestGetBooking(t *testing.T) {
 	communityPk, err := blockchain.GetNextPrivateKey()
 	require.NoError(t, err)
 
+	gifts := evm.NewGifts(
+		map[int]float64{1: 1000},
+		map[int]float64{1: 1000},
+	)
+
 	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
+		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 
@@ -74,6 +86,8 @@ func TestGetBooking(t *testing.T) {
 		t.Errorf("Expected 1 offer, got %d", len(offers))
 	}
 
+	require.NoError(t, userContr.DepositCoin(1000))
+
 	//test book
 	err = userContr.BookVM(offers[0].Index, 1000)
 	require.NoError(t, err)
@@ -81,7 +95,7 @@ func TestGetBooking(t *testing.T) {
 	booking, err := userContr.GetBooking(0)
 	require.NoError(t, err)
 	assertEqual(t, 0, booking.Index)
-	assertEqual(t, 1, booking.PPS)
+	assertEqual(t, 1.0, booking.PPS)
 	assertEqual(t, 3, booking.VmTypeId)
 }
 
@@ -91,8 +105,13 @@ func TestBook(t *testing.T) {
 	communityPk, err := blockchain.GetNextPrivateKey()
 	require.NoError(t, err)
 
+	gifts := evm.NewGifts(
+		map[int]float64{1: 17777},
+		map[int]float64{1: 17777},
+	)
+
 	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
+		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 
@@ -112,6 +131,8 @@ func TestBook(t *testing.T) {
 	if len(offers) != 1 {
 		t.Errorf("Expected 1 offer, got %d", len(offers))
 	}
+
+	userContr.DepositCoin(17777)
 
 	//test book
 	err = userContr.BookVM(offers[0].Index, 17777)

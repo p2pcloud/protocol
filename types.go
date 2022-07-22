@@ -7,7 +7,7 @@ import (
 
 type Offer struct {
 	VmTypeId      int
-	PPS           int
+	PPS           float64
 	Availablility int
 	Miner         common.Address
 	Index         int
@@ -15,7 +15,7 @@ type Offer struct {
 
 type VMBooking struct {
 	VmTypeId   int
-	PPS        int
+	PPS        float64
 	Miner      *common.Address
 	Index      int
 	User       *common.Address

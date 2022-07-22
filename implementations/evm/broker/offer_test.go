@@ -177,5 +177,5 @@ func TestUpdateOffer(t *testing.T) {
 
 	assertEqual(t, updatedOffers[0].VmTypeId, 99)
 	assertEqual(t, updatedOffers[0].Availablility, 88)
-	assertEqual(t, updatedOffers[0].PPS, 77)
+	assertEqual(t, updatedOffers[0].PPS, float64(77))
 }
