@@ -69,17 +69,21 @@ func TestDepositCoinIntegration(t *testing.T) {
 			blockchain, err := evm.NewGanacheBCHelper(1, web3Client)
 			require.NoError(t, err)
 
+			communityPk, err := blockchain.GetNextPrivateKey()
+			require.NoError(t, err)
+
 			userIdx := 0
 			ti, err := evm.InitializeTestInstances(
 				1, 6, evm.NewGifts(map[int]float64{0: 1.5}, nil),
 				web3Client, blockchain,
+				communityPk,
 			)
 			require.NoError(t, err)
 
-			contract := ti.Contracts[0]
+			contract := ti.Contracts[userIdx]
 
 			user, err := evm.NewEVMImplementation(
-				blockchain.GetUserPrivateKeyByIndexStr(userIdx),
+				blockchain.GetPrivateKeyString(contract.GetPrivateKey()),
 				contract.ContractAddress().Hex(),
 				rpcEndpoint,
 				evm.ChainIDSimulated,
@@ -242,16 +246,19 @@ func TestWithdrawCoinIntegration(t *testing.T) {
 			blockchain, err := evm.NewGanacheBCHelper(1, web3Client)
 			require.NoError(t, err)
 
+			communityPk, err := blockchain.GetNextPrivateKey()
+			require.NoError(t, err)
+
 			ti, err := evm.InitializeTestInstances(
 				1, 6, evm.NewGifts(map[int]float64{0: 1.5}, nil),
-				web3Client, blockchain,
+				web3Client, blockchain, communityPk,
 			)
 			require.NoError(t, err)
 
 			contract := ti.Contracts[0]
 
 			user, err := evm.NewEVMImplementation(
-				blockchain.GetUserPrivateKeyByIndexStr(userIdx),
+				blockchain.GetPrivateKeyString(contract.GetPrivateKey()),
 				contract.ContractAddress().Hex(),
 				rpcEndpoint,
 				evm.ChainIDSimulated,
@@ -295,9 +302,12 @@ func TestGetStablecoinAddressIntegration(t *testing.T) {
 	blockchain, err := evm.NewGanacheBCHelper(1, web3Client)
 	require.NoError(t, err)
 
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	ti, err := evm.InitializeTestInstances(
 		1, 6, nil,
-		web3Client, blockchain,
+		web3Client, blockchain, communityPk,
 	)
 	require.NoError(t, err)
 

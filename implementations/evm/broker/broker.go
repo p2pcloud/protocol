@@ -89,10 +89,11 @@ func (b *Broker) RegenerateSession() error {
 	return nil
 }
 
-func (b *Broker) DeployContracts() ([]string, error) {
+func (b *Broker) DeployContracts(community common.Address) ([]string, error) {
 	address, tx, _, err := contracts.DeployBroker(
 		b.transactOpts,
 		b.backend,
+		community,
 	)
 
 	if err != nil {

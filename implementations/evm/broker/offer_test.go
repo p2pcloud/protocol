@@ -17,8 +17,11 @@ func check(t *testing.T, err error) {
 func TestAddOffer(t *testing.T) {
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain,
+		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 
@@ -67,8 +70,11 @@ func assertEqual(t *testing.T, a, b interface{}) {
 func TestUrlUpdate(t *testing.T) {
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	testInstances, err := evm.InitializeTestInstances(
-		1, 6, nil, blockchain.Origin.Backend, blockchain,
+		1, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 
@@ -135,8 +141,11 @@ func TestUrlUpdate(t *testing.T) {
 func TestUpdateOffer(t *testing.T) {
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain,
+		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 

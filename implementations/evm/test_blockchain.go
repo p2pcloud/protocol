@@ -19,6 +19,7 @@ import (
 type GanacheBCHelper struct {
 	privateKeys  []*ecdsa.PrivateKey
 	pksString    []string
+	pksToString  map[*ecdsa.PrivateKey]string
 	nextKeyIndex int
 	waitForTx    func(common.Hash) error
 }
@@ -39,7 +40,19 @@ func NewGanacheBCHelper(count int, web3client *ethclient.Client) (*GanacheBCHelp
 		"46ada3ce889c3478d808bf47529b83da749a078f15794042fdc800af36f3340d",
 		"bf11a242a33fb33fba0a54b8ecb032a2a5d43112c78be500433f4f28e75927eb",
 		"f56760887faffc45797bb5d6563bcd4032254c44524fca8191fe6009c9cef5cd",
+		"0f9e2f3a4afd287342731d483db789fb50aca9ea8aca7f763d5b640cb315acf7",
+		"bea74505d50c0caee8ca4b44a157cc78538e512755b2146ae1f79fa1c730b87d",
+		"6c01d43b67c7cde066dec41c58128baeab5fefcfe1c96103a31e54b7b19d2974",
+		"a4081e80d738502c98ae491d2f334a61bdef105e9a11e2da851c5bda06f71ce3",
+		"7a4a8ac13ac681cc2886ac0c2f3c18b4b723de9c12f58907d178775d8b4a6b8d",
+		"130fdc39b5a044cf802e71c9cbac8a7bb937029da7b261ba7c94ebfba018587d",
+		"b399f2a03189b9a16406ede65a38178bda58ceb81a3dcbebd91c419e018217fc",
+		"c22e32d55a217ac6a3e52bde9e0ab83020dd6e68850f7a7e5df4d39bff2efbd6",
+		"c75b72fec5ed55ff556dd6a95f1c64a03885ca6008eb52e1504f963423ca0fb4",
+		"11a42ca61ca17d0b708e4cd2165ded2f84d8a8e866969adfe4b9f7644569c690",
 	}
+
+	pksToString := make(map[*ecdsa.PrivateKey]string, len(pks))
 
 	for i := range pks {
 		pk, err := keyring.DecodePrivateKey(pks[i])
@@ -47,12 +60,14 @@ func NewGanacheBCHelper(count int, web3client *ethclient.Client) (*GanacheBCHelp
 			return nil, err
 		}
 
+		pksToString[pk] = pks[i]
 		result = append(result, pk)
 	}
 
 	return &GanacheBCHelper{
 		privateKeys: result,
 		pksString:   pks,
+		pksToString: pksToString,
 		waitForTx:   NewTransactionWaiter(web3client, time.Minute).WaitForTx,
 	}, nil
 }
@@ -66,20 +81,8 @@ func (s *GanacheBCHelper) GetNextPrivateKey() (*ecdsa.PrivateKey, error) {
 	return key, nil
 }
 
-func (s *GanacheBCHelper) GetPrivateKeyByIndex(index int) *ecdsa.PrivateKey {
-	return s.privateKeys[index]
-}
-
-func (s *GanacheBCHelper) GetPrivateKeyByIndexStr(index int) string {
-	return s.pksString[index]
-}
-
-func (s *GanacheBCHelper) GetUserPrivateKeyByIndex(index int) *ecdsa.PrivateKey {
-	return s.privateKeys[index+3]
-}
-
-func (s *GanacheBCHelper) GetUserPrivateKeyByIndexStr(index int) string {
-	return s.pksString[index+3]
+func (s *GanacheBCHelper) GetPrivateKeyString(pk *ecdsa.PrivateKey) string {
+	return s.pksToString[pk]
 }
 
 func (s *GanacheBCHelper) WaitForTx(hash common.Hash) error {
@@ -100,6 +103,7 @@ type TestInstances struct {
 	DeployerToken       *token.Token
 	DeployerBroker      protocol.BrokerIface
 	BrokerDeployAddress *common.Address
+	CommunityInitialPk  *ecdsa.PrivateKey
 	CommunityAccount    protocol.BrokerIface
 	Contracts           []protocol.BrokerIface
 	BcHelper            BlockChainHelper
@@ -130,7 +134,7 @@ func (g *Gifts) requiredSupply() (initialSupply float64) {
 	return initialSupply
 }
 
-func (g *Gifts) initialUserAllowances(p *TestInstances) error {
+func (g *Gifts) InitialUserAllowances(p *TestInstances) error {
 	if g == nil {
 		return nil
 	}
@@ -159,7 +163,7 @@ func (g *Gifts) initialUserAllowances(p *TestInstances) error {
 	return nil
 }
 
-func (g *Gifts) initialUsersTokens(p *TestInstances) error {
+func (g *Gifts) InitialUserTokens(p *TestInstances) error {
 	if g == nil {
 		return nil
 	}
@@ -190,44 +194,46 @@ func (g *Gifts) initialUsersTokens(p *TestInstances) error {
 func InitializeTestInstances(
 	count int, decimals uint8, g *Gifts,
 	backend bind.ContractBackend, bcHelper BlockChainHelper,
+	communityPk *ecdsa.PrivateKey,
 ) (*TestInstances, error) {
 	p := &TestInstances{
-		Count:         count,
-		Decimals:      decimals,
-		InitialSupply: g.requiredSupply() + 10,
-		Backend:       backend,
-		BcHelper:      bcHelper,
-		UpdateCh:      make(chan common.Address, count),
+		Count:              count,
+		Decimals:           decimals,
+		InitialSupply:      g.requiredSupply() + 10,
+		Backend:            backend,
+		BcHelper:           bcHelper,
+		CommunityInitialPk: communityPk,
+		UpdateCh:           make(chan common.Address, count),
 	}
 
-	if err := instantiateToken(p); err != nil {
+	if err := BuildToken(p); err != nil {
 		return nil, err
 	}
 
-	if err := instantiateBroker(p); err != nil {
+	if err := BuildBroker(p); err != nil {
 		return nil, err
 	}
 
-	if err := instantiateCommunity(p); err != nil {
+	if err := SetFeeAndStablecoin(p); err != nil {
 		return nil, err
 	}
 
-	if err := instantiateUsers(p); err != nil {
+	if err := BuildUsers(p); err != nil {
 		return nil, err
 	}
 
-	if err := g.initialUsersTokens(p); err != nil {
+	if err := g.InitialUserTokens(p); err != nil {
 		return nil, err
 	}
 
-	if err := g.initialUserAllowances(p); err != nil {
+	if err := g.InitialUserAllowances(p); err != nil {
 		return nil, err
 	}
 
 	return p, nil
 }
 
-func instantiateToken(p *TestInstances) error {
+func BuildToken(p *TestInstances) error {
 	tokenPk, err := p.BcHelper.GetNextPrivateKey()
 	if err != nil {
 		return err
@@ -251,7 +257,7 @@ func instantiateToken(p *TestInstances) error {
 	return nil
 }
 
-func instantiateBroker(p *TestInstances) error {
+func BuildBroker(p *TestInstances) error {
 	pk, err := p.BcHelper.GetNextPrivateKey()
 	if err != nil {
 		return err
@@ -264,7 +270,7 @@ func instantiateBroker(p *TestInstances) error {
 		return err
 	}
 
-	_, err = deployContract.DeployContracts()
+	_, err = deployContract.DeployContracts(crypto.PubkeyToAddress(p.CommunityInitialPk.PublicKey))
 	if err != nil {
 		return err
 	}
@@ -274,7 +280,7 @@ func instantiateBroker(p *TestInstances) error {
 	return nil
 }
 
-func instantiateUsers(p *TestInstances) error {
+func BuildUsers(p *TestInstances) error {
 	userContracts := make([]protocol.BrokerIface, 0)
 	for i := 0; i < p.Count; i++ {
 		pk, err := p.BcHelper.GetNextPrivateKey()
@@ -298,18 +304,9 @@ func instantiateUsers(p *TestInstances) error {
 	return nil
 }
 
-func instantiateCommunity(p *TestInstances) error {
-	communityPk, err := p.BcHelper.GetNextPrivateKey()
-	if err != nil {
-		return err
-	}
-
-	if err = p.DeployerBroker.SetCommunityContract(crypto.PubkeyToAddress(communityPk.PublicKey)); err != nil {
-		return err
-	}
-
+func SetFeeAndStablecoin(p *TestInstances) error {
 	communityContract, err := broker.NewBroker(
-		p.Backend, communityPk, p.DeployerBroker.ContractAddress().Hex(),
+		p.Backend, p.CommunityInitialPk, p.DeployerBroker.ContractAddress().Hex(),
 		ChainIDSimulated, p.BcHelper.WaitForTx, make(chan common.Address, 1),
 	)
 	if err != nil {

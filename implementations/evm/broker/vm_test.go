@@ -11,8 +11,11 @@ import (
 func TestBookingNotFound(t *testing.T) {
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain,
+		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 
@@ -46,8 +49,11 @@ func TestBookingNotFound(t *testing.T) {
 func TestGetBooking(t *testing.T) {
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain,
+		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 
@@ -82,8 +88,11 @@ func TestGetBooking(t *testing.T) {
 func TestBook(t *testing.T) {
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain,
+		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 

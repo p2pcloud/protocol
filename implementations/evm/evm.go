@@ -75,8 +75,8 @@ func NewEVMImplementation(
 
 }
 
-func (a *EVMImplementation) DeployContracts() ([]string, error) {
-	addresses, err := a.broker.DeployContracts()
+func (a *EVMImplementation) DeployContracts(community common.Address) ([]string, error) {
+	addresses, err := a.broker.DeployContracts(community)
 	return addresses, err
 }
 

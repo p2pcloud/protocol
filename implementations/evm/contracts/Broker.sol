@@ -61,6 +61,10 @@ contract Broker {
     address community;
     uint256 communityFee;
 
+    constructor(address communityAddress) {
+        community = communityAddress;
+    }
+
     function SetMtlsHash(bytes20 _signature) public {
         mtlsHashes[msg.sender] = _signature;
     }
@@ -275,8 +279,13 @@ contract Broker {
         return token.allowance(msg.sender, address(this));
     }
 
-    function setCommunityContract(address communityAddress) public returns (bool) {
-        community = communityAddress;
+    function setCommunityContract(address newCommunityAddress) public returns (bool) {
+        require(
+            msg.sender == community,
+            "only community contract can set new community contract"
+        );
+
+        community = newCommunityAddress;
         return false;
     }
 

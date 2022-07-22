@@ -101,9 +101,13 @@ func TestDepositCoin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+
+			communityPk, err := blockchain.GetNextPrivateKey()
+			require.NoError(t, err)
+
 			testInstances, err := evm.InitializeTestInstances(
 				1, tt.decimals, tt.gifts,
-				blockchain.Origin.Backend, blockchain,
+				blockchain.Origin.Backend, blockchain, communityPk,
 			)
 			require.NoError(t, err)
 
@@ -262,9 +266,13 @@ func TestWithdrawCoin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+
+			communityPk, err := blockchain.GetNextPrivateKey()
+			require.NoError(t, err)
+
 			testInstances, err := evm.InitializeTestInstances(
 				1, tt.decimals, tt.gifts,
-				blockchain.Origin.Backend, blockchain,
+				blockchain.Origin.Backend, blockchain, communityPk,
 			)
 			require.NoError(t, err)
 
@@ -297,9 +305,13 @@ func TestWithdrawCoin(t *testing.T) {
 
 func TestGetStablecoinAddress(t *testing.T) {
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	ti, err := evm.InitializeTestInstances(
 		2, 6, nil,
-		blockchain.Origin.Backend, blockchain,
+		blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	require.NoError(t, err)
 

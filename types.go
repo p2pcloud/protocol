@@ -23,7 +23,7 @@ type VMBooking struct {
 }
 
 type BrokerIface interface {
-	DeployContracts() ([]string, error)
+	DeployContracts(address common.Address) ([]string, error)
 	AddOffer(offer Offer, callbackUrl string) error
 	GetMyOffers() ([]Offer, error)
 	UpdateOffer(offer Offer) error
