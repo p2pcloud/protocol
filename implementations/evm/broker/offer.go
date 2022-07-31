@@ -86,7 +86,6 @@ func (b *Broker) UpdateOffer(offer protocol.Offer) error {
 
 	tx, err := b.session.UpdateOffer(
 		big.NewInt(int64(offer.Index)),
-		b.coinsToAmount(offer.PPS),
 		big.NewInt(int64(offer.VmTypeId)),
 		big.NewInt(int64(offer.Availablility)),
 	)

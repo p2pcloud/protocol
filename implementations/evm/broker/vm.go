@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/p2pcloud/protocol"
 )
 
@@ -33,6 +35,7 @@ func (b *Broker) GetUsersBookings() ([]protocol.VMBooking, error) {
 			Miner:      &booking.Miner,
 			Index:      int(booking.Index.Int64()),
 			User:       &booking.User,
+			BookedAt:   int(booking.BookedAt.Int64()),
 			BookedTill: int(booking.BookedTill.Int64()),
 		})
 	}
@@ -59,6 +62,7 @@ func (b *Broker) GetBooking(index int) (*protocol.VMBooking, error) {
 		Miner:      &booking.Miner,
 		Index:      int(booking.Index.Int64()),
 		User:       &booking.User,
+		BookedAt:   int(booking.BookedAt.Int64()),
 		BookedTill: int(booking.BookedTill.Int64()),
 	}, nil
 }
@@ -89,9 +93,60 @@ func (b *Broker) GetMinersBookings() ([]protocol.VMBooking, error) {
 			Miner:      &booking.Miner,
 			Index:      int(booking.Index.Int64()),
 			User:       &booking.User,
+			BookedAt:   int(booking.BookedAt.Int64()),
 			BookedTill: int(booking.BookedTill.Int64()),
 		})
 	}
+	return result, nil
+}
+
+func (b *Broker) AbortBooking(index uint64, abortType protocol.AbortType) error {
+	tx, err := b.session.AbortBooking(index, abortType.ToSolidityType())
+	if err != nil {
+		return err
+	}
+
+	return b.waitForTx(tx.Hash())
+}
+
+func (b *Broker) ClaimExpired(index uint64) error {
+	tx, err := b.session.ClaimExpired(index)
+	if err != nil {
+		return err
+	}
+
+	return b.waitForTx(tx.Hash())
+}
+
+func (b *Broker) ExtendBooking(index uint64, secs int) error {
+	tx, err := b.session.ExtendBooking(index, big.NewInt(int64(secs)))
+	if err != nil {
+		return err
+	}
+
+	return b.waitForTx(tx.Hash())
+}
+
+func (b *Broker) GetUserBookings() ([]protocol.VMBooking, error) {
+	bb, err := b.session.GetUsersBookings(crypto.PubkeyToAddress(b.GetPrivateKey().PublicKey))
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]protocol.VMBooking, 0, len(bb))
+
+	for i := range bb {
+		result = append(result, protocol.VMBooking{
+			VmTypeId:   int(bb[i].VmTypeId.Int64()),
+			PPS:        b.amountToCoins(bb[i].PricePerSecond),
+			Miner:      &bb[i].Miner,
+			Index:      int(bb[i].Index.Int64()),
+			User:       &bb[i].User,
+			BookedAt:   int(bb[i].BookedAt.Int64()),
+			BookedTill: int(bb[i].BookedTill.Int64()),
+		})
+	}
+
 	return result, nil
 }
 

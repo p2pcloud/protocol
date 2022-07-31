@@ -187,6 +187,32 @@ func (b *Broker) Balance() (float64, error) {
 	return b.amountToCoins(amount), nil
 }
 
+func (b *Broker) DepositBalance() (float64, error) {
+	if err := b.setDecimals(); err != nil {
+		return 0, err
+	}
+
+	amount, err := b.session.UserDeposit()
+	if err != nil {
+		return 0, err
+	}
+
+	return b.amountToCoins(amount), nil
+}
+
+func (b *Broker) LockedBalance() (float64, error) {
+	if err := b.setDecimals(); err != nil {
+		return 0, err
+	}
+
+	amount, err := b.session.UserLockedBalance()
+	if err != nil {
+		return 0, err
+	}
+
+	return b.amountToCoins(amount), nil
+}
+
 func (b *Broker) UserTokenBalance() (float64, error) {
 	if err := b.setDecimals(); err != nil {
 		return 0, err

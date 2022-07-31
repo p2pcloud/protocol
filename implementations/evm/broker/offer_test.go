@@ -164,7 +164,6 @@ func TestUpdateOffer(t *testing.T) {
 	require.Len(t, offers, 1)
 
 	offerUpdate := offers[0]
-	offerUpdate.PPS = 77
 	offerUpdate.Availablility = 88
 	offerUpdate.VmTypeId = 99
 
@@ -177,5 +176,4 @@ func TestUpdateOffer(t *testing.T) {
 
 	assertEqual(t, updatedOffers[0].VmTypeId, 99)
 	assertEqual(t, updatedOffers[0].Availablility, 88)
-	assertEqual(t, updatedOffers[0].PPS, float64(77))
 }

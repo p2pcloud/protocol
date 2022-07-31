@@ -191,3 +191,23 @@ func (a *EVMImplementation) SetCommunityFee(fee int64) error {
 func (a *EVMImplementation) GetCommunityFee() (int64, error) {
 	return a.broker.GetCommunityFee()
 }
+
+func (a *EVMImplementation) AbortBooking(index uint64, abortType protocol.AbortType) error {
+	return a.broker.AbortBooking(index, abortType)
+}
+
+func (a *EVMImplementation) ClaimExpired(index uint64) error {
+	return a.broker.ClaimExpired(index)
+}
+
+func (a *EVMImplementation) ExtendBooking(index uint64, secs int) error {
+	return a.broker.ExtendBooking(index, secs)
+}
+
+func (a *EVMImplementation) DepositBalance() (float64, error) {
+	return a.broker.DepositBalance()
+}
+
+func (a *EVMImplementation) LockedBalance() (float64, error) {
+	return a.broker.LockedBalance()
+}
