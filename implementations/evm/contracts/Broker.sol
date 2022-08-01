@@ -202,15 +202,12 @@ contract Broker {
         uint256 currentTime = GetTime();
 
         require(msg.sender == booking.user, "only owner of booking can extend");
-        require(
-            currentTime < booking.bookedTill,
-            "booking is expired, it can be only claimed by miner"
-        );
+        require(currentTime < booking.bookedTill, "booking is expired");
         require(userBalance() >= booking.pricePerSecond * secs, "insufficient funds to extend booking");
 
         locked[msg.sender] += booking.pricePerSecond * secs;
 
-        booking.bookedTill + secs;
+        booking.bookedTill += secs;
         bookings[index] = booking;
 
         emit BookingExtended(booking.index, booking.miner, booking.user, booking.vmTypeId);
