@@ -108,6 +108,10 @@ func (a *EVMImplementation) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, 
 	return a.broker.GetAvailableOffers(vmTypeId)
 }
 
+func (a *EVMImplementation) RemoveOffer(id int) error {
+	return a.broker.RemoveOffer(id)
+}
+
 func (a *EVMImplementation) BookVM(offerIndex, seconds int) error {
 	return a.broker.BookVM(offerIndex, seconds)
 }

@@ -1,4 +1,4 @@
-package evm
+package evmcompiler
 
 import (
 	"fmt"

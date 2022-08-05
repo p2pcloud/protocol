@@ -1,8 +1,9 @@
 package broker_test
 
 import (
-	"github.com/p2pcloud/protocol/implementations/evm"
 	"testing"
+
+	"github.com/p2pcloud/protocol/implementations/evm"
 
 	"github.com/p2pcloud/protocol"
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,7 @@ func TestBookingNotFound(t *testing.T) {
 	testInstances, err := evm.InitializeTestInstances(
 		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
 	)
-	check(t, err)
+	require.NoError(t, err)
 
 	minerContr := testInstances.Contracts[0]
 	userContr := testInstances.Contracts[1]
@@ -67,7 +68,7 @@ func TestGetBooking(t *testing.T) {
 	testInstances, err := evm.InitializeTestInstances(
 		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
 	)
-	check(t, err)
+	require.NoError(t, err)
 
 	minerContr := testInstances.Contracts[0]
 	userContr := testInstances.Contracts[1]
@@ -94,9 +95,9 @@ func TestGetBooking(t *testing.T) {
 
 	booking, err := userContr.GetBooking(0)
 	require.NoError(t, err)
-	assertEqual(t, 0, booking.Index)
-	assertEqual(t, 1.0, booking.PPS)
-	assertEqual(t, 3, booking.VmTypeId)
+	require.Equal(t, 0, booking.Index)
+	require.Equal(t, 1.0, booking.PPS)
+	require.Equal(t, 3, booking.VmTypeId)
 }
 
 func TestBook(t *testing.T) {
@@ -113,7 +114,7 @@ func TestBook(t *testing.T) {
 	testInstances, err := evm.InitializeTestInstances(
 		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
 	)
-	check(t, err)
+	require.NoError(t, err)
 
 	minerContr := testInstances.Contracts[0]
 	userContr := testInstances.Contracts[1]

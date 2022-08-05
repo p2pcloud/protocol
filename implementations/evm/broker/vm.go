@@ -31,7 +31,7 @@ func (b *Broker) GetUsersBookings() ([]protocol.VMBooking, error) {
 	for _, booking := range bookings {
 		result = append(result, protocol.VMBooking{
 			VmTypeId:   int(booking.VmTypeId.Int64()),
-			PPS:        b.amountToCoins(booking.PricePerSecond),
+			PPS:        int(booking.PricePerSecond.Int64()),
 			Miner:      &booking.Miner,
 			Index:      int(booking.Index.Int64()),
 			User:       &booking.User,
@@ -58,7 +58,7 @@ func (b *Broker) GetBooking(index int) (*protocol.VMBooking, error) {
 
 	return &protocol.VMBooking{
 		VmTypeId:   int(booking.VmTypeId.Int64()),
-		PPS:        b.amountToCoins(booking.PricePerSecond),
+		PPS:        int(booking.PricePerSecond.Int64()),
 		Miner:      &booking.Miner,
 		Index:      int(booking.Index.Int64()),
 		User:       &booking.User,
@@ -89,7 +89,7 @@ func (b *Broker) GetMinersBookings() ([]protocol.VMBooking, error) {
 
 		result = append(result, protocol.VMBooking{
 			VmTypeId:   int(booking.VmTypeId.Int64()),
-			PPS:        b.amountToCoins(booking.PricePerSecond),
+			PPS:        int(booking.PricePerSecond.Int64()),
 			Miner:      &booking.Miner,
 			Index:      int(booking.Index.Int64()),
 			User:       &booking.User,
@@ -128,22 +128,22 @@ func (b *Broker) ExtendBooking(index uint64, secs int) error {
 }
 
 func (b *Broker) GetUserBookings() ([]protocol.VMBooking, error) {
-	bb, err := b.session.GetUsersBookings(crypto.PubkeyToAddress(b.GetPrivateKey().PublicKey))
+	userBookings, err := b.session.GetUsersBookings(crypto.PubkeyToAddress(b.GetPrivateKey().PublicKey))
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]protocol.VMBooking, 0, len(bb))
+	result := make([]protocol.VMBooking, 0, len(userBookings))
 
-	for i := range bb {
+	for i := range userBookings {
 		result = append(result, protocol.VMBooking{
-			VmTypeId:   int(bb[i].VmTypeId.Int64()),
-			PPS:        b.amountToCoins(bb[i].PricePerSecond),
-			Miner:      &bb[i].Miner,
-			Index:      int(bb[i].Index.Int64()),
-			User:       &bb[i].User,
-			BookedAt:   int(bb[i].BookedAt.Int64()),
-			BookedTill: int(bb[i].BookedTill.Int64()),
+			VmTypeId:   int(userBookings[i].VmTypeId.Int64()),
+			PPS:        int(userBookings[i].PricePerSecond.Int64()),
+			Miner:      &userBookings[i].Miner,
+			Index:      int(userBookings[i].Index.Int64()),
+			User:       &userBookings[i].User,
+			BookedAt:   int(userBookings[i].BookedAt.Int64()),
+			BookedTill: int(userBookings[i].BookedTill.Int64()),
 		})
 	}
 

@@ -137,17 +137,25 @@ contract Broker {
         return nextVmOfferId - 1;
     }
 
-    function updateOffer(
+    function UpdateOffer(
         uint256 offerIndex,
-        uint256 vmTypeId,
-        uint256 machinesAvailable
+        uint256 machinesAvailable,
+        uint256 pps
     ) public {
         require(
             vmOffers[offerIndex].miner == msg.sender,
             "Only the owner can update an offer"
         );
         vmOffers[offerIndex].machinesAvailable = machinesAvailable;
-        vmOffers[offerIndex].vmTypeId = vmTypeId;
+        vmOffers[offerIndex].pricePerSecond = pps;
+    }
+
+    function RemoveOffer(uint256 offerIndex) public {
+        require(
+            vmOffers[offerIndex].miner == msg.sender,
+            "Only the owner can remove an offer"
+        );
+        delete vmOffers[offerIndex];
     }
 
     function bookVM(uint256 offerIndex, uint256 secs) public returns (uint256) {

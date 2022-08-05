@@ -189,7 +189,7 @@ func TestAbortBooking(t *testing.T) {
 			deposit: 500,
 			offer: protocol.Offer{
 				VmTypeId:      1,
-				PPS:           9.9999991,
+				PPS:           12,
 				Availablility: 1,
 			},
 			secs:                  50,
@@ -205,7 +205,7 @@ func TestAbortBooking(t *testing.T) {
 			deposit: 500,
 			offer: protocol.Offer{
 				VmTypeId:      1,
-				PPS:           9.9999991,
+				PPS:           12,
 				Availablility: 1,
 			},
 			secs:                  50,
@@ -222,7 +222,7 @@ func TestAbortBooking(t *testing.T) {
 			deposit: 500,
 			offer: protocol.Offer{
 				VmTypeId:      1,
-				PPS:           0.000001,
+				PPS:           1,
 				Availablility: 1,
 			},
 			secs:                  50,
@@ -238,7 +238,7 @@ func TestAbortBooking(t *testing.T) {
 			deposit: 500,
 			offer: protocol.Offer{
 				VmTypeId:      1,
-				PPS:           0.000001,
+				PPS:           1,
 				Availablility: 1,
 			},
 			secs:                  50,

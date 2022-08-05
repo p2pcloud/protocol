@@ -20,7 +20,7 @@ func (a AbortType) ToSolidityType() uint8 {
 
 type Offer struct {
 	VmTypeId      int
-	PPS           float64
+	PPS           int
 	Availablility int
 	Miner         common.Address
 	Index         int
@@ -28,7 +28,7 @@ type Offer struct {
 
 type VMBooking struct {
 	VmTypeId   int
-	PPS        float64
+	PPS        int
 	Miner      *common.Address
 	Index      int
 	User       *common.Address
@@ -37,14 +37,20 @@ type VMBooking struct {
 }
 
 type BrokerIface interface {
+	//Initial setup
 	DeployContracts(address common.Address) ([]string, error)
+
+	//Offers
 	AddOffer(offer Offer, callbackUrl string) error
 	GetMyOffers() ([]Offer, error)
 	UpdateOffer(offer Offer) error
+	GetAvailableOffers(vmTypeId int) ([]Offer, error)
+	RemoveOffer(id int) error
+
+	//Non-refactored yet
 	GetPrivateKey() *ecdsa.PrivateKey
 	ContractAddress() common.Address
 	GetBooking(index int) (*VMBooking, error)
-	GetAvailableOffers(vmTypeId int) ([]Offer, error)
 	BookVM(offerIndex, seconds int) error
 	GetUsersBookings() ([]VMBooking, error)
 	GetMyAddress() *common.Address

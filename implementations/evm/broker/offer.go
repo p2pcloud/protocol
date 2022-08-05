@@ -19,7 +19,7 @@ func (b *Broker) AddOffer(offer protocol.Offer, callbackUrl string) error {
 	}
 
 	tx, err := b.session.AddOffer(
-		b.coinsToAmount(offer.PPS),
+		big.NewInt(int64(offer.PPS)),
 		big.NewInt(int64(offer.VmTypeId)),
 		big.NewInt(int64(offer.Availablility)),
 	)
@@ -43,7 +43,7 @@ func (b *Broker) GetMyOffers() ([]protocol.Offer, error) {
 	for _, offer := range offers {
 		result = append(result, protocol.Offer{
 			VmTypeId:      int(offer.VmTypeId.Int64()),
-			PPS:           b.amountToCoins(offer.PricePerSecond),
+			PPS:           int(offer.PricePerSecond.Int64()),
 			Availablility: int(offer.MachinesAvailable.Int64()),
 			Miner:         offer.Miner,
 			Index:         int(offer.Index.Int64()),
@@ -65,7 +65,7 @@ func (b *Broker) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, error) {
 	for _, offer := range offers {
 		result = append(result, protocol.Offer{
 			VmTypeId:      int(offer.VmTypeId.Int64()),
-			PPS:           b.amountToCoins(offer.PricePerSecond),
+			PPS:           int(offer.PricePerSecond.Int64()),
 			Availablility: int(offer.MachinesAvailable.Int64()),
 			Miner:         offer.Miner,
 			Index:         int(offer.Index.Int64()),
@@ -74,10 +74,13 @@ func (b *Broker) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, error) {
 	return result, nil
 }
 
-// func (b *Broker) RemoveOffer(offerId int) error {
-// 	_, err := b.session.RemoveOffer(big.NewInt(int64(offerId)))
-// 	return err
-// }
+func (b *Broker) RemoveOffer(offerId int) error {
+	tx, err := b.session.RemoveOffer(big.NewInt(int64(offerId)))
+	if err != nil {
+		return err
+	}
+	return b.waitForTx(tx.Hash())
+}
 
 func (b *Broker) UpdateOffer(offer protocol.Offer) error {
 	if err := b.setDecimals(); err != nil {
@@ -86,8 +89,8 @@ func (b *Broker) UpdateOffer(offer protocol.Offer) error {
 
 	tx, err := b.session.UpdateOffer(
 		big.NewInt(int64(offer.Index)),
-		big.NewInt(int64(offer.VmTypeId)),
 		big.NewInt(int64(offer.Availablility)),
+		big.NewInt(int64(offer.PPS)),
 	)
 	if err != nil {
 		return err

@@ -37,7 +37,7 @@ There are 3 actors - miner, user and community. User books and pays for VM. Mine
 
 ### Workflow
 1. Miner creates offer setting type and price of VM per second
-    - Functions: `getMinersOffers`, `updateOffer`, `addOffer`
+    - Functions: `GetMinersOffers`, `UpdateOffer`, `AddOffer`, `RemoveOffer`
 1. User sends a stablecoin to the Broker.
     - Functions: `depositCoin`, `checkBalance`, `withdrawCoin`
 1. User/Miner withdraws a stablecoin from the Broker. Vatiable `totalPPS` get's checked to make sure there is enough money for a week of work.
