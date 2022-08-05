@@ -214,7 +214,7 @@ func InitializeTestInstances(
 		return nil, err
 	}
 
-	if err := SetFeeAndStablecoin(p); err != nil {
+	if err := p.DeployerBroker.SetStablecoinAddress(p.DeployerToken.GetContractAddress()); err != nil {
 		return nil, err
 	}
 
@@ -271,6 +271,7 @@ func BuildBroker(p *TestInstances) error {
 	}
 
 	_, err = deployContract.DeployContracts(crypto.PubkeyToAddress(p.CommunityInitialPk.PublicKey))
+
 	if err != nil {
 		return err
 	}
