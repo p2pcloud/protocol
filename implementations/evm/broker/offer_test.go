@@ -1,6 +1,7 @@
 package broker_test
 
 import (
+	"github.com/p2pcloud/protocol/implementations/evm"
 	"testing"
 
 	"github.com/p2pcloud/protocol"
@@ -14,14 +15,21 @@ func check(t *testing.T, err error) {
 }
 
 func TestAddOffer(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
-	defer simChain.Close()
+	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	contract1 := testInstances[0]
-	contract2 := testInstances[1]
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
+	testInstances, err := evm.InitializeTestInstances(
+		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
+	)
+	check(t, err)
+
+	contract1 := testInstances.Contracts[0]
+	contract2 := testInstances.Contracts[1]
 
 	//test add offer
-	err := contract1.AddOffer(protocol.Offer{
+	err = contract1.AddOffer(protocol.Offer{
 		VmTypeId:      3,
 		PPS:           1,
 		Availablility: 1,
@@ -33,8 +41,6 @@ func TestAddOffer(t *testing.T) {
 		Availablility: 1,
 	}, "https://hello.world")
 	require.NoError(t, err)
-
-	simChain.Commit()
 
 	offers, err := contract1.GetMyOffers()
 	require.NoError(t, err)
@@ -62,19 +68,25 @@ func assertEqual(t *testing.T, a, b interface{}) {
 }
 
 func TestUrlUpdate(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
-	defer simChain.Close()
+	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	contract := testInstances[0]
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
+	testInstances, err := evm.InitializeTestInstances(
+		1, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
+	)
+	check(t, err)
+
+	contract := testInstances.Contracts[0]
 
 	//test add offer
-	err := contract.AddOffer(protocol.Offer{
+	err = contract.AddOffer(protocol.Offer{
 		VmTypeId:      3,
 		PPS:           1,
 		Availablility: 1,
 	}, "https://hello.1")
 	require.NoError(t, err)
-	simChain.Commit()
 
 	url, err := contract.GetMinerUrl(contract.GetMyAddress())
 	require.NoError(t, err)
@@ -84,7 +96,6 @@ func TestUrlUpdate(t *testing.T) {
 	//update manually
 	err = contract.SetMinerUrlIfNeeded("https://hello.2")
 	require.NoError(t, err)
-	simChain.Commit()
 
 	url, err = contract.GetMinerUrl(contract.GetMyAddress())
 	require.NoError(t, err)
@@ -128,32 +139,36 @@ func TestUrlUpdate(t *testing.T) {
 // }
 
 func TestUpdateOffer(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
-	defer simChain.Close()
+	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	contract1 := testInstances[0]
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
+	testInstances, err := evm.InitializeTestInstances(
+		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
+	)
+	check(t, err)
+
+	contract1 := testInstances.Contracts[0]
 
 	//test add offer
-	err := contract1.AddOffer(protocol.Offer{
+	err = contract1.AddOffer(protocol.Offer{
 		VmTypeId:      3,
 		PPS:           1,
 		Availablility: 1,
 	}, "http://hello.world")
 	require.NoError(t, err)
-	simChain.Commit()
 
 	offers, err := contract1.GetMyOffers()
 	require.NoError(t, err)
 	require.Len(t, offers, 1)
 
 	offerUpdate := offers[0]
-	offerUpdate.PPS = 77
 	offerUpdate.Availablility = 88
 	offerUpdate.VmTypeId = 99
 
 	err = contract1.UpdateOffer(offerUpdate)
 	require.NoError(t, err)
-	simChain.Commit()
 
 	updatedOffers, err := contract1.GetMyOffers()
 	require.NoError(t, err)
@@ -161,5 +176,4 @@ func TestUpdateOffer(t *testing.T) {
 
 	assertEqual(t, updatedOffers[0].VmTypeId, 99)
 	assertEqual(t, updatedOffers[0].Availablility, 88)
-	assertEqual(t, updatedOffers[0].PPS, 77)
 }

@@ -3,6 +3,7 @@ module github.com/p2pcloud/protocol
 go 1.18
 
 require (
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/ethereum/go-ethereum v1.10.20
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.0

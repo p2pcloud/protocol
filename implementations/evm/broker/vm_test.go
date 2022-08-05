@@ -1,6 +1,7 @@
 package broker_test
 
 import (
+	"github.com/p2pcloud/protocol/implementations/evm"
 	"testing"
 
 	"github.com/p2pcloud/protocol"
@@ -8,20 +9,33 @@ import (
 )
 
 func TestBookingNotFound(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
-	defer simChain.Close()
+	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	minerContr := testInstances[0]
-	userContr := testInstances[1]
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
+	gifts := evm.NewGifts(
+		map[int]float64{1: 1000},
+		map[int]float64{1: 1000},
+	)
+
+	testInstances, err := evm.InitializeTestInstances(
+		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
+	)
+	check(t, err)
+
+	minerContr := testInstances.Contracts[0]
+	userContr := testInstances.Contracts[1]
 
 	//test add offer
-	err := minerContr.AddOffer(protocol.Offer{
+	err = minerContr.AddOffer(protocol.Offer{
 		VmTypeId:      3,
 		PPS:           1,
 		Availablility: 1,
 	}, "https://hello.world")
 	require.NoError(t, err)
-	simChain.Commit()
+
+	require.NoError(t, userContr.DepositCoin(1000))
 
 	offers, err := userContr.GetAvailableOffers(3)
 	require.NoError(t, err)
@@ -32,7 +46,6 @@ func TestBookingNotFound(t *testing.T) {
 	//test book
 	err = userContr.BookVM(offers[0].Index, 1000)
 	require.NoError(t, err)
-	simChain.Commit()
 
 	_, err = userContr.GetBooking(99999)
 	if err == nil {
@@ -41,54 +54,77 @@ func TestBookingNotFound(t *testing.T) {
 }
 
 func TestGetBooking(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
-	defer simChain.Close()
+	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	minerContr := testInstances[0]
-	userContr := testInstances[1]
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
+	gifts := evm.NewGifts(
+		map[int]float64{1: 1000},
+		map[int]float64{1: 1000},
+	)
+
+	testInstances, err := evm.InitializeTestInstances(
+		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
+	)
+	check(t, err)
+
+	minerContr := testInstances.Contracts[0]
+	userContr := testInstances.Contracts[1]
 
 	//test add offer
-	err := minerContr.AddOffer(protocol.Offer{
+	err = minerContr.AddOffer(protocol.Offer{
 		VmTypeId:      3,
 		PPS:           1,
 		Availablility: 1,
 	}, "https://hello.world")
 	require.NoError(t, err)
-	simChain.Commit()
 
 	offers, err := userContr.GetAvailableOffers(3)
 	require.NoError(t, err)
 	if len(offers) != 1 {
 		t.Errorf("Expected 1 offer, got %d", len(offers))
 	}
+
+	require.NoError(t, userContr.DepositCoin(1000))
 
 	//test book
 	err = userContr.BookVM(offers[0].Index, 1000)
 	require.NoError(t, err)
-	simChain.Commit()
 
 	booking, err := userContr.GetBooking(0)
 	require.NoError(t, err)
 	assertEqual(t, 0, booking.Index)
-	assertEqual(t, 1, booking.PPS)
+	assertEqual(t, 1.0, booking.PPS)
 	assertEqual(t, 3, booking.VmTypeId)
 }
 
 func TestBook(t *testing.T) {
-	testInstances, simChain := getTestInstances(t, 2)
-	defer simChain.Close()
+	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	minerContr := testInstances[0]
-	userContr := testInstances[1]
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
+	gifts := evm.NewGifts(
+		map[int]float64{1: 17777},
+		map[int]float64{1: 17777},
+	)
+
+	testInstances, err := evm.InitializeTestInstances(
+		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
+	)
+	check(t, err)
+
+	minerContr := testInstances.Contracts[0]
+	userContr := testInstances.Contracts[1]
 
 	//test add offer
-	err := minerContr.AddOffer(protocol.Offer{
+	err = minerContr.AddOffer(protocol.Offer{
 		VmTypeId:      3,
 		PPS:           1,
 		Availablility: 1,
 	}, "https://hello.world")
 	require.NoError(t, err)
-	simChain.Commit()
 
 	offers, err := userContr.GetAvailableOffers(3)
 	require.NoError(t, err)
@@ -96,10 +132,11 @@ func TestBook(t *testing.T) {
 		t.Errorf("Expected 1 offer, got %d", len(offers))
 	}
 
+	userContr.DepositCoin(17777)
+
 	//test book
 	err = userContr.BookVM(offers[0].Index, 17777)
 	require.NoError(t, err)
-	simChain.Commit()
 
 	bookings, err := userContr.GetUsersBookings()
 	require.NoError(t, err)

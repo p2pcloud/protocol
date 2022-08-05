@@ -5,12 +5,16 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/p2pcloud/protocol/implementations/evm/contracts"
 	"github.com/sirupsen/logrus"
+
+	"github.com/p2pcloud/protocol"
+	"github.com/p2pcloud/protocol/implementations/evm/contracts"
 )
 
 type Broker struct {
@@ -19,9 +23,22 @@ type Broker struct {
 	contractAddress common.Address
 	session         contracts.BrokerSession
 	privateKey      *ecdsa.PrivateKey
+	waitForTx       func(hash common.Hash) error
+	updateCh        chan<- common.Address
+
+	mu                *sync.Mutex
+	decimals          uint8
+	stableCoinAddress *common.Address
 }
 
-func NewBroker(backend bind.ContractBackend, privateKey *ecdsa.PrivateKey, contractAddressStr string, chanId int64) (*Broker, error) {
+func NewBroker(
+	backend bind.ContractBackend,
+	privateKey *ecdsa.PrivateKey,
+	contractAddressStr string,
+	chanId int64,
+	waitForTx func(hash common.Hash) error,
+	updCh chan<- common.Address,
+) (protocol.BrokerIface, error) {
 	if chanId == 0 {
 		return nil, fmt.Errorf("chanId is 0. please set it to a valid value")
 	}
@@ -36,6 +53,9 @@ func NewBroker(backend bind.ContractBackend, privateKey *ecdsa.PrivateKey, contr
 		transactOpts:    transactOpts,
 		contractAddress: common.HexToAddress(contractAddressStr),
 		privateKey:      privateKey,
+		waitForTx:       waitForTx,
+		mu:              &sync.Mutex{},
+		updateCh:        updCh,
 	}
 
 	b.RegenerateSession()
@@ -45,6 +65,10 @@ func NewBroker(backend bind.ContractBackend, privateKey *ecdsa.PrivateKey, contr
 
 func (b *Broker) GetPrivateKey() *ecdsa.PrivateKey {
 	return b.privateKey
+}
+
+func (b *Broker) ContractAddress() common.Address {
+	return b.contractAddress
 }
 
 func (b *Broker) RegenerateSession() error {
@@ -65,20 +89,21 @@ func (b *Broker) RegenerateSession() error {
 	return nil
 }
 
-func (b *Broker) Deploy() (string, error) {
-	address, _, _, err := contracts.DeployBroker(
+func (b *Broker) DeployContracts(community common.Address) ([]string, error) {
+	address, tx, _, err := contracts.DeployBroker(
 		b.transactOpts,
 		b.backend,
+		community,
 	)
 
 	if err != nil {
-		return "", fmt.Errorf("could not deploy broker: %v", err)
+		return nil, fmt.Errorf("could not deploy broker: %v", err)
 	}
 	b.contractAddress = address
 
 	b.RegenerateSession()
 
-	return address.String(), nil
+	return []string{address.String()}, b.waitForTx(tx.Hash())
 }
 
 func (b *Broker) GetMyAddress() *common.Address {
@@ -115,9 +140,204 @@ func (b *Broker) RegisterMtlsHashIfNeeded(mtlsHash string) error {
 
 	copy(bytes20[:], hashBytes)
 
-	_, err = b.session.SetMtlsHash(bytes20)
+	tx, err := b.session.SetMtlsHash(bytes20)
 	if err != nil {
 		return fmt.Errorf("could not register mtls hash: %v", err)
 	}
+
+	return b.waitForTx(tx.Hash())
+}
+
+func (b *Broker) DepositCoin(coins float64) error {
+	if err := b.setDecimals(); err != nil {
+		return err
+	}
+
+	tx, err := b.session.DepositCoin(b.coinsToAmount(coins))
+	if err != nil {
+		return err
+	}
+
+	return b.waitForTx(tx.Hash())
+}
+
+func (b *Broker) WithdrawCoin(coins float64) error {
+	if err := b.setDecimals(); err != nil {
+		return err
+	}
+
+	tx, err := b.session.WithdrawCoin(b.coinsToAmount(coins))
+	if err != nil {
+		return err
+	}
+
+	return b.waitForTx(tx.Hash())
+}
+
+func (b *Broker) Balance() (float64, error) {
+	if err := b.setDecimals(); err != nil {
+		return 0, err
+	}
+
+	amount, err := b.session.UserBalance()
+	if err != nil {
+		return 0, err
+	}
+
+	return b.amountToCoins(amount), nil
+}
+
+func (b *Broker) DepositBalance() (float64, error) {
+	if err := b.setDecimals(); err != nil {
+		return 0, err
+	}
+
+	amount, err := b.session.UserDeposit()
+	if err != nil {
+		return 0, err
+	}
+
+	return b.amountToCoins(amount), nil
+}
+
+func (b *Broker) LockedBalance() (float64, error) {
+	if err := b.setDecimals(); err != nil {
+		return 0, err
+	}
+
+	amount, err := b.session.UserLockedBalance()
+	if err != nil {
+		return 0, err
+	}
+
+	return b.amountToCoins(amount), nil
+}
+
+func (b *Broker) UserTokenBalance() (float64, error) {
+	if err := b.setDecimals(); err != nil {
+		return 0, err
+	}
+
+	amount, err := b.session.UserTokenBalance()
+	if err != nil {
+		return 0, err
+	}
+
+	return b.amountToCoins(amount), nil
+}
+
+func (b *Broker) UserAllowance() (float64, error) {
+	if err := b.setDecimals(); err != nil {
+		return 0, err
+	}
+
+	amount, err := b.session.UserAllowance()
+	if err != nil {
+		return 0, err
+	}
+
+	return b.amountToCoins(amount), nil
+}
+
+func (b *Broker) SetStablecoinAddress(address common.Address) error {
+	tx, err := b.session.SetStablecoinAddress(address)
+	if err != nil {
+		return err
+	}
+
+	if err = b.waitForTx(tx.Hash()); err != nil {
+		return err
+	}
+
+	decimals, err := b.session.GetCoinDecimals()
+	if err != nil {
+		return err
+	}
+
+	select {
+	case b.updateCh <- address:
+	default:
+		logrus.WithField("updated", address.Hex()).Error("failed to send to upd ch")
+	}
+
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	b.stableCoinAddress = nil
+	b.decimals = decimals
+
 	return nil
+}
+
+func (b *Broker) GetStablecoinAddress() (common.Address, error) {
+	if b.stableCoinAddress != nil {
+		return *b.stableCoinAddress, nil
+	}
+
+	addr, err := b.session.GetStablecoinAddress()
+	if err != nil {
+		return [20]byte{}, err
+	}
+
+	b.stableCoinAddress = &addr
+
+	return addr, nil
+}
+
+func (b *Broker) SetCommunityContract(address common.Address) error {
+	tx, err := b.session.SetCommunityContract(address)
+	if err != nil {
+		return err
+	}
+
+	return b.waitForTx(tx.Hash())
+}
+
+func (b *Broker) GetCommunityContract() (common.Address, error) {
+	return b.session.GetCommunityContract()
+}
+
+func (b *Broker) SetCommunityFee(fee int64) error {
+	tx, err := b.session.SetCommunityFee(big.NewInt(fee))
+	if err != nil {
+		return err
+	}
+
+	return b.waitForTx(tx.Hash())
+}
+
+func (b *Broker) GetCommunityFee() (int64, error) {
+	fee, err := b.session.GetCommunityFee()
+	if err != nil {
+		return 0, err
+	}
+
+	return fee.Int64(), nil
+}
+
+func (b *Broker) setDecimals() error {
+	if b.decimals > 0 {
+		return nil
+	}
+
+	decimals, err := b.session.GetCoinDecimals()
+	if err != nil {
+		return err
+	}
+
+	b.decimals = decimals
+
+	return nil
+}
+
+func (b *Broker) amountToCoins(amount *big.Int) float64 {
+	coin := math.Pow(10, float64(b.decimals))
+
+	return float64(amount.Int64()) / coin
+}
+
+func (b *Broker) coinsToAmount(coins float64) *big.Int {
+	coinsInt := int64(coins * math.Pow(10, float64(b.decimals)))
+
+	return big.NewInt(coinsInt)
 }

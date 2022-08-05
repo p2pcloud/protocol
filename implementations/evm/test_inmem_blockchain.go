@@ -4,43 +4,42 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/p2pcloud/protocol"
-	"github.com/p2pcloud/protocol/implementations/evm/broker"
+
 	"github.com/p2pcloud/protocol/pkg/keyring"
 )
 
-const ChainIDSimulated = 1337
+const (
+	ChainIDSimulated = 1337
+	CommunityFee     = 5
+)
 
-func NewSimulatedBackend(backend bind.ContractBackend, contractAddressStr string, privateKey *ecdsa.PrivateKey) (protocol.BlockchainIface, error) {
-	b, err := broker.NewBroker(backend, privateKey, contractAddressStr, ChainIDSimulated)
-	if err != nil {
-		return nil, err
-	}
-
-	b.RegenerateSession()
-
-	return &EVMImplementation{
-		broker: b,
-	}, nil
+type InMemBlockChain struct {
+	Origin *SimulatedBlockchainEnv
 }
 
-func NewSimulatedBlockchain(backend bind.ContractBackend, contractAddressStr string, privateKey *ecdsa.PrivateKey) (protocol.BlockchainIface, error) {
-	b, err := broker.NewBroker(backend, privateKey, contractAddressStr, ChainIDSimulated)
+func (b *InMemBlockChain) GetNextPrivateKey() (*ecdsa.PrivateKey, error) {
+	return b.Origin.GetNextPrivateKey()
+}
+
+func (b *InMemBlockChain) WaitForTx(_ common.Hash) error {
+	b.Origin.Backend.Commit()
+
+	return nil
+}
+
+func NewWrappedSimulatedBlockchainEnv(t *testing.T) *InMemBlockChain {
+	bc, err := NewSimulatedBlockchainEnv()
 	if err != nil {
-		return nil, err
+		t.Fatal(err)
 	}
 
-	b.RegenerateSession()
-
-	return &EVMImplementation{
-		broker: b,
-	}, nil
+	return &InMemBlockChain{Origin: bc}
 }
 
 type SimulatedBlockchainEnv struct {

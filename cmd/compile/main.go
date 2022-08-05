@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/p2pcloud/protocol/implementations/evm"
 	"github.com/sirupsen/logrus"
+
+	"github.com/p2pcloud/protocol/implementations/evm"
 )
 
 func main() {
-	err := evm.CompileContracts()
+	err := evm.CompileContracts(true)
 	if err != nil {
 		panic(err)
 	}
