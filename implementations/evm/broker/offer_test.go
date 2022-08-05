@@ -143,7 +143,7 @@ func TestUpdateOffer(t *testing.T) {
 		VmTypeId:      3,
 		PPS:           12,
 		Availablility: 1,
-	}, "http://hello.world")
+	}, "https://hello.world")
 	require.NoError(t, err)
 
 	offers, err := contract1.GetMyOffers()
