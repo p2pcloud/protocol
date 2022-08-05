@@ -36,7 +36,7 @@ type VMBooking struct {
 	BookedTill int
 }
 
-type BrokerIface interface {
+type P2PCloudProtocolIface interface {
 	//Initial setup
 	DeployContracts(address common.Address) ([]string, error)
 
@@ -77,6 +77,7 @@ type BrokerIface interface {
 }
 
 type TokenIface interface {
+	//Non-refactored yet
 	BalanceOf(address common.Address) (float64, error)
 	Transfer(to common.Address, coins float64) error
 	Approve(to common.Address, coins float64) error

@@ -34,7 +34,7 @@ func TestLength(t *testing.T) {
 			decodedStr, err := Bytes32ToUrl(bytes)
 			require.NoError(t, err)
 			require.Equal(t, url, decodedStr)
-		} else if i >= 32 {
+		} else if i > 32 {
 			require.Error(t, err)
 		}
 	}
@@ -50,22 +50,11 @@ func TestUrlToBytes32Short(t *testing.T) {
 	require.Equal(t, decodedStr, "https://a.com")
 }
 
-func TestHttpHttps(t *testing.T) {
-	bytes, err := UrlToBytes32("https://web.mydomain.com:8080/eb/232323")
+func TestHttp(t *testing.T) {
+	_, err := UrlToBytes32("https://web.mydomain.com:8080/eb/232323")
 	require.NoError(t, err)
-	require.Len(t, bytes, 32)
-
-	decodedStr, err := Bytes32ToUrl(bytes)
-	require.NoError(t, err)
-	require.Equal(t, "https://web.mydomain.com:8080/eb/232323", decodedStr)
-
-	bytes, err = UrlToBytes32("http://not.secure/eb/232323")
-	require.NoError(t, err)
-	require.Len(t, bytes, 32)
-
-	decodedStr, err = Bytes32ToUrl(bytes)
-	require.NoError(t, err)
-	require.Equal(t, "http://not.secure/eb/232323", decodedStr)
+	_, err = UrlToBytes32("http://web.mydomain.com:8080/eb/232323")
+	require.Error(t, err)
 }
 
 func TestNonUrl(t *testing.T) {

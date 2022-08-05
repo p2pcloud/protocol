@@ -37,7 +37,7 @@ func NewBroker(
 	chanId int64,
 	waitForTx func(hash common.Hash) error,
 	updCh chan<- common.Address,
-) (protocol.BrokerIface, error) {
+) (protocol.P2PCloudProtocolIface, error) {
 	if chanId == 0 {
 		return nil, fmt.Errorf("chanId is 0. please set it to a valid value")
 	}

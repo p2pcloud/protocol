@@ -101,11 +101,11 @@ type TestInstances struct {
 	UpdateCh      chan common.Address
 
 	DeployerToken       *token.Token
-	DeployerBroker      protocol.BrokerIface
+	DeployerBroker      protocol.P2PCloudProtocolIface
 	BrokerDeployAddress *common.Address
 	CommunityInitialPk  *ecdsa.PrivateKey
-	CommunityAccount    protocol.BrokerIface
-	Contracts           []protocol.BrokerIface
+	CommunityAccount    protocol.P2PCloudProtocolIface
+	Contracts           []protocol.P2PCloudProtocolIface
 	BcHelper            BlockChainHelper
 	Backend             bind.ContractBackend
 }
@@ -281,7 +281,7 @@ func BuildBroker(p *TestInstances) error {
 }
 
 func BuildUsers(p *TestInstances) error {
-	userContracts := make([]protocol.BrokerIface, 0)
+	userContracts := make([]protocol.P2PCloudProtocolIface, 0)
 	for i := 0; i < p.Count; i++ {
 		pk, err := p.BcHelper.GetNextPrivateKey()
 		if err != nil {

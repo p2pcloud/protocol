@@ -17,11 +17,11 @@ import (
 
 type EVMImplementation struct {
 	backend bind.ContractBackend
-	broker  protocol.BrokerIface
+	broker  protocol.P2PCloudProtocolIface
 	token   protocol.TokenIface
 }
 
-var _ protocol.BrokerIface = (*EVMImplementation)(nil)
+var _ protocol.P2PCloudProtocolIface = (*EVMImplementation)(nil)
 
 func NewEVMImplementation(
 	privateKey string, contractAddress, rpcEndpoint string, chanId int64,
