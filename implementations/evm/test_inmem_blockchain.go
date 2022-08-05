@@ -14,7 +14,10 @@ import (
 	"github.com/p2pcloud/protocol/pkg/keyring"
 )
 
-const ChainIDSimulated = 1337
+const (
+	ChainIDSimulated = 1337
+	CommunityFee     = 5
+)
 
 type InMemBlockChain struct {
 	Origin *SimulatedBlockchainEnv

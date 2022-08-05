@@ -31,6 +31,7 @@ contract Broker {
         address miner;
         address user;
         uint256 pricePerSecond;
+        uint256 bookedAt;
         uint256 bookedTill;
     }
 
@@ -41,6 +42,12 @@ contract Broker {
         uint256 machinesAvailable;
         uint256 vmTypeId;
     }
+
+    event BookingStarted(uint256 index, address indexed miner, address indexed user, uint256 vmTypeId);
+    event BookingReported(uint256 minerPayout, uint256 index, address indexed miner, address indexed user, uint256 timeUsed, uint256 vmTypeId);
+    event BookingStopped(uint256 minerPayout, uint256 index, address indexed miner, address indexed user, uint256 timeUsed, uint256 vmTypeId);
+    event BookingClaimed(uint256 minerPayout, uint256 index, address indexed miner, address indexed user, uint256 timeUsed, uint256 vmTypeId);
+    event BookingExtended(uint256 index, address indexed miner, address indexed user, uint256 vmTypeId);
 
     uint256 public constant version = 1;
 
@@ -57,6 +64,13 @@ contract Broker {
     mapping(address => uint256) locked;
 
     IERC20 token;
+
+    address community;
+    uint256 communityFee;
+
+    constructor(address communityAddress) {
+        community = communityAddress;
+    }
 
     function SetMtlsHash(bytes20 _signature) public {
         mtlsHashes[msg.sender] = _signature;
@@ -96,7 +110,6 @@ contract Broker {
 
     function updateOffer(
         uint256 offerIndex,
-        uint256 pricePerSecond,
         uint256 vmTypeId,
         uint256 machinesAvailable
     ) public {
@@ -104,26 +117,35 @@ contract Broker {
             vmOffers[offerIndex].miner == msg.sender,
             "Only the owner can update an offer"
         );
-        vmOffers[offerIndex].pricePerSecond = pricePerSecond;
         vmOffers[offerIndex].machinesAvailable = machinesAvailable;
         vmOffers[offerIndex].vmTypeId = vmTypeId;
     }
 
     function bookVM(uint256 offerIndex, uint256 secs) public returns (uint256) {
         require(
-            vmOffers[offerIndex].machinesAvailable > 0,
-            "No machines available"
+            vmOffers[offerIndex].machinesAvailable > 0 &&
+            secs > 0 &&
+            userBalance() >= vmOffers[offerIndex].pricePerSecond * secs,
+            "No machines available OR secs should be positive OR user does not have required amount to book machine"
         );
+        require(vmOffers[offerIndex].miner != address(0), "offer with that index does not exist");
+
+        locked[msg.sender] += vmOffers[offerIndex].pricePerSecond * secs;
+
         Booking memory booking = Booking(
             nextBookingId,
             vmOffers[offerIndex].vmTypeId,
             vmOffers[offerIndex].miner,
             msg.sender,
             vmOffers[offerIndex].pricePerSecond,
+            block.timestamp,
             block.timestamp + secs
         );
         bookings[nextBookingId] = booking;
         nextBookingId++;
+
+        emit BookingStarted(booking.index, booking.miner, booking.user, booking.vmTypeId);
+
         return nextBookingId - 1;
     }
 
@@ -175,6 +197,98 @@ contract Broker {
         booking = bookings[index];
     }
 
+    function extendBooking(uint64 index, uint256 secs) public {
+        Booking memory booking = bookings[index];
+        uint256 currentTime = GetTime();
+
+        require(msg.sender == booking.user, "only owner of booking can extend");
+        require(currentTime < booking.bookedTill, "booking is expired");
+        require(userBalance() >= booking.pricePerSecond * secs, "insufficient funds to extend booking");
+
+        locked[msg.sender] += booking.pricePerSecond * secs;
+
+        booking.bookedTill += secs;
+        bookings[index] = booking;
+
+        emit BookingExtended(booking.index, booking.miner, booking.user, booking.vmTypeId);
+    }
+
+    function abortBooking(uint64 index, uint8 abortType) public {
+        Booking memory booking = bookings[index];
+        uint256 currentTime = GetTime();
+
+        require(msg.sender == booking.user, "only owner of booking can report");
+        require(abortType == 1 || abortType == 2, "report or stop booking is required");
+        require(
+            currentTime < booking.bookedTill,
+            "booking is expired, miner should claim expired booking"
+        );
+
+        uint256 minersPercentage = 0;
+        uint256 communityPercentage = 0;
+
+        if (abortType == 1) {
+            minersPercentage = 50;
+            communityPercentage = 50;
+        } else {
+            minersPercentage = 100 - communityFee;
+            communityPercentage = communityFee;
+        }
+
+        uint256 toPay = booking.pricePerSecond * (currentTime - booking.bookedAt);
+
+        uint256 minerPayout = (toPay * minersPercentage) / 100;
+        uint256 communityPayout = toPay - minerPayout;
+
+        deposits[msg.sender] -= toPay;
+        locked[msg.sender] -= booking.pricePerSecond * (booking.bookedTill - booking.bookedAt);
+
+        delete bookings[booking.index];
+
+        if (abortType == 1) {
+            emit BookingReported(minerPayout, booking.index, booking.miner, booking.user, currentTime - booking.bookedAt, booking.vmTypeId);
+        } else {
+            emit BookingStopped(minerPayout, booking.index, booking.miner, booking.user, currentTime - booking.bookedAt, booking.vmTypeId);
+        }
+
+        if (!token.transfer(booking.miner, minerPayout)) {
+            revert("could not payout for miner");
+        }
+
+        if (!token.transfer(community, communityPayout)) {
+            revert("could not payout for community");
+        }
+    }
+
+    function claimExpired(uint64 index) public {
+        Booking memory booking = bookings[index];
+        uint256 currentTime = GetTime();
+
+        require(msg.sender == booking.miner, "only miner of booking can claim");
+        require(currentTime >= booking.bookedTill, "booking is still in use");
+
+        uint256 toPay = booking.pricePerSecond * (booking.bookedTill - booking.bookedAt);
+
+        uint256 minerPayout = (toPay * (100 - communityFee)) / 100;
+        uint256 communityPayout = toPay - minerPayout;
+
+        deposits[booking.user] -= toPay;
+        locked[booking.user] -= toPay;
+
+        delete bookings[booking.index];
+
+        emit BookingClaimed(minerPayout, booking.index, booking.miner, booking.user, booking.bookedTill - booking.bookedAt, booking.vmTypeId);
+
+        if (!token.transfer(booking.miner, minerPayout)) {
+            revert("could not payout for miner");
+        }
+
+        if (!token.transfer(community, communityPayout)) {
+            revert("could not payout for community");
+        }
+    }
+
+
     function getAvailableOffers(uint256 _vmTypeId)
         public
         view
@@ -195,6 +309,26 @@ contract Broker {
         filteredOffers = new VMOffer[](count);
         for (uint256 i = 0; i < count; i++) {
             filteredOffers[i] = offersTemp[i];
+        }
+    }
+
+    function getUsersBookings(address user)
+    public
+    view
+    returns (Booking[] memory filteredBookings)
+    {
+        Booking[] memory bookingsTemp = new Booking[](nextBookingId);
+        uint256 count;
+        for (uint256 i = 0; i < nextBookingId; i++) {
+            if (bookings[i].user == user) {
+                bookingsTemp[count] = bookings[i];
+                count += 1;
+            }
+        }
+
+        filteredBookings = new Booking[](count);
+        for (uint256 i = 0; i < count; i++) {
+            filteredBookings[i] = bookingsTemp[i];
         }
     }
 
@@ -219,6 +353,11 @@ contract Broker {
     }
 
     function setStablecoinAddress(IERC20 t) public returns (bool) {
+        require(
+            msg.sender == community,
+            "only community contract can set stablecoin"
+        );
+
         token = t;
 
         return false;
@@ -259,11 +398,48 @@ contract Broker {
         return deposits[msg.sender] - locked[msg.sender];
     }
 
+    function userDeposit() public view returns (uint256) {
+        return deposits[msg.sender];
+    }
+
+    function userLockedBalance() public view returns (uint256) {
+        return locked[msg.sender];
+    }
+
     function userTokenBalance() public view returns (uint256) {
         return token.balanceOf(msg.sender);
     }
 
     function userAllowance() public view returns (uint256) {
         return token.allowance(msg.sender, address(this));
+    }
+
+    function setCommunityContract(address newCommunityAddress) public returns (bool) {
+        require(
+            msg.sender == community,
+            "only community contract can set new community contract"
+        );
+
+        community = newCommunityAddress;
+        return false;
+    }
+
+    function getCommunityContract() public view returns (address) {
+        return community;
+    }
+
+    function setCommunityFee(uint256 fee) public returns (bool) {
+        require(
+            fee > 0 && fee < 101 &&
+            msg.sender == community,
+            "community fee should be in range of 1 to 100"
+        );
+
+        communityFee = fee;
+        return false;
+    }
+
+    function getCommunityFee() public view returns (uint256) {
+        return communityFee;
     }
 }

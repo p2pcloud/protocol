@@ -1,6 +1,7 @@
 package broker_test
 
 import (
+	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
 
@@ -10,8 +11,11 @@ import (
 func TestGetMtlsHash(t *testing.T) {
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain,
+		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 

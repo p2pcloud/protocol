@@ -17,8 +17,11 @@ func check(t *testing.T, err error) {
 func TestAddOffer(t *testing.T) {
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain,
+		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 
@@ -67,8 +70,11 @@ func assertEqual(t *testing.T, a, b interface{}) {
 func TestUrlUpdate(t *testing.T) {
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	testInstances, err := evm.InitializeTestInstances(
-		1, 6, nil, blockchain.Origin.Backend, blockchain,
+		1, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 
@@ -135,8 +141,11 @@ func TestUrlUpdate(t *testing.T) {
 func TestUpdateOffer(t *testing.T) {
 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
+	communityPk, err := blockchain.GetNextPrivateKey()
+	require.NoError(t, err)
+
 	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain,
+		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
 	)
 	check(t, err)
 
@@ -155,7 +164,6 @@ func TestUpdateOffer(t *testing.T) {
 	require.Len(t, offers, 1)
 
 	offerUpdate := offers[0]
-	offerUpdate.PPS = 77
 	offerUpdate.Availablility = 88
 	offerUpdate.VmTypeId = 99
 
@@ -168,5 +176,4 @@ func TestUpdateOffer(t *testing.T) {
 
 	assertEqual(t, updatedOffers[0].VmTypeId, 99)
 	assertEqual(t, updatedOffers[0].Availablility, 88)
-	assertEqual(t, updatedOffers[0].PPS, 77)
 }

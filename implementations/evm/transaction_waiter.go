@@ -48,7 +48,7 @@ func (t *TransactionWaiter) WaitForTx(hash common.Hash) error {
 	}
 
 	// polling
-	ticker := time.NewTicker(time.Second * 1)
+	ticker := time.NewTicker(time.Millisecond * 10)
 	defer ticker.Stop()
 
 	for {

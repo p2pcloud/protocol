@@ -40,6 +40,16 @@ func NewGanacheBCHelper(count int, web3client *ethclient.Client) (*GanacheBCHelp
 		"46ada3ce889c3478d808bf47529b83da749a078f15794042fdc800af36f3340d",
 		"bf11a242a33fb33fba0a54b8ecb032a2a5d43112c78be500433f4f28e75927eb",
 		"f56760887faffc45797bb5d6563bcd4032254c44524fca8191fe6009c9cef5cd",
+		"0f9e2f3a4afd287342731d483db789fb50aca9ea8aca7f763d5b640cb315acf7",
+		"bea74505d50c0caee8ca4b44a157cc78538e512755b2146ae1f79fa1c730b87d",
+		"6c01d43b67c7cde066dec41c58128baeab5fefcfe1c96103a31e54b7b19d2974",
+		"a4081e80d738502c98ae491d2f334a61bdef105e9a11e2da851c5bda06f71ce3",
+		"7a4a8ac13ac681cc2886ac0c2f3c18b4b723de9c12f58907d178775d8b4a6b8d",
+		"130fdc39b5a044cf802e71c9cbac8a7bb937029da7b261ba7c94ebfba018587d",
+		"b399f2a03189b9a16406ede65a38178bda58ceb81a3dcbebd91c419e018217fc",
+		"c22e32d55a217ac6a3e52bde9e0ab83020dd6e68850f7a7e5df4d39bff2efbd6",
+		"c75b72fec5ed55ff556dd6a95f1c64a03885ca6008eb52e1504f963423ca0fb4",
+		"11a42ca61ca17d0b708e4cd2165ded2f84d8a8e866969adfe4b9f7644569c690",
 	}
 
 	pksToString := make(map[*ecdsa.PrivateKey]string, len(pks))
@@ -93,6 +103,7 @@ type TestInstances struct {
 	DeployerToken       *token.Token
 	DeployerBroker      protocol.BrokerIface
 	BrokerDeployAddress *common.Address
+	CommunityInitialPk  *ecdsa.PrivateKey
 	CommunityAccount    protocol.BrokerIface
 	Contracts           []protocol.BrokerIface
 	BcHelper            BlockChainHelper
@@ -183,14 +194,16 @@ func (g *Gifts) InitialUserTokens(p *TestInstances) error {
 func InitializeTestInstances(
 	count int, decimals uint8, g *Gifts,
 	backend bind.ContractBackend, bcHelper BlockChainHelper,
+	communityPk *ecdsa.PrivateKey,
 ) (*TestInstances, error) {
 	p := &TestInstances{
-		Count:         count,
-		Decimals:      decimals,
-		InitialSupply: g.requiredSupply() + 10,
-		Backend:       backend,
-		BcHelper:      bcHelper,
-		UpdateCh:      make(chan common.Address, count),
+		Count:              count,
+		Decimals:           decimals,
+		InitialSupply:      g.requiredSupply() + 10,
+		Backend:            backend,
+		BcHelper:           bcHelper,
+		CommunityInitialPk: communityPk,
+		UpdateCh:           make(chan common.Address, count),
 	}
 
 	if err := BuildToken(p); err != nil {
@@ -257,7 +270,8 @@ func BuildBroker(p *TestInstances) error {
 		return err
 	}
 
-	_, err = deployContract.DeployContracts()
+	_, err = deployContract.DeployContracts(crypto.PubkeyToAddress(p.CommunityInitialPk.PublicKey))
+
 	if err != nil {
 		return err
 	}
@@ -287,6 +301,32 @@ func BuildUsers(p *TestInstances) error {
 	}
 
 	p.Contracts = userContracts
+
+	return nil
+}
+
+func SetFeeAndStablecoin(p *TestInstances) error {
+	communityContract, err := broker.NewBroker(
+		p.Backend, p.CommunityInitialPk, p.DeployerBroker.ContractAddress().Hex(),
+		ChainIDSimulated, p.BcHelper.WaitForTx, make(chan common.Address, 1),
+	)
+	if err != nil {
+		return err
+	}
+
+	if err = communityContract.(*broker.Broker).RegenerateSession(); err != nil {
+		return err
+	}
+
+	if err = communityContract.SetCommunityFee(CommunityFee); err != nil {
+		return err
+	}
+
+	if err = communityContract.SetStablecoinAddress(p.DeployerToken.GetContractAddress()); err != nil {
+		return err
+	}
+
+	p.CommunityAccount = communityContract
 
 	return nil
 }

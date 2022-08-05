@@ -75,8 +75,8 @@ func NewEVMImplementation(
 
 }
 
-func (a *EVMImplementation) DeployContracts() ([]string, error) {
-	addresses, err := a.broker.DeployContracts()
+func (a *EVMImplementation) DeployContracts(community common.Address) ([]string, error) {
+	addresses, err := a.broker.DeployContracts(community)
 	return addresses, err
 }
 
@@ -174,4 +174,40 @@ func (a *EVMImplementation) SetStablecoinAddress(address common.Address) error {
 
 func (a *EVMImplementation) GetStablecoinAddress() (common.Address, error) {
 	return a.broker.GetStablecoinAddress()
+}
+
+func (a *EVMImplementation) SetCommunityContract(address common.Address) error {
+	return a.broker.SetCommunityContract(address)
+}
+
+func (a *EVMImplementation) GetCommunityContract() (common.Address, error) {
+	return a.broker.GetCommunityContract()
+}
+
+func (a *EVMImplementation) SetCommunityFee(fee int64) error {
+	return a.broker.SetCommunityFee(fee)
+}
+
+func (a *EVMImplementation) GetCommunityFee() (int64, error) {
+	return a.broker.GetCommunityFee()
+}
+
+func (a *EVMImplementation) AbortBooking(index uint64, abortType protocol.AbortType) error {
+	return a.broker.AbortBooking(index, abortType)
+}
+
+func (a *EVMImplementation) ClaimExpired(index uint64) error {
+	return a.broker.ClaimExpired(index)
+}
+
+func (a *EVMImplementation) ExtendBooking(index uint64, secs int) error {
+	return a.broker.ExtendBooking(index, secs)
+}
+
+func (a *EVMImplementation) DepositBalance() (float64, error) {
+	return a.broker.DepositBalance()
+}
+
+func (a *EVMImplementation) LockedBalance() (float64, error) {
+	return a.broker.LockedBalance()
 }

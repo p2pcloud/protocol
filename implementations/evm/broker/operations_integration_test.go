@@ -69,10 +69,14 @@ func TestDepositCoinIntegration(t *testing.T) {
 			blockchain, err := evm.NewGanacheBCHelper(1, web3Client)
 			require.NoError(t, err)
 
+			communityPk, err := blockchain.GetNextPrivateKey()
+			require.NoError(t, err)
+
 			userIdx := 0
 			ti, err := evm.InitializeTestInstances(
 				1, 6, evm.NewGifts(map[int]float64{0: 1.5}, nil),
 				web3Client, blockchain,
+				communityPk,
 			)
 			require.NoError(t, err)
 
@@ -242,9 +246,12 @@ func TestWithdrawCoinIntegration(t *testing.T) {
 			blockchain, err := evm.NewGanacheBCHelper(1, web3Client)
 			require.NoError(t, err)
 
+			communityPk, err := blockchain.GetNextPrivateKey()
+			require.NoError(t, err)
+
 			ti, err := evm.InitializeTestInstances(
 				1, 6, evm.NewGifts(map[int]float64{0: 1.5}, nil),
-				web3Client, blockchain,
+				web3Client, blockchain, communityPk,
 			)
 			require.NoError(t, err)
 
@@ -284,8 +291,6 @@ func TestWithdrawCoinIntegration(t *testing.T) {
 }
 
 func TestGetStablecoinAddressIntegration(t *testing.T) {
-	communityIdx := 0
-
 	rpcEndpoint := os.Getenv("GANACHE_RPC_ENDPOINT")
 	if rpcEndpoint == "" {
 		t.Skip()
@@ -297,13 +302,14 @@ func TestGetStablecoinAddressIntegration(t *testing.T) {
 	blockchain, err := evm.NewGanacheBCHelper(1, web3Client)
 	require.NoError(t, err)
 
-	ti, err := evm.InitializeTestInstances(
-		1, 6, nil,
-		web3Client, blockchain,
-	)
+	communityPk, err := blockchain.GetNextPrivateKey()
 	require.NoError(t, err)
 
-	comm := ti.Contracts[communityIdx]
+	ti, err := evm.InitializeTestInstances(
+		1, 6, nil,
+		web3Client, blockchain, communityPk,
+	)
+	require.NoError(t, err)
 
 	newTokenPk, err := blockchain.GetNextPrivateKey()
 	require.NoError(t, err)
@@ -319,9 +325,9 @@ func TestGetStablecoinAddressIntegration(t *testing.T) {
 	newTokenAddr, err := tkn.(*token.Token).DeployContract(0)
 	require.NoError(t, err)
 
-	require.NoError(t, comm.SetStablecoinAddress(*newTokenAddr))
+	require.NoError(t, ti.CommunityAccount.SetStablecoinAddress(*newTokenAddr))
 
-	got, err := comm.GetStablecoinAddress()
+	got, err := ti.CommunityAccount.GetStablecoinAddress()
 	require.NoError(t, err)
 	require.Equal(t, *newTokenAddr, got)
 }

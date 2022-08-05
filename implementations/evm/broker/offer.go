@@ -14,8 +14,12 @@ func (b *Broker) AddOffer(offer protocol.Offer, callbackUrl string) error {
 		return err
 	}
 
+	if err = b.setDecimals(); err != nil {
+		return err
+	}
+
 	tx, err := b.session.AddOffer(
-		big.NewInt(int64(offer.PPS)),
+		b.coinsToAmount(offer.PPS),
 		big.NewInt(int64(offer.VmTypeId)),
 		big.NewInt(int64(offer.Availablility)),
 	)
@@ -27,6 +31,10 @@ func (b *Broker) AddOffer(offer protocol.Offer, callbackUrl string) error {
 }
 
 func (b *Broker) GetMyOffers() ([]protocol.Offer, error) {
+	if err := b.setDecimals(); err != nil {
+		return nil, err
+	}
+
 	offers, err := b.session.GetMinersOffers(b.transactOpts.From)
 	if err != nil {
 		return nil, err
@@ -35,7 +43,7 @@ func (b *Broker) GetMyOffers() ([]protocol.Offer, error) {
 	for _, offer := range offers {
 		result = append(result, protocol.Offer{
 			VmTypeId:      int(offer.VmTypeId.Int64()),
-			PPS:           int(offer.PricePerSecond.Int64()),
+			PPS:           b.amountToCoins(offer.PricePerSecond),
 			Availablility: int(offer.MachinesAvailable.Int64()),
 			Miner:         offer.Miner,
 			Index:         int(offer.Index.Int64()),
@@ -45,6 +53,10 @@ func (b *Broker) GetMyOffers() ([]protocol.Offer, error) {
 }
 
 func (b *Broker) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, error) {
+	if err := b.setDecimals(); err != nil {
+		return nil, err
+	}
+
 	offers, err := b.session.GetAvailableOffers(big.NewInt(int64(vmTypeId)))
 	if err != nil {
 		return nil, err
@@ -53,7 +65,7 @@ func (b *Broker) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, error) {
 	for _, offer := range offers {
 		result = append(result, protocol.Offer{
 			VmTypeId:      int(offer.VmTypeId.Int64()),
-			PPS:           int(offer.PricePerSecond.Int64()),
+			PPS:           b.amountToCoins(offer.PricePerSecond),
 			Availablility: int(offer.MachinesAvailable.Int64()),
 			Miner:         offer.Miner,
 			Index:         int(offer.Index.Int64()),
@@ -68,9 +80,12 @@ func (b *Broker) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, error) {
 // }
 
 func (b *Broker) UpdateOffer(offer protocol.Offer) error {
+	if err := b.setDecimals(); err != nil {
+		return err
+	}
+
 	tx, err := b.session.UpdateOffer(
 		big.NewInt(int64(offer.Index)),
-		big.NewInt(int64(offer.PPS)),
 		big.NewInt(int64(offer.VmTypeId)),
 		big.NewInt(int64(offer.Availablility)),
 	)
