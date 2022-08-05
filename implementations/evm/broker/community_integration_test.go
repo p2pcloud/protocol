@@ -1,126 +1,114 @@
 package broker_test
 
-import (
-	"os"
-	"testing"
+// func TestSetCommunityContract(t *testing.T) {
+// 	rpcEndpoint := os.Getenv("GANACHE_RPC_ENDPOINT")
+// 	if rpcEndpoint == "" {
+// 		t.Skip()
+// 	}
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/p2pcloud/protocol/implementations/evm"
+// 	web3Client, err := ethclient.Dial(rpcEndpoint)
+// 	require.NoError(t, err)
 
-	"github.com/stretchr/testify/require"
-)
+// 	bcHelper, err := evm.NewGanacheBCHelper(1, web3Client)
+// 	require.NoError(t, err)
 
-func TestSetCommunityContract(t *testing.T) {
-	rpcEndpoint := os.Getenv("GANACHE_RPC_ENDPOINT")
-	if rpcEndpoint == "" {
-		t.Skip()
-	}
+// 	initialPk, err := bcHelper.GetNextPrivateKey()
+// 	require.NoError(t, err)
 
-	web3Client, err := ethclient.Dial(rpcEndpoint)
-	require.NoError(t, err)
+// 	p := &evm.TestInstances{
+// 		Count:              1,
+// 		Decimals:           6,
+// 		Backend:            web3Client,
+// 		BcHelper:           bcHelper,
+// 		UpdateCh:           make(chan common.Address, 1),
+// 		CommunityInitialPk: initialPk,
+// 	}
+// 	require.NoError(t, evm.BuildToken(p))
+// 	require.NoError(t, evm.BuildBroker(p))
+// 	require.NoError(t, evm.SetFeeAndStablecoin(p))
 
-	bcHelper, err := evm.NewGanacheBCHelper(1, web3Client)
-	require.NoError(t, err)
+// 	newCommunityPk, err := bcHelper.GetNextPrivateKey()
+// 	require.NoError(t, err)
 
-	initialPk, err := bcHelper.GetNextPrivateKey()
-	require.NoError(t, err)
+// 	community, err := evm.NewEVMImplementation(
+// 		bcHelper.GetPrivateKeyString(initialPk),
+// 		p.DeployerBroker.ContractAddress().Hex(),
+// 		rpcEndpoint,
+// 		evm.ChainIDSimulated,
+// 	)
+// 	require.NoError(t, err)
 
-	p := &evm.TestInstances{
-		Count:              1,
-		Decimals:           6,
-		Backend:            web3Client,
-		BcHelper:           bcHelper,
-		UpdateCh:           make(chan common.Address, 1),
-		CommunityInitialPk: initialPk,
-	}
-	require.NoError(t, evm.BuildToken(p))
-	require.NoError(t, evm.BuildBroker(p))
-	require.NoError(t, evm.SetFeeAndStablecoin(p))
+// 	require.NoError(t, community.SetCommunityContract(crypto.PubkeyToAddress(newCommunityPk.PublicKey)))
 
-	newCommunityPk, err := bcHelper.GetNextPrivateKey()
-	require.NoError(t, err)
+// 	wrongPk, err := bcHelper.GetNextPrivateKey()
+// 	require.NoError(t, err)
 
-	community, err := evm.NewEVMImplementation(
-		bcHelper.GetPrivateKeyString(initialPk),
-		p.DeployerBroker.ContractAddress().Hex(),
-		rpcEndpoint,
-		evm.ChainIDSimulated,
-	)
-	require.NoError(t, err)
+// 	wrongContract, err := evm.NewEVMImplementation(
+// 		bcHelper.GetPrivateKeyString(wrongPk),
+// 		p.DeployerBroker.ContractAddress().Hex(),
+// 		rpcEndpoint,
+// 		evm.ChainIDSimulated,
+// 	)
+// 	require.NoError(t, err)
 
-	require.NoError(t, community.SetCommunityContract(crypto.PubkeyToAddress(newCommunityPk.PublicKey)))
+// 	require.Error(t, wrongContract.SetCommunityContract(crypto.PubkeyToAddress(wrongPk.PublicKey)))
 
-	wrongPk, err := bcHelper.GetNextPrivateKey()
-	require.NoError(t, err)
+// 	got, err := community.GetCommunityContract()
+// 	require.NoError(t, err)
+// 	require.Equal(t, crypto.PubkeyToAddress(newCommunityPk.PublicKey), got)
+// }
 
-	wrongContract, err := evm.NewEVMImplementation(
-		bcHelper.GetPrivateKeyString(wrongPk),
-		p.DeployerBroker.ContractAddress().Hex(),
-		rpcEndpoint,
-		evm.ChainIDSimulated,
-	)
-	require.NoError(t, err)
+// func TestSetCommunityFee(t *testing.T) {
+// 	rpcEndpoint := os.Getenv("GANACHE_RPC_ENDPOINT")
+// 	if rpcEndpoint == "" {
+// 		t.Skip()
+// 	}
 
-	require.Error(t, wrongContract.SetCommunityContract(crypto.PubkeyToAddress(wrongPk.PublicKey)))
+// 	web3Client, err := ethclient.Dial(rpcEndpoint)
+// 	require.NoError(t, err)
 
-	got, err := community.GetCommunityContract()
-	require.NoError(t, err)
-	require.Equal(t, crypto.PubkeyToAddress(newCommunityPk.PublicKey), got)
-}
+// 	bcHelper, err := evm.NewGanacheBCHelper(1, web3Client)
+// 	require.NoError(t, err)
 
-func TestSetCommunityFee(t *testing.T) {
-	rpcEndpoint := os.Getenv("GANACHE_RPC_ENDPOINT")
-	if rpcEndpoint == "" {
-		t.Skip()
-	}
+// 	initialPk, err := bcHelper.GetNextPrivateKey()
+// 	require.NoError(t, err)
 
-	web3Client, err := ethclient.Dial(rpcEndpoint)
-	require.NoError(t, err)
+// 	p := &evm.TestInstances{
+// 		Count:              1,
+// 		Decimals:           6,
+// 		Backend:            web3Client,
+// 		BcHelper:           bcHelper,
+// 		UpdateCh:           make(chan common.Address, 1),
+// 		CommunityInitialPk: initialPk,
+// 	}
+// 	require.NoError(t, evm.BuildToken(p))
+// 	require.NoError(t, evm.BuildBroker(p))
+// 	require.NoError(t, evm.SetFeeAndStablecoin(p))
 
-	bcHelper, err := evm.NewGanacheBCHelper(1, web3Client)
-	require.NoError(t, err)
+// 	community, err := evm.NewEVMImplementation(
+// 		bcHelper.GetPrivateKeyString(initialPk),
+// 		p.DeployerBroker.ContractAddress().Hex(),
+// 		rpcEndpoint,
+// 		evm.ChainIDSimulated,
+// 	)
+// 	require.NoError(t, err)
 
-	initialPk, err := bcHelper.GetNextPrivateKey()
-	require.NoError(t, err)
+// 	require.NoError(t, community.SetCommunityFee(90))
 
-	p := &evm.TestInstances{
-		Count:              1,
-		Decimals:           6,
-		Backend:            web3Client,
-		BcHelper:           bcHelper,
-		UpdateCh:           make(chan common.Address, 1),
-		CommunityInitialPk: initialPk,
-	}
-	require.NoError(t, evm.BuildToken(p))
-	require.NoError(t, evm.BuildBroker(p))
-	require.NoError(t, evm.SetFeeAndStablecoin(p))
+// 	wrongPk, err := bcHelper.GetNextPrivateKey()
+// 	require.NoError(t, err)
 
-	community, err := evm.NewEVMImplementation(
-		bcHelper.GetPrivateKeyString(initialPk),
-		p.DeployerBroker.ContractAddress().Hex(),
-		rpcEndpoint,
-		evm.ChainIDSimulated,
-	)
-	require.NoError(t, err)
+// 	wrongContract, err := evm.NewEVMImplementation(
+// 		bcHelper.GetPrivateKeyString(wrongPk),
+// 		p.DeployerBroker.ContractAddress().Hex(),
+// 		rpcEndpoint,
+// 		evm.ChainIDSimulated,
+// 	)
+// 	require.NoError(t, err)
 
-	require.NoError(t, community.SetCommunityFee(90))
+// 	require.Error(t, wrongContract.SetCommunityFee(30))
 
-	wrongPk, err := bcHelper.GetNextPrivateKey()
-	require.NoError(t, err)
-
-	wrongContract, err := evm.NewEVMImplementation(
-		bcHelper.GetPrivateKeyString(wrongPk),
-		p.DeployerBroker.ContractAddress().Hex(),
-		rpcEndpoint,
-		evm.ChainIDSimulated,
-	)
-	require.NoError(t, err)
-
-	require.Error(t, wrongContract.SetCommunityFee(30))
-
-	fee, err := community.GetCommunityFee()
-	require.NoError(t, err)
-	require.Equal(t, int64(90), fee)
-}
+// 	fee, err := community.GetCommunityFee()
+// 	require.NoError(t, err)
+// 	require.Equal(t, int64(90), fee)
+// }

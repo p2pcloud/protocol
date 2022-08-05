@@ -27,19 +27,16 @@ type Offer struct {
 }
 
 type VMBooking struct {
-	VmTypeId   int
-	PPS        int
-	Miner      *common.Address
-	Index      int
-	User       *common.Address
-	BookedAt   int
-	BookedTill int
+	VmTypeId    int
+	PPS         int
+	Miner       *common.Address
+	Index       int
+	User        *common.Address
+	BookedAt    int
+	LastPayment int
 }
 
 type P2PCloudProtocolIface interface {
-	//Initial setup
-	DeployContracts(address common.Address) ([]string, error)
-
 	//Offers
 	AddOffer(offer Offer, callbackUrl string) error
 	GetMyOffers() ([]Offer, error)
@@ -47,41 +44,33 @@ type P2PCloudProtocolIface interface {
 	GetAvailableOffers(vmTypeId int) ([]Offer, error)
 	RemoveOffer(id int) error
 
+	//WIP
+	// DepositCoin(coins float64) error
+	// WithdrawCoin() error
+	BookVM(offerIndex int) error
+	// Balance() (float64, error)
+	// DepositBalance() (float64, error)
+	// LockedBalance() (float64, error)
+	// SetStablecoinAddress(address common.Address) error
+	// GetStablecoinAddress() (common.Address, error)
+	// UserAllowance() (float64, error)
+	// UserTokenBalance() (float64, error)
+
 	//Non-refactored yet
 	GetPrivateKey() *ecdsa.PrivateKey
 	ContractAddress() common.Address
 	GetBooking(index int) (*VMBooking, error)
-	BookVM(offerIndex, seconds int) error
 	GetUsersBookings() ([]VMBooking, error)
 	GetMyAddress() *common.Address
 	GetMinerUrl(address *common.Address) (string, error)
 	SetMinerUrlIfNeeded(newUrl string) error
 	GetTime() (int, error)
 	GetMinersBookings() ([]VMBooking, error)
-	DepositCoin(coins float64) error
-	WithdrawCoin(coins float64) error
-	Balance() (float64, error)
-	DepositBalance() (float64, error)
-	LockedBalance() (float64, error)
-	UserTokenBalance() (float64, error)
-	UserAllowance() (float64, error)
-	SetStablecoinAddress(address common.Address) error
-	GetStablecoinAddress() (common.Address, error)
 	SetCommunityContract(address common.Address) error
 	GetCommunityContract() (common.Address, error)
 	SetCommunityFee(fee int64) error
 	GetCommunityFee() (int64, error)
-	AbortBooking(index uint64, abortType AbortType) error
-	ClaimExpired(index uint64) error
-	ExtendBooking(index uint64, secs int) error
-}
-
-type TokenIface interface {
-	//Non-refactored yet
-	BalanceOf(address common.Address) (float64, error)
-	Transfer(to common.Address, coins float64) error
-	Approve(to common.Address, coins float64) error
-	Allowance(from, address common.Address) (float64, error)
-
-	StartUp() error
+	// AbortBooking(index uint64, abortType AbortType) error
+	// ClaimExpired(index uint64) error
+	// ExtendBooking(index uint64, secs int) error
 }

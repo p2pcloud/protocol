@@ -16,36 +16,28 @@ import (
 )
 
 type EVMImplementation struct {
-	backend bind.ContractBackend
-	broker  protocol.P2PCloudProtocolIface
-	token   protocol.TokenIface
+	broker *broker.Broker
+	token  *token.Token
 }
 
 var _ protocol.P2PCloudProtocolIface = (*EVMImplementation)(nil)
 
-func NewEVMImplementation(
-	privateKey string, contractAddress, rpcEndpoint string, chanId int64,
+func NewEvmImplementationFromBackend(
+	contractBackend bind.ContractBackend,
+	privateKey string, brokerContractAddress string,
+	chanId int64,
+	waitForTx func(hash common.Hash) error,
 ) (*EVMImplementation, error) {
+
 	privateKeyDecoded, err := keyring.DecodePrivateKey(privateKey)
 	if err != nil {
 		return nil, err
 	}
 
-	if rpcEndpoint == "" {
-		return nil, fmt.Errorf("rpc_endpoint is not set")
-	}
-
-	web3Client, err := ethclient.Dial(rpcEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("could not connect to web3 at \"%s\": %v", rpcEndpoint, err)
-	}
-
 	updCh := make(chan common.Address, 1)
 
-	txWaiter := NewTransactionWaiter(web3Client, time.Minute)
-
 	myBroker, err := broker.NewBroker(
-		web3Client, privateKeyDecoded, contractAddress, chanId, txWaiter.WaitForTx, updCh,
+		contractBackend, privateKeyDecoded, brokerContractAddress, chanId, waitForTx, updCh,
 	)
 	if err != nil {
 		return nil, err
@@ -57,27 +49,40 @@ func NewEVMImplementation(
 	}
 
 	tkn := token.NewToken(&token.Params{
-		Backend:            web3Client,
+		Backend:            contractBackend,
 		PrivateKey:         myBroker.GetPrivateKey(),
 		ContractAddressStr: tokenAddr.Hex(),
 		ChainID:            chanId,
 		UpdCh:              updCh,
-		WaitForTx:          txWaiter.WaitForTx,
+		WaitForTx:          waitForTx,
 	})
-	if err = tkn.StartUp(); err != nil {
-		return nil, err
-	}
+
+	//TODO: wtf is this
+	// if err = tkn.StartUp(); err != nil {
+	// 	return nil, err
+	// }
 
 	return &EVMImplementation{
 		broker: myBroker,
 		token:  tkn,
 	}, nil
-
 }
 
-func (a *EVMImplementation) DeployContracts(community common.Address) ([]string, error) {
-	addresses, err := a.broker.DeployContracts(community)
-	return addresses, err
+func NewEVMImplementation(
+	privateKey string, contractAddress, rpcEndpoint string, chanId int64,
+) (*EVMImplementation, error) {
+	if rpcEndpoint == "" {
+		return nil, fmt.Errorf("rpc_endpoint is not set")
+	}
+
+	web3Client, err := ethclient.Dial(rpcEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("could not connect to web3 at \"%s\": %v", rpcEndpoint, err)
+	}
+
+	txWaiter := NewTransactionWaiter(web3Client, time.Minute)
+
+	return NewEvmImplementationFromBackend(web3Client, privateKey, contractAddress, chanId, txWaiter.WaitForTx)
 }
 
 func (a *EVMImplementation) AddOffer(offer protocol.Offer, callbackUrl string) error {
@@ -112,8 +117,8 @@ func (a *EVMImplementation) RemoveOffer(id int) error {
 	return a.broker.RemoveOffer(id)
 }
 
-func (a *EVMImplementation) BookVM(offerIndex, seconds int) error {
-	return a.broker.BookVM(offerIndex, seconds)
+func (a *EVMImplementation) BookVM(offerIndex int) error {
+	return a.broker.BookVM(offerIndex)
 }
 
 func (a *EVMImplementation) GetUsersBookings() ([]protocol.VMBooking, error) {
@@ -140,33 +145,33 @@ func (a *EVMImplementation) GetMinersBookings() ([]protocol.VMBooking, error) {
 	return a.broker.GetMinersBookings()
 }
 
-func (a *EVMImplementation) DepositCoin(coins float64) error {
-	if err := a.token.Approve(a.broker.ContractAddress(), coins); err != nil {
-		return err
-	}
+// func (a *EVMImplementation) DepositCoin(coins float64) error {
+// 	if err := a.token.Approve(a.broker.ContractAddress(), coins); err != nil {
+// 		return err
+// 	}
 
-	return a.broker.DepositCoin(coins)
-}
+// 	return a.broker.DepositCoin(coins)
+// }
 
-func (a *EVMImplementation) WithdrawCoin(coins float64) error {
-	return a.broker.WithdrawCoin(coins)
-}
+// func (a *EVMImplementation) WithdrawCoin() error {
+// 	return a.broker.WithdrawCoin()
+// }
 
-func (a *EVMImplementation) Balance() (float64, error) {
-	return a.broker.Balance()
-}
+// func (a *EVMImplementation) Balance() (float64, error) {
+// 	return a.broker.Balance()
+// }
 
-func (a *EVMImplementation) UserTokenBalance() (float64, error) {
-	return a.broker.UserTokenBalance()
-}
+// func (a *EVMImplementation) UserTokenBalance() (float64, error) {
+// 	return a.broker.UserTokenBalance()
+// }
 
-func (a *EVMImplementation) UserAllowance() (float64, error) {
-	return a.broker.UserAllowance()
-}
+// func (a *EVMImplementation) UserAllowance() (float64, error) {
+// 	return a.broker.UserAllowance()
+// }
 
-func (a *EVMImplementation) SetStablecoinAddress(address common.Address) error {
-	return a.broker.SetStablecoinAddress(address)
-}
+// func (a *EVMImplementation) SetStablecoinAddress(address common.Address) error {
+// 	return a.broker.SetStablecoinAddress(address)
+// }
 
 func (a *EVMImplementation) GetStablecoinAddress() (common.Address, error) {
 	return a.broker.GetStablecoinAddress()
@@ -188,22 +193,22 @@ func (a *EVMImplementation) GetCommunityFee() (int64, error) {
 	return a.broker.GetCommunityFee()
 }
 
-func (a *EVMImplementation) AbortBooking(index uint64, abortType protocol.AbortType) error {
-	return a.broker.AbortBooking(index, abortType)
-}
+// func (a *EVMImplementation) AbortBooking(index uint64, abortType protocol.AbortType) error {
+// 	return a.broker.AbortBooking(index, abortType)
+// }
 
-func (a *EVMImplementation) ClaimExpired(index uint64) error {
-	return a.broker.ClaimExpired(index)
-}
+// func (a *EVMImplementation) ClaimExpired(index uint64) error {
+// 	return a.broker.ClaimExpired(index)
+// }
 
-func (a *EVMImplementation) ExtendBooking(index uint64, secs int) error {
-	return a.broker.ExtendBooking(index, secs)
-}
+// func (a *EVMImplementation) ExtendBooking(index uint64, secs int) error {
+// 	return a.broker.ExtendBooking(index, secs)
+// }
 
-func (a *EVMImplementation) DepositBalance() (float64, error) {
-	return a.broker.DepositBalance()
-}
+// func (a *EVMImplementation) DepositBalance() (float64, error) {
+// 	return a.broker.DepositBalance()
+// }
 
-func (a *EVMImplementation) LockedBalance() (float64, error) {
-	return a.broker.LockedBalance()
-}
+// func (a *EVMImplementation) LockedBalance() (float64, error) {
+// 	return a.broker.LockedBalance()
+// }

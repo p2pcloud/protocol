@@ -14,10 +14,6 @@ func (b *Broker) AddOffer(offer protocol.Offer, callbackUrl string) error {
 		return err
 	}
 
-	if err = b.setDecimals(); err != nil {
-		return err
-	}
-
 	tx, err := b.session.AddOffer(
 		big.NewInt(int64(offer.PPS)),
 		big.NewInt(int64(offer.VmTypeId)),
@@ -31,9 +27,9 @@ func (b *Broker) AddOffer(offer protocol.Offer, callbackUrl string) error {
 }
 
 func (b *Broker) GetMyOffers() ([]protocol.Offer, error) {
-	if err := b.setDecimals(); err != nil {
-		return nil, err
-	}
+	// if err := b.setDecimals(); err != nil {
+	// 	return nil, err
+	// }
 
 	offers, err := b.session.GetMinersOffers(b.transactOpts.From)
 	if err != nil {
@@ -53,11 +49,11 @@ func (b *Broker) GetMyOffers() ([]protocol.Offer, error) {
 }
 
 func (b *Broker) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, error) {
-	if err := b.setDecimals(); err != nil {
-		return nil, err
-	}
+	// if err := b.setDecimals(); err != nil {
+	// 	return nil, err
+	// }
 
-	offers, err := b.session.GetAvailableOffers(big.NewInt(int64(vmTypeId)))
+	offers, err := b.session.GetAvailableOffersByType(big.NewInt(int64(vmTypeId)))
 	if err != nil {
 		return nil, err
 	}
@@ -83,9 +79,9 @@ func (b *Broker) RemoveOffer(offerId int) error {
 }
 
 func (b *Broker) UpdateOffer(offer protocol.Offer) error {
-	if err := b.setDecimals(); err != nil {
-		return err
-	}
+	// if err := b.setDecimals(); err != nil {
+	// 	return err
+	// }
 
 	tx, err := b.session.UpdateOffer(
 		big.NewInt(int64(offer.Index)),

@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	ChainIDSimulated = 1337
-	CommunityFee     = 5
+	CommunityFee = 5
 )
 
 type InMemBlockChain struct {

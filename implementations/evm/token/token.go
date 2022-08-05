@@ -4,14 +4,14 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/p2pcloud/protocol"
-	"github.com/p2pcloud/protocol/implementations/evm/contracts"
-	"github.com/sirupsen/logrus"
 	"math"
 	"math/big"
 	"sync"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/p2pcloud/protocol/implementations/evm/contracts"
+	"github.com/sirupsen/logrus"
 )
 
 type Token struct {
@@ -39,7 +39,7 @@ type Params struct {
 	UpdCh              <-chan common.Address
 }
 
-func NewToken(params *Params) protocol.TokenIface {
+func NewToken(params *Params) *Token {
 	transactOpts, _ := bind.NewKeyedTransactorWithChainID(params.PrivateKey, big.NewInt(params.ChainID))
 
 	b := &Token{

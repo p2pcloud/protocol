@@ -1,330 +1,319 @@
 package broker_test
 
-import (
-	"testing"
-	"time"
+// func TestAbortBookingWithMany(t *testing.T) {
+// 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/stretchr/testify/require"
+// 	communityPk, err := blockchain.GetNextPrivateKey()
+// 	require.NoError(t, err)
 
-	"github.com/p2pcloud/protocol"
-	"github.com/p2pcloud/protocol/implementations/evm"
-)
+// 	userIdx := 0
+// 	minerIdx := 1
 
-func TestAbortBookingWithMany(t *testing.T) {
-	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+// 	ti, err := evm.InitializeTestInstances(
+// 		2, 6, evm.NewGifts(
+// 			map[int]float64{userIdx: 3000}, map[int]float64{userIdx: 3000},
+// 		),
+// 		blockchain.Origin.Backend, blockchain,
+// 		communityPk,
+// 	)
+// 	require.NoError(t, err)
 
-	communityPk, err := blockchain.GetNextPrivateKey()
-	require.NoError(t, err)
+// 	user := ti.Contracts[userIdx]
 
-	userIdx := 0
-	minerIdx := 1
+// 	miner := ti.Contracts[minerIdx]
 
-	ti, err := evm.InitializeTestInstances(
-		2, 6, evm.NewGifts(
-			map[int]float64{userIdx: 3000}, map[int]float64{userIdx: 3000},
-		),
-		blockchain.Origin.Backend, blockchain,
-		communityPk,
-	)
-	require.NoError(t, err)
+// 	require.NoError(t, miner.AddOffer(protocol.Offer{
+// 		VmTypeId:      1,
+// 		PPS:           10,
+// 		Availablility: 1,
+// 	}, "https://hello.world"))
+// 	require.NoError(t, miner.AddOffer(protocol.Offer{
+// 		VmTypeId:      1,
+// 		PPS:           20,
+// 		Availablility: 1,
+// 	}, "https://hello.world"))
 
-	user := ti.Contracts[userIdx]
+// 	require.NoError(t, user.DepositCoin(3000))
 
-	miner := ti.Contracts[minerIdx]
+// 	offers, err := user.GetAvailableOffers(1)
+// 	require.NoError(t, err)
+// 	require.Len(t, offers, 2)
 
-	require.NoError(t, miner.AddOffer(protocol.Offer{
-		VmTypeId:      1,
-		PPS:           10,
-		Availablility: 1,
-	}, "https://hello.world"))
-	require.NoError(t, miner.AddOffer(protocol.Offer{
-		VmTypeId:      1,
-		PPS:           20,
-		Availablility: 1,
-	}, "https://hello.world"))
+// 	require.NoError(t, user.BookVM(offers[0].Index, 60))
+// 	require.NoError(t, user.BookVM(offers[1].Index, 80))
 
-	require.NoError(t, user.DepositCoin(3000))
+// 	lockedBalance, err := user.LockedBalance()
+// 	require.NoError(t, err)
+// 	require.Equal(t, 2200.0, lockedBalance)
 
-	offers, err := user.GetAvailableOffers(1)
-	require.NoError(t, err)
-	require.Len(t, offers, 2)
+// 	userBalance, err := user.Balance()
+// 	require.NoError(t, err)
+// 	require.Equal(t, 800.0, userBalance)
 
-	require.NoError(t, user.BookVM(offers[0].Index, 60))
-	require.NoError(t, user.BookVM(offers[1].Index, 80))
+// 	bookings, err := user.GetUsersBookings()
+// 	require.NoError(t, err)
+// 	booking := bookings[0]
 
-	lockedBalance, err := user.LockedBalance()
-	require.NoError(t, err)
-	require.Equal(t, 2200.0, lockedBalance)
+// 	require.NoError(t, blockchain.Origin.Backend.AdjustTime(time.Second*5))
+// 	blockchain.Origin.Backend.Commit()
 
-	userBalance, err := user.Balance()
-	require.NoError(t, err)
-	require.Equal(t, 800.0, userBalance)
+// 	require.NoError(t, user.AbortBooking(uint64(booking.Index), protocol.ReportAbortType))
 
-	bookings, err := user.GetUsersBookings()
-	require.NoError(t, err)
-	booking := bookings[0]
+// 	userBalance, err = user.Balance()
+// 	require.NoError(t, err)
+// 	require.Equal(t, 1050.0, userBalance)
 
-	require.NoError(t, blockchain.Origin.Backend.AdjustTime(time.Second*5))
-	blockchain.Origin.Backend.Commit()
+// 	lockedBalance, err = user.LockedBalance()
+// 	require.NoError(t, err)
+// 	require.Equal(t, 1600.0, lockedBalance)
 
-	require.NoError(t, user.AbortBooking(uint64(booking.Index), protocol.ReportAbortType))
+// 	commBalance, err := ti.DeployerToken.BalanceOf(crypto.PubkeyToAddress(communityPk.PublicKey))
+// 	require.NoError(t, err)
 
-	userBalance, err = user.Balance()
-	require.NoError(t, err)
-	require.Equal(t, 1050.0, userBalance)
+// 	minerBalance, err := miner.UserTokenBalance()
+// 	require.NoError(t, err)
 
-	lockedBalance, err = user.LockedBalance()
-	require.NoError(t, err)
-	require.Equal(t, 1600.0, lockedBalance)
+// 	require.Equal(t, 175.0, commBalance)
+// 	require.Equal(t, 175.0, minerBalance)
+// }
 
-	commBalance, err := ti.DeployerToken.BalanceOf(crypto.PubkeyToAddress(communityPk.PublicKey))
-	require.NoError(t, err)
+// func TestAbortBookingInvalidUser(t *testing.T) {
+// 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	minerBalance, err := miner.UserTokenBalance()
-	require.NoError(t, err)
+// 	communityPk, err := blockchain.GetNextPrivateKey()
+// 	require.NoError(t, err)
 
-	require.Equal(t, 175.0, commBalance)
-	require.Equal(t, 175.0, minerBalance)
-}
+// 	userIdx := 0
+// 	minerIdx := 1
+// 	otherUser := 2
 
-func TestAbortBookingInvalidUser(t *testing.T) {
-	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+// 	ti, err := evm.InitializeTestInstances(
+// 		3, 6, evm.NewGifts(
+// 			map[int]float64{userIdx: 3000}, map[int]float64{userIdx: 3000},
+// 		),
+// 		blockchain.Origin.Backend, blockchain,
+// 		communityPk,
+// 	)
+// 	require.NoError(t, err)
 
-	communityPk, err := blockchain.GetNextPrivateKey()
-	require.NoError(t, err)
+// 	user := ti.Contracts[userIdx]
 
-	userIdx := 0
-	minerIdx := 1
-	otherUser := 2
+// 	miner := ti.Contracts[minerIdx]
 
-	ti, err := evm.InitializeTestInstances(
-		3, 6, evm.NewGifts(
-			map[int]float64{userIdx: 3000}, map[int]float64{userIdx: 3000},
-		),
-		blockchain.Origin.Backend, blockchain,
-		communityPk,
-	)
-	require.NoError(t, err)
+// 	require.NoError(t, miner.AddOffer(protocol.Offer{
+// 		VmTypeId:      1,
+// 		PPS:           10,
+// 		Availablility: 1,
+// 	}, "https://hello.world"))
 
-	user := ti.Contracts[userIdx]
+// 	require.NoError(t, user.DepositCoin(3000))
 
-	miner := ti.Contracts[minerIdx]
+// 	offers, err := user.GetAvailableOffers(1)
+// 	require.NoError(t, err)
+// 	require.Len(t, offers, 1)
 
-	require.NoError(t, miner.AddOffer(protocol.Offer{
-		VmTypeId:      1,
-		PPS:           10,
-		Availablility: 1,
-	}, "https://hello.world"))
+// 	require.NoError(t, user.BookVM(offers[0].Index, 60))
 
-	require.NoError(t, user.DepositCoin(3000))
+// 	bookings, err := user.GetUsersBookings()
+// 	require.NoError(t, err)
+// 	booking := bookings[0]
 
-	offers, err := user.GetAvailableOffers(1)
-	require.NoError(t, err)
-	require.Len(t, offers, 1)
+// 	require.NoError(t, blockchain.Origin.Backend.AdjustTime(time.Second*5))
+// 	blockchain.Origin.Backend.Commit()
 
-	require.NoError(t, user.BookVM(offers[0].Index, 60))
+// 	err = ti.Contracts[otherUser].AbortBooking(uint64(booking.Index), protocol.ReportAbortType)
+// 	require.ErrorContains(t, err, "only owner of booking can report")
+// }
 
-	bookings, err := user.GetUsersBookings()
-	require.NoError(t, err)
-	booking := bookings[0]
+// func TestAbortBooking(t *testing.T) {
+// 	var tests = []struct {
+// 		name                  string
+// 		deposit               float64
+// 		offer                 protocol.Offer
+// 		secs                  int64
+// 		waitSecs              int64
+// 		communityFee          int64
+// 		abortType             protocol.AbortType
+// 		wantUserBalance       float64
+// 		wantUserLockedBalance float64
+// 		wantMinersBalance     float64
+// 		wantCommunityBalance  float64
+// 		wantErrContains       string
+// 	}{
+// 		{
+// 			name:    "user successfully reports",
+// 			deposit: 600,
+// 			offer: protocol.Offer{
+// 				VmTypeId:      1,
+// 				PPS:           10,
+// 				Availablility: 1,
+// 			},
+// 			secs:                  50,
+// 			waitSecs:              20,
+// 			abortType:             protocol.ReportAbortType,
+// 			wantUserBalance:       200,
+// 			wantUserLockedBalance: 0,
+// 			wantMinersBalance:     200,
+// 			wantCommunityBalance:  200,
+// 		},
+// 		{
+// 			name:    "user successfully stops",
+// 			deposit: 600,
+// 			offer: protocol.Offer{
+// 				VmTypeId:      1,
+// 				PPS:           10,
+// 				Availablility: 1,
+// 			},
+// 			secs:                  50,
+// 			waitSecs:              20,
+// 			communityFee:          5,
+// 			abortType:             protocol.StopAbortType,
+// 			wantUserBalance:       200,
+// 			wantUserLockedBalance: 0,
+// 			wantMinersBalance:     380,
+// 			wantCommunityBalance:  20,
+// 		},
+// 		{
+// 			name:    "user reports, overflow 6 decimals",
+// 			deposit: 500,
+// 			offer: protocol.Offer{
+// 				VmTypeId:      1,
+// 				PPS:           12,
+// 				Availablility: 1,
+// 			},
+// 			secs:                  50,
+// 			waitSecs:              29,
+// 			abortType:             protocol.ReportAbortType,
+// 			wantUserBalance:       10.000049,
+// 			wantUserLockedBalance: 0,
+// 			wantMinersBalance:     244.999975,
+// 			wantCommunityBalance:  244.999976,
+// 		},
+// 		{
+// 			name:    "user stops, overflow 6 decimals",
+// 			deposit: 500,
+// 			offer: protocol.Offer{
+// 				VmTypeId:      1,
+// 				PPS:           12,
+// 				Availablility: 1,
+// 			},
+// 			secs:                  50,
+// 			waitSecs:              29,
+// 			communityFee:          5,
+// 			abortType:             protocol.StopAbortType,
+// 			wantUserBalance:       10.000049,
+// 			wantUserLockedBalance: 0,
+// 			wantMinersBalance:     465.499953,
+// 			wantCommunityBalance:  24.499998,
+// 		},
+// 		{
+// 			name:    "user reports, lowest pps",
+// 			deposit: 500,
+// 			offer: protocol.Offer{
+// 				VmTypeId:      1,
+// 				PPS:           1,
+// 				Availablility: 1,
+// 			},
+// 			secs:                  50,
+// 			waitSecs:              29,
+// 			abortType:             protocol.ReportAbortType,
+// 			wantUserBalance:       499.999951,
+// 			wantUserLockedBalance: 0,
+// 			wantMinersBalance:     0.000024,
+// 			wantCommunityBalance:  0.000025,
+// 		},
+// 		{
+// 			name:    "user stops, lowest pps",
+// 			deposit: 500,
+// 			offer: protocol.Offer{
+// 				VmTypeId:      1,
+// 				PPS:           1,
+// 				Availablility: 1,
+// 			},
+// 			secs:                  50,
+// 			waitSecs:              29,
+// 			abortType:             protocol.StopAbortType,
+// 			wantUserBalance:       499.999951,
+// 			wantUserLockedBalance: 0,
+// 			wantMinersBalance:     0.000046,
+// 			wantCommunityBalance:  0.000003,
+// 		},
+// 		{
+// 			name:    "booking expired",
+// 			deposit: 500,
+// 			offer: protocol.Offer{
+// 				VmTypeId:      1,
+// 				PPS:           10,
+// 				Availablility: 1,
+// 			},
+// 			secs:            50,
+// 			waitSecs:        999,
+// 			abortType:       protocol.StopAbortType,
+// 			wantErrContains: "expired",
+// 		},
+// 	}
 
-	require.NoError(t, blockchain.Origin.Backend.AdjustTime(time.Second*5))
-	blockchain.Origin.Backend.Commit()
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	err = ti.Contracts[otherUser].AbortBooking(uint64(booking.Index), protocol.ReportAbortType)
-	require.ErrorContains(t, err, "only owner of booking can report")
-}
+// 			communityPk, err := blockchain.GetNextPrivateKey()
+// 			require.NoError(t, err)
 
-func TestAbortBooking(t *testing.T) {
-	var tests = []struct {
-		name                  string
-		deposit               float64
-		offer                 protocol.Offer
-		secs                  int64
-		waitSecs              int64
-		communityFee          int64
-		abortType             protocol.AbortType
-		wantUserBalance       float64
-		wantUserLockedBalance float64
-		wantMinersBalance     float64
-		wantCommunityBalance  float64
-		wantErrContains       string
-	}{
-		{
-			name:    "user successfully reports",
-			deposit: 600,
-			offer: protocol.Offer{
-				VmTypeId:      1,
-				PPS:           10,
-				Availablility: 1,
-			},
-			secs:                  50,
-			waitSecs:              20,
-			abortType:             protocol.ReportAbortType,
-			wantUserBalance:       200,
-			wantUserLockedBalance: 0,
-			wantMinersBalance:     200,
-			wantCommunityBalance:  200,
-		},
-		{
-			name:    "user successfully stops",
-			deposit: 600,
-			offer: protocol.Offer{
-				VmTypeId:      1,
-				PPS:           10,
-				Availablility: 1,
-			},
-			secs:                  50,
-			waitSecs:              20,
-			communityFee:          5,
-			abortType:             protocol.StopAbortType,
-			wantUserBalance:       200,
-			wantUserLockedBalance: 0,
-			wantMinersBalance:     380,
-			wantCommunityBalance:  20,
-		},
-		{
-			name:    "user reports, overflow 6 decimals",
-			deposit: 500,
-			offer: protocol.Offer{
-				VmTypeId:      1,
-				PPS:           12,
-				Availablility: 1,
-			},
-			secs:                  50,
-			waitSecs:              29,
-			abortType:             protocol.ReportAbortType,
-			wantUserBalance:       10.000049,
-			wantUserLockedBalance: 0,
-			wantMinersBalance:     244.999975,
-			wantCommunityBalance:  244.999976,
-		},
-		{
-			name:    "user stops, overflow 6 decimals",
-			deposit: 500,
-			offer: protocol.Offer{
-				VmTypeId:      1,
-				PPS:           12,
-				Availablility: 1,
-			},
-			secs:                  50,
-			waitSecs:              29,
-			communityFee:          5,
-			abortType:             protocol.StopAbortType,
-			wantUserBalance:       10.000049,
-			wantUserLockedBalance: 0,
-			wantMinersBalance:     465.499953,
-			wantCommunityBalance:  24.499998,
-		},
-		{
-			name:    "user reports, lowest pps",
-			deposit: 500,
-			offer: protocol.Offer{
-				VmTypeId:      1,
-				PPS:           1,
-				Availablility: 1,
-			},
-			secs:                  50,
-			waitSecs:              29,
-			abortType:             protocol.ReportAbortType,
-			wantUserBalance:       499.999951,
-			wantUserLockedBalance: 0,
-			wantMinersBalance:     0.000024,
-			wantCommunityBalance:  0.000025,
-		},
-		{
-			name:    "user stops, lowest pps",
-			deposit: 500,
-			offer: protocol.Offer{
-				VmTypeId:      1,
-				PPS:           1,
-				Availablility: 1,
-			},
-			secs:                  50,
-			waitSecs:              29,
-			abortType:             protocol.StopAbortType,
-			wantUserBalance:       499.999951,
-			wantUserLockedBalance: 0,
-			wantMinersBalance:     0.000046,
-			wantCommunityBalance:  0.000003,
-		},
-		{
-			name:    "booking expired",
-			deposit: 500,
-			offer: protocol.Offer{
-				VmTypeId:      1,
-				PPS:           10,
-				Availablility: 1,
-			},
-			secs:            50,
-			waitSecs:        999,
-			abortType:       protocol.StopAbortType,
-			wantErrContains: "expired",
-		},
-	}
+// 			userIdx := 0
+// 			minerIdx := 1
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+// 			ti, err := evm.InitializeTestInstances(
+// 				2, 6, evm.NewGifts(
+// 					map[int]float64{userIdx: tt.deposit}, map[int]float64{userIdx: tt.deposit},
+// 				),
+// 				blockchain.Origin.Backend, blockchain,
+// 				communityPk,
+// 			)
+// 			require.NoError(t, err)
 
-			communityPk, err := blockchain.GetNextPrivateKey()
-			require.NoError(t, err)
+// 			user := ti.Contracts[userIdx]
 
-			userIdx := 0
-			minerIdx := 1
+// 			miner := ti.Contracts[minerIdx]
 
-			ti, err := evm.InitializeTestInstances(
-				2, 6, evm.NewGifts(
-					map[int]float64{userIdx: tt.deposit}, map[int]float64{userIdx: tt.deposit},
-				),
-				blockchain.Origin.Backend, blockchain,
-				communityPk,
-			)
-			require.NoError(t, err)
+// 			require.NoError(t, miner.AddOffer(tt.offer, "https://hello.world"))
 
-			user := ti.Contracts[userIdx]
+// 			if tt.deposit > 1 {
+// 				require.NoError(t, user.DepositCoin(tt.deposit))
+// 			}
 
-			miner := ti.Contracts[minerIdx]
+// 			offers, err := user.GetAvailableOffers(1)
+// 			require.NoError(t, err)
+// 			require.Len(t, offers, 1)
 
-			require.NoError(t, miner.AddOffer(tt.offer, "https://hello.world"))
+// 			offer := offers[0]
+// 			require.NoError(t, user.BookVM(offer.Index, int(tt.secs)))
 
-			if tt.deposit > 1 {
-				require.NoError(t, user.DepositCoin(tt.deposit))
-			}
+// 			bookings, err := user.GetUsersBookings()
+// 			require.NoError(t, err)
+// 			booking := bookings[0]
 
-			offers, err := user.GetAvailableOffers(1)
-			require.NoError(t, err)
-			require.Len(t, offers, 1)
+// 			require.NoError(t, blockchain.Origin.Backend.AdjustTime(time.Second*time.Duration(tt.waitSecs)))
+// 			blockchain.Origin.Backend.Commit()
 
-			offer := offers[0]
-			require.NoError(t, user.BookVM(offer.Index, int(tt.secs)))
+// 			err = user.AbortBooking(uint64(booking.Index), tt.abortType)
+// 			if err != nil {
+// 				require.ErrorContains(t, err, tt.wantErrContains)
+// 				require.NotEqual(t, "", tt.wantErrContains)
+// 				return
+// 			}
 
-			bookings, err := user.GetUsersBookings()
-			require.NoError(t, err)
-			booking := bookings[0]
+// 			userBalance, err := user.Balance()
+// 			require.NoError(t, err)
 
-			require.NoError(t, blockchain.Origin.Backend.AdjustTime(time.Second*time.Duration(tt.waitSecs)))
-			blockchain.Origin.Backend.Commit()
+// 			commBalance, err := ti.DeployerToken.BalanceOf(crypto.PubkeyToAddress(communityPk.PublicKey))
+// 			require.NoError(t, err)
+// 			t.Logf("community balance is %.6f", commBalance)
 
-			err = user.AbortBooking(uint64(booking.Index), tt.abortType)
-			if err != nil {
-				require.ErrorContains(t, err, tt.wantErrContains)
-				require.NotEqual(t, "", tt.wantErrContains)
-				return
-			}
-
-			userBalance, err := user.Balance()
-			require.NoError(t, err)
-
-			commBalance, err := ti.DeployerToken.BalanceOf(crypto.PubkeyToAddress(communityPk.PublicKey))
-			require.NoError(t, err)
-			t.Logf("community balance is %.6f", commBalance)
-
-			minerBalance, err := miner.UserTokenBalance()
-			require.NoError(t, err)
-			require.Equal(t, tt.wantMinersBalance, minerBalance)
-			require.Equal(t, tt.wantUserBalance, userBalance)
-		})
-	}
-}
+// 			minerBalance, err := miner.UserTokenBalance()
+// 			require.NoError(t, err)
+// 			require.Equal(t, tt.wantMinersBalance, minerBalance)
+// 			require.Equal(t, tt.wantUserBalance, userBalance)
+// 		})
+// 	}
+// }
