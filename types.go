@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"crypto/ecdsa"
+
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -42,9 +43,7 @@ type BrokerIface interface {
 	UpdateOffer(offer Offer) error
 	GetPrivateKey() *ecdsa.PrivateKey
 	ContractAddress() common.Address
-	GetMtlsHash(*common.Address) (string, error)
 	GetBooking(index int) (*VMBooking, error)
-	RegisterMtlsHashIfNeeded(mtlsHash string) error
 	GetAvailableOffers(vmTypeId int) ([]Offer, error)
 	BookVM(offerIndex, seconds int) error
 	GetUsersBookings() ([]VMBooking, error)

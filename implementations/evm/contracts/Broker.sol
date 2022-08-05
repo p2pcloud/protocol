@@ -5,13 +5,20 @@ pragma solidity >=0.7.0 <0.9.0;
 interface IERC20 {
     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 
     function balanceOf(address account) external view returns (uint256);
 
     function transfer(address to, uint256 amount) external returns (bool);
 
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
 
     function approve(address spender, uint256 amount) external returns (bool);
 
@@ -43,11 +50,42 @@ contract Broker {
         uint256 vmTypeId;
     }
 
-    event BookingStarted(uint256 index, address indexed miner, address indexed user, uint256 vmTypeId);
-    event BookingReported(uint256 minerPayout, uint256 index, address indexed miner, address indexed user, uint256 timeUsed, uint256 vmTypeId);
-    event BookingStopped(uint256 minerPayout, uint256 index, address indexed miner, address indexed user, uint256 timeUsed, uint256 vmTypeId);
-    event BookingClaimed(uint256 minerPayout, uint256 index, address indexed miner, address indexed user, uint256 timeUsed, uint256 vmTypeId);
-    event BookingExtended(uint256 index, address indexed miner, address indexed user, uint256 vmTypeId);
+    event BookingStarted(
+        uint256 index,
+        address indexed miner,
+        address indexed user,
+        uint256 vmTypeId
+    );
+    event BookingReported(
+        uint256 minerPayout,
+        uint256 index,
+        address indexed miner,
+        address indexed user,
+        uint256 timeUsed,
+        uint256 vmTypeId
+    );
+    event BookingStopped(
+        uint256 minerPayout,
+        uint256 index,
+        address indexed miner,
+        address indexed user,
+        uint256 timeUsed,
+        uint256 vmTypeId
+    );
+    event BookingClaimed(
+        uint256 minerPayout,
+        uint256 index,
+        address indexed miner,
+        address indexed user,
+        uint256 timeUsed,
+        uint256 vmTypeId
+    );
+    event BookingExtended(
+        uint256 index,
+        address indexed miner,
+        address indexed user,
+        uint256 vmTypeId
+    );
 
     uint256 public constant version = 1;
 
@@ -58,7 +96,6 @@ contract Broker {
     uint256 nextBookingId = 0;
 
     mapping(address => bytes32) minerUrls;
-    mapping(address => bytes20) mtlsHashes;
 
     mapping(address => uint256) deposits;
     mapping(address => uint256) locked;
@@ -70,14 +107,6 @@ contract Broker {
 
     constructor(address communityAddress) {
         community = communityAddress;
-    }
-
-    function SetMtlsHash(bytes20 _signature) public {
-        mtlsHashes[msg.sender] = _signature;
-    }
-
-    function getMtlsHash(address _user) public view returns (bytes20) {
-        return mtlsHashes[_user];
     }
 
     function setMunerUrl(bytes32 url) public {
@@ -124,11 +153,14 @@ contract Broker {
     function bookVM(uint256 offerIndex, uint256 secs) public returns (uint256) {
         require(
             vmOffers[offerIndex].machinesAvailable > 0 &&
-            secs > 0 &&
-            userBalance() >= vmOffers[offerIndex].pricePerSecond * secs,
+                secs > 0 &&
+                userBalance() >= vmOffers[offerIndex].pricePerSecond * secs,
             "No machines available OR secs should be positive OR user does not have required amount to book machine"
         );
-        require(vmOffers[offerIndex].miner != address(0), "offer with that index does not exist");
+        require(
+            vmOffers[offerIndex].miner != address(0),
+            "offer with that index does not exist"
+        );
 
         locked[msg.sender] += vmOffers[offerIndex].pricePerSecond * secs;
 
@@ -144,7 +176,12 @@ contract Broker {
         bookings[nextBookingId] = booking;
         nextBookingId++;
 
-        emit BookingStarted(booking.index, booking.miner, booking.user, booking.vmTypeId);
+        emit BookingStarted(
+            booking.index,
+            booking.miner,
+            booking.user,
+            booking.vmTypeId
+        );
 
         return nextBookingId - 1;
     }
@@ -203,14 +240,22 @@ contract Broker {
 
         require(msg.sender == booking.user, "only owner of booking can extend");
         require(currentTime < booking.bookedTill, "booking is expired");
-        require(userBalance() >= booking.pricePerSecond * secs, "insufficient funds to extend booking");
+        require(
+            userBalance() >= booking.pricePerSecond * secs,
+            "insufficient funds to extend booking"
+        );
 
         locked[msg.sender] += booking.pricePerSecond * secs;
 
         booking.bookedTill += secs;
         bookings[index] = booking;
 
-        emit BookingExtended(booking.index, booking.miner, booking.user, booking.vmTypeId);
+        emit BookingExtended(
+            booking.index,
+            booking.miner,
+            booking.user,
+            booking.vmTypeId
+        );
     }
 
     function abortBooking(uint64 index, uint8 abortType) public {
@@ -218,7 +263,10 @@ contract Broker {
         uint256 currentTime = GetTime();
 
         require(msg.sender == booking.user, "only owner of booking can report");
-        require(abortType == 1 || abortType == 2, "report or stop booking is required");
+        require(
+            abortType == 1 || abortType == 2,
+            "report or stop booking is required"
+        );
         require(
             currentTime < booking.bookedTill,
             "booking is expired, miner should claim expired booking"
@@ -235,20 +283,37 @@ contract Broker {
             communityPercentage = communityFee;
         }
 
-        uint256 toPay = booking.pricePerSecond * (currentTime - booking.bookedAt);
+        uint256 toPay = booking.pricePerSecond *
+            (currentTime - booking.bookedAt);
 
         uint256 minerPayout = (toPay * minersPercentage) / 100;
         uint256 communityPayout = toPay - minerPayout;
 
         deposits[msg.sender] -= toPay;
-        locked[msg.sender] -= booking.pricePerSecond * (booking.bookedTill - booking.bookedAt);
+        locked[msg.sender] -=
+            booking.pricePerSecond *
+            (booking.bookedTill - booking.bookedAt);
 
         delete bookings[booking.index];
 
         if (abortType == 1) {
-            emit BookingReported(minerPayout, booking.index, booking.miner, booking.user, currentTime - booking.bookedAt, booking.vmTypeId);
+            emit BookingReported(
+                minerPayout,
+                booking.index,
+                booking.miner,
+                booking.user,
+                currentTime - booking.bookedAt,
+                booking.vmTypeId
+            );
         } else {
-            emit BookingStopped(minerPayout, booking.index, booking.miner, booking.user, currentTime - booking.bookedAt, booking.vmTypeId);
+            emit BookingStopped(
+                minerPayout,
+                booking.index,
+                booking.miner,
+                booking.user,
+                currentTime - booking.bookedAt,
+                booking.vmTypeId
+            );
         }
 
         if (!token.transfer(booking.miner, minerPayout)) {
@@ -267,7 +332,8 @@ contract Broker {
         require(msg.sender == booking.miner, "only miner of booking can claim");
         require(currentTime >= booking.bookedTill, "booking is still in use");
 
-        uint256 toPay = booking.pricePerSecond * (booking.bookedTill - booking.bookedAt);
+        uint256 toPay = booking.pricePerSecond *
+            (booking.bookedTill - booking.bookedAt);
 
         uint256 minerPayout = (toPay * (100 - communityFee)) / 100;
         uint256 communityPayout = toPay - minerPayout;
@@ -277,7 +343,14 @@ contract Broker {
 
         delete bookings[booking.index];
 
-        emit BookingClaimed(minerPayout, booking.index, booking.miner, booking.user, booking.bookedTill - booking.bookedAt, booking.vmTypeId);
+        emit BookingClaimed(
+            minerPayout,
+            booking.index,
+            booking.miner,
+            booking.user,
+            booking.bookedTill - booking.bookedAt,
+            booking.vmTypeId
+        );
 
         if (!token.transfer(booking.miner, minerPayout)) {
             revert("could not payout for miner");
@@ -287,7 +360,6 @@ contract Broker {
             revert("could not payout for community");
         }
     }
-
 
     function getAvailableOffers(uint256 _vmTypeId)
         public
@@ -313,9 +385,9 @@ contract Broker {
     }
 
     function getUsersBookings(address user)
-    public
-    view
-    returns (Booking[] memory filteredBookings)
+        public
+        view
+        returns (Booking[] memory filteredBookings)
     {
         Booking[] memory bookingsTemp = new Booking[](nextBookingId);
         uint256 count;
@@ -381,10 +453,7 @@ contract Broker {
     }
 
     function withdrawCoin(uint256 numTokens) public returns (bool) {
-        require(
-            userBalance() >= numTokens,
-            "insufficient funds to withdraw"
-        );
+        require(userBalance() >= numTokens, "insufficient funds to withdraw");
 
         if (!token.transfer(msg.sender, numTokens)) {
             return false;
@@ -414,7 +483,10 @@ contract Broker {
         return token.allowance(msg.sender, address(this));
     }
 
-    function setCommunityContract(address newCommunityAddress) public returns (bool) {
+    function setCommunityContract(address newCommunityAddress)
+        public
+        returns (bool)
+    {
         require(
             msg.sender == community,
             "only community contract can set new community contract"
@@ -430,8 +502,7 @@ contract Broker {
 
     function setCommunityFee(uint256 fee) public returns (bool) {
         require(
-            fee > 0 && fee < 101 &&
-            msg.sender == community,
+            fee > 0 && fee < 101 && msg.sender == community,
             "community fee should be in range of 1 to 100"
         );
 

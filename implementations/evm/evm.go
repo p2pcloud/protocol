@@ -100,16 +100,8 @@ func (a *EVMImplementation) ContractAddress() common.Address {
 	return a.broker.ContractAddress()
 }
 
-func (a *EVMImplementation) GetMtlsHash(address *common.Address) (string, error) {
-	return a.broker.GetMtlsHash(address)
-}
-
 func (a *EVMImplementation) GetBooking(index int) (*protocol.VMBooking, error) {
 	return a.broker.GetBooking(index)
-}
-
-func (a *EVMImplementation) RegisterMtlsHashIfNeeded(mtlsHash string) error {
-	return a.broker.RegisterMtlsHashIfNeeded(mtlsHash)
 }
 
 func (a *EVMImplementation) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, error) {

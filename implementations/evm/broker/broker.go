@@ -3,7 +3,6 @@ package broker
 import (
 	"context"
 	"crypto/ecdsa"
-	"encoding/hex"
 	"fmt"
 	"math"
 	"math/big"
@@ -108,44 +107,6 @@ func (b *Broker) DeployContracts(community common.Address) ([]string, error) {
 
 func (b *Broker) GetMyAddress() *common.Address {
 	return &b.transactOpts.From
-}
-
-func (b *Broker) GetMtlsHash(address *common.Address) (string, error) {
-	hashBytes, err := b.session.GetMtlsHash(*address)
-	if err != nil {
-		return "", err
-	}
-	logrus.WithField("result", "0x"+hex.EncodeToString(hashBytes[:])).Debug("GetMtlsHash called")
-	return "0x" + hex.EncodeToString(hashBytes[:]), nil
-}
-
-func (b *Broker) RegisterMtlsHashIfNeeded(mtlsHash string) error {
-	logrus.WithField("mtlsHash", mtlsHash).Debug("RegisterMtlsHashIfNeeded called")
-	oldMtlsHash, err := b.GetMtlsHash(b.GetMyAddress())
-	if err != nil {
-		return err
-	}
-
-	if oldMtlsHash == mtlsHash {
-		return nil
-	}
-
-	var bytes20 [20]byte
-
-	hashBytes := common.FromHex(mtlsHash)
-
-	if len(hashBytes) != 20 {
-		return fmt.Errorf("mtls hash is not 20 bytes long")
-	}
-
-	copy(bytes20[:], hashBytes)
-
-	tx, err := b.session.SetMtlsHash(bytes20)
-	if err != nil {
-		return fmt.Errorf("could not register mtls hash: %v", err)
-	}
-
-	return b.waitForTx(tx.Hash())
 }
 
 func (b *Broker) DepositCoin(coins float64) error {
