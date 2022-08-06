@@ -1,78 +1,46 @@
 package broker
 
-// func (b *Broker) WithdrawCoins() error {
-// 	if err := b.setDecimals(); err != nil {
-// 		return err
-// 	}
+import (
+	"math/big"
+)
 
-// 	tx, err := b.session.WithdrawCoin()
-// 	if err != nil {
-// 		return err
-// 	}
+func (b *Broker) GetStablecoinBalance() (int, int, error) {
+	free, locked, err := b.session.GetStablecoinBalance(*b.GetMyAddress())
+	if err != nil {
+		return 0, 0, err
+	}
 
-// 	return b.waitForTx(tx.Hash())
-// }
+	return int(free.Int64()), int(locked.Int64()), nil
+}
 
-// func (b *Broker) Balance() (int, error) {
-// 	if err := b.setDecimals(); err != nil {
-// 		return 0, err
-// 	}
+func (b *Broker) DepositStablecoin(amount int) error {
+	amt := big.NewInt(int64(amount))
 
-// 	amount, err := b.session.UserBalance()
-// 	if err != nil {
-// 		return 0, err
-// 	}
+	_, err := b.EstimateGas("DepositStablecoin", amt)
+	if err != nil {
+		return err
+	}
 
-// 	return int(amount.Int64()), nil
-// }
+	tx, err := b.session.DepositStablecoin(amt)
+	if err != nil {
+		return err
+	}
 
-// func (b *Broker) DepositBalance() (int, error) {
-// 	if err := b.setDecimals(); err != nil {
-// 		return 0, err
-// 	}
+	return b.waitForTx(tx)
+}
 
-// 	amount, err := b.session.UserDeposit()
-// 	if err != nil {
-// 		return 0, err
-// 	}
+func (b *Broker) WithdrawStablecoin(amount int) error {
+	amt := big.NewInt(int64(amount))
 
-// 	return int(amount.Int64()), nil
-// }
+	_, err := b.EstimateGas("WithdrawStablecoin", amt)
+	if err != nil {
+		return err
+	}
 
-// func (b *Broker) LockedBalance() (int, error) {
-// 	if err := b.setDecimals(); err != nil {
-// 		return 0, err
-// 	}
+	tx, err := b.session.WithdrawStablecoin(amt)
+	if err != nil {
+		return err
+	}
 
-// 	amount, err := b.session.UserLockedBalance()
-// 	if err != nil {
-// 		return 0, err
-// 	}
-
-// 	return int(amount.Int64()), nil
-// }
-
-// func (b *Broker) UserTokenBalance() (int, error) {
-// 	if err := b.setDecimals(); err != nil {
-// 		return 0, err
-// 	}
-
-// 	amount, err := b.session.UserTokenBalance()
-// 	if err != nil {
-// 		return 0, err
-// 	}
-
-// 	return int(amount.Int64()), nil
-// }
-
-// // func (b *Broker) amountToCoins(amount *big.Int) float64 {
-// // 	coin := math.Pow(10, float64(b.decimals))
-
-// // 	return float64(amount.Int64()) / coin
-// // }
-
-// // func (b *Broker) coinsToAmount(coins float64) *big.Int {
-// // 	coinsInt := int64(coins * math.Pow(10, float64(b.decimals)))
-
-// // 	return big.NewInt(coinsInt)
-// // }
+	return b.waitForTx(tx)
+}

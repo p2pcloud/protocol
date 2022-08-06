@@ -5,10 +5,14 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"strings"
 	"sync"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/p2pcloud/protocol/implementations/evm/contracts"
 )
@@ -19,11 +23,10 @@ type Broker struct {
 	contractAddress common.Address
 	session         contracts.BrokerSession
 	privateKey      *ecdsa.PrivateKey
-	waitForTx       func(hash common.Hash) error
+	waitForTx       func(tx *types.Transaction) error
 	updateCh        chan<- common.Address
 
 	mu                *sync.Mutex
-	decimals          uint8
 	stableCoinAddress *common.Address
 }
 
@@ -32,7 +35,7 @@ func NewBroker(
 	privateKey *ecdsa.PrivateKey,
 	contractAddressStr string,
 	chanId int64,
-	waitForTx func(hash common.Hash) error,
+	waitForTx func(tx *types.Transaction) error,
 	updCh chan<- common.Address,
 ) (*Broker, error) {
 	if chanId == 0 {
@@ -54,9 +57,46 @@ func NewBroker(
 		updateCh:        updCh,
 	}
 
-	b.RegenerateSession()
+	instance, err := contracts.NewBroker(b.contractAddress, b.backend)
+	if err != nil {
+		return nil, err
+	}
+
+	b.session = contracts.BrokerSession{
+		Contract:     instance,
+		TransactOpts: *b.transactOpts,
+		CallOpts: bind.CallOpts{
+			Pending: false,                // Whether to operate on the pending state or the last known one
+			From:    b.transactOpts.From, // Optional the sender address, otherwise the first account is used
+			Context: context.Background(),
+		},
+	}
 
 	return b, nil
+}
+
+func (b *Broker) EstimateGas(method string, args ...interface{}) (uint64, error) {
+	abi, err := abi.JSON(strings.NewReader(contracts.BrokerABI))
+	if err != nil {
+		return 0, err
+	}
+
+	input, err := abi.Pack(method, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	callMsg := ethereum.CallMsg{
+		From:     b.transactOpts.From,
+		To:       &b.contractAddress,
+		Gas:      0,
+		GasPrice: big.NewInt(0),
+		Value:    big.NewInt(0),
+		Data:     input,
+	}
+
+	gasLimit, err := b.backend.EstimateGas(context.Background(), callMsg)
+	return gasLimit, err
 }
 
 func (b *Broker) GetPrivateKey() *ecdsa.PrivateKey {
@@ -65,24 +105,6 @@ func (b *Broker) GetPrivateKey() *ecdsa.PrivateKey {
 
 func (b *Broker) ContractAddress() common.Address {
 	return b.contractAddress
-}
-
-func (b *Broker) RegenerateSession() error {
-	instance, err := contracts.NewBroker(b.contractAddress, b.backend)
-	if err != nil {
-		return err
-	}
-
-	b.session = contracts.BrokerSession{
-		Contract:     instance,
-		TransactOpts: *b.transactOpts,
-		CallOpts: bind.CallOpts{
-			Pending: false,               // Whether to operate on the pending state or the last known one
-			From:    b.transactOpts.From, // Optional the sender address, otherwise the first account is used
-			Context: context.Background(),
-		},
-	}
-	return nil
 }
 
 func (b *Broker) DeployContract() (string, error) {
@@ -97,9 +119,7 @@ func (b *Broker) DeployContract() (string, error) {
 	}
 	b.contractAddress = address
 
-	b.RegenerateSession()
-
-	return address.String(), b.waitForTx(tx.Hash())
+	return address.String(), b.waitForTx(tx)
 }
 
 func (b *Broker) GetMyAddress() *common.Address {
@@ -116,7 +136,7 @@ func (b *Broker) GetMyAddress() *common.Address {
 // 		return err
 // 	}
 
-// 	return b.waitForTx(tx.Hash())
+// 	return b.waitForTx(tx)
 // }
 
 // func (b *Broker) UserAllowance() (float64, error) {

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -33,12 +32,12 @@ func NewTransactionWaiter(
 	}
 }
 
-func (t *TransactionWaiter) WaitForTx(hash common.Hash) error {
+func (t *TransactionWaiter) WaitForTx(tx *types.Transaction) error {
 	// run instantly, cause ticker firstly waits the period, helpful in tests
 	ctx, cancel := context.WithTimeout(context.Background(), t.timeout)
 	defer cancel()
 
-	finished, err := t.waitForTx(ctx, hash)
+	finished, err := t.waitForTx(ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -56,7 +55,7 @@ func (t *TransactionWaiter) WaitForTx(hash common.Hash) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			finished, err = t.waitForTx(ctx, hash)
+			finished, err = t.waitForTx(ctx, tx)
 			if err != nil {
 				return err
 			}
@@ -68,8 +67,8 @@ func (t *TransactionWaiter) WaitForTx(hash common.Hash) error {
 	}
 }
 
-func (t *TransactionWaiter) waitForTx(ctx context.Context, hash common.Hash) (bool, error) {
-	pending, err := t.isTxPending(ctx, hash)
+func (t *TransactionWaiter) waitForTx(ctx context.Context, tx *types.Transaction) (bool, error) {
+	pending, err := t.isTxPending(ctx, tx)
 	if err != nil {
 		return false, err
 	}
@@ -78,7 +77,7 @@ func (t *TransactionWaiter) waitForTx(ctx context.Context, hash common.Hash) (bo
 		return false, nil
 	}
 
-	receipt, err := t.getTxReceipt(ctx, hash)
+	receipt, err := t.getTxReceipt(ctx, tx)
 	if err != nil {
 		return false, err
 	}
@@ -92,11 +91,11 @@ func (t *TransactionWaiter) waitForTx(ctx context.Context, hash common.Hash) (bo
 	return true, nil
 }
 
-func (t *TransactionWaiter) isTxPending(ctx context.Context, hash common.Hash) (bool, error) {
+func (t *TransactionWaiter) isTxPending(ctx context.Context, tx *types.Transaction) (bool, error) {
 	var pending bool
 
 	err := backoff.Retry(func() error {
-		_, txPending, err := t.client.TransactionByHash(ctx, hash)
+		_, txPending, err := t.client.TransactionByHash(ctx, tx.Hash())
 		if err != nil {
 			return err
 		}
@@ -109,11 +108,11 @@ func (t *TransactionWaiter) isTxPending(ctx context.Context, hash common.Hash) (
 	return pending, err
 }
 
-func (t *TransactionWaiter) getTxReceipt(ctx context.Context, hash common.Hash) (*types.Receipt, error) {
+func (t *TransactionWaiter) getTxReceipt(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
 	var receipt *types.Receipt
 
 	err := backoff.Retry(func() error {
-		result, err := t.client.TransactionReceipt(ctx, hash)
+		result, err := t.client.TransactionReceipt(ctx, tx.Hash())
 		if err != nil {
 			return err
 		}

@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
@@ -9,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/p2pcloud/protocol/pkg/keyring"
@@ -26,8 +28,13 @@ func (b *InMemBlockChain) GetNextPrivateKey() (*ecdsa.PrivateKey, error) {
 	return b.Origin.GetNextPrivateKey()
 }
 
-func (b *InMemBlockChain) WaitForTx(_ common.Hash) error {
+func (b *InMemBlockChain) WaitForTx(tx *types.Transaction) error {
 	b.Origin.Backend.Commit()
+
+	receipt, err := b.Origin.Backend.TransactionReceipt(context.Background(), tx.Hash())
+	_ = receipt
+	_ = err
+	// receipt.Status
 
 	return nil
 }

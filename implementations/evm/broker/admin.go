@@ -6,11 +6,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// func (b *Broker) SetStablecoinAddress(address common.Address) error {
-// 	tx, err := b.session.SetStablecoinAddress(address)
-// 	if err != nil {
-// 		return err
-// 	}
+func (b *Broker) SetStablecoinAddress(address common.Address) error {
+	tx, err := b.session.SetStablecoinAddress(address)
+	if err != nil {
+		return err
+	}
+	return b.waitForTx(tx)
+}
 
 // 	if err = b.waitForTx(tx.Hash()); err != nil {
 // 		return err
@@ -57,7 +59,7 @@ func (b *Broker) SetCommunityContract(address common.Address) error {
 		return err
 	}
 
-	return b.waitForTx(tx.Hash())
+	return b.waitForTx(tx)
 }
 
 func (b *Broker) GetCommunityContract() (common.Address, error) {
@@ -70,7 +72,7 @@ func (b *Broker) SetCommunityFee(fee int64) error {
 		return err
 	}
 
-	return b.waitForTx(tx.Hash())
+	return b.waitForTx(tx)
 }
 
 func (b *Broker) GetCommunityFee() (int64, error) {

@@ -1,20 +1,24 @@
 package evm_test
 
 import (
+	"crypto/ecdsa"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/p2pcloud/protocol"
 	"github.com/p2pcloud/protocol/implementations/evm"
 	"github.com/p2pcloud/protocol/implementations/evm/broker"
+	"github.com/p2pcloud/protocol/implementations/evm/token"
 	"github.com/p2pcloud/protocol/pkg/keyring"
 	"github.com/stretchr/testify/require"
 )
 
 type TestEnv struct {
-	Admin      protocol.P2PCloudProtocolIface
-	Users      []protocol.P2PCloudProtocolIface
-	blockchain *evm.InMemBlockChain
+	Admin                   protocol.P2PCloudProtocolIface
+	Users                   []protocol.P2PCloudProtocolIface
+	blockchain              *evm.InMemBlockChain
+	adminStablecoinContract *token.Token
+	t                       *testing.T
 }
 
 const ChainIDSimulated = 1337
@@ -24,16 +28,31 @@ func CreateTestEnv(t *testing.T, usersCount int) *TestEnv {
 
 	testEnv := &TestEnv{
 		blockchain: blockchain,
+		t:          t,
 	}
-	testEnv.CreateAdmin(t)
-	testEnv.CreateUsers(t, usersCount)
+
+	adminPk, err := blockchain.Origin.GetNextPrivateKey()
+	require.NoError(t, err)
+
+	tokenAddress := testEnv.deployToken(adminPk)
+	brokerAddress := testEnv.deployBroker(adminPk, tokenAddress)
+	testEnv.createAdmin(adminPk, brokerAddress)
+	testEnv.createUsers(usersCount)
 	return testEnv
 }
 
-func (te *TestEnv) CreateAdmin(t *testing.T) {
-	adminPk, err := te.blockchain.Origin.GetNextPrivateKey()
-	require.NoError(t, err)
+func (te *TestEnv) AddSomeStablecoin(to common.Address, amount int) {
+	err := te.adminStablecoinContract.Transfer(to, amount)
+	require.NoError(te.t, err)
+}
 
+func (te *TestEnv) RequireStablecoinBalance(address common.Address, expectedBalance int) {
+	balance, err := te.adminStablecoinContract.BalanceOf(address)
+	require.NoError(te.t, err)
+	require.Equal(te.t, expectedBalance, balance)
+}
+
+func (te *TestEnv) deployBroker(adminPk *ecdsa.PrivateKey, tokenAddress common.Address) string {
 	idkWhyWeNeedThat := make(chan<- common.Address)
 
 	adminBrokerContract, err := broker.NewBroker(
@@ -44,11 +63,54 @@ func (te *TestEnv) CreateAdmin(t *testing.T) {
 		te.blockchain.WaitForTx,
 		idkWhyWeNeedThat,
 	)
-	require.NoError(t, err)
+	require.NoError(te.t, err)
 
 	brokerContractAddress, err := adminBrokerContract.DeployContract()
-	require.NoError(t, err)
 
+	adminBrokerContract, err = broker.NewBroker(
+		te.blockchain.Origin.Backend,
+		adminPk,
+		brokerContractAddress,
+		ChainIDSimulated,
+		te.blockchain.WaitForTx,
+		idkWhyWeNeedThat,
+	)
+	require.NoError(te.t, err)
+
+	err = adminBrokerContract.SetStablecoinAddress(tokenAddress)
+	require.NoError(te.t, err)
+
+	require.NoError(te.t, err)
+	return brokerContractAddress
+}
+
+func (te *TestEnv) deployToken(adminPk *ecdsa.PrivateKey) common.Address {
+	adminStablecoinContract, err := token.NewToken(
+		te.blockchain.Origin.Backend,
+		adminPk,
+		"",
+		ChainIDSimulated,
+		te.blockchain.WaitForTx,
+	)
+	require.NoError(te.t, err)
+
+	tokenAddress, err := adminStablecoinContract.DeployContract()
+	require.NoError(te.t, err)
+
+	//recreate with address
+	te.adminStablecoinContract, err = token.NewToken(
+		te.blockchain.Origin.Backend,
+		adminPk,
+		tokenAddress.Hex(),
+		ChainIDSimulated,
+		te.blockchain.WaitForTx,
+	)
+	require.NoError(te.t, err)
+
+	return *tokenAddress
+}
+
+func (te *TestEnv) createAdmin(adminPk *ecdsa.PrivateKey, brokerContractAddress string) {
 	admin, err := evm.NewEvmImplementationFromBackend(
 		te.blockchain.Origin.Backend,
 		keyring.EncodePrivateKey(adminPk),
@@ -56,17 +118,17 @@ func (te *TestEnv) CreateAdmin(t *testing.T) {
 		ChainIDSimulated,
 		te.blockchain.WaitForTx,
 	)
-	require.NoError(t, err)
+	require.NoError(te.t, err)
 
 	te.Admin = admin
 }
 
-func (te *TestEnv) CreateUsers(t *testing.T, usersCount int) {
+func (te *TestEnv) createUsers(usersCount int) {
 	users := make([]protocol.P2PCloudProtocolIface, usersCount)
 
 	for i := 0; i < usersCount; i++ {
 		userPk, err := te.blockchain.Origin.GetNextPrivateKey()
-		require.NoError(t, err)
+		require.NoError(te.t, err)
 
 		users[i], err = evm.NewEvmImplementationFromBackend(
 			te.blockchain.Origin.Backend,
@@ -75,6 +137,7 @@ func (te *TestEnv) CreateUsers(t *testing.T, usersCount int) {
 			ChainIDSimulated,
 			te.blockchain.WaitForTx,
 		)
+		require.NoError(te.t, err)
 	}
 
 	te.Users = users

@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/p2pcloud/protocol"
@@ -16,8 +17,8 @@ import (
 )
 
 type EVMImplementation struct {
-	broker *broker.Broker
-	token  *token.Token
+	Broker *broker.Broker
+	Token  *token.Token
 }
 
 var _ protocol.P2PCloudProtocolIface = (*EVMImplementation)(nil)
@@ -26,7 +27,7 @@ func NewEvmImplementationFromBackend(
 	contractBackend bind.ContractBackend,
 	privateKey string, brokerContractAddress string,
 	chanId int64,
-	waitForTx func(hash common.Hash) error,
+	waitForTx func(tx *types.Transaction) error,
 ) (*EVMImplementation, error) {
 
 	privateKeyDecoded, err := keyring.DecodePrivateKey(privateKey)
@@ -48,23 +49,16 @@ func NewEvmImplementationFromBackend(
 		return nil, err
 	}
 
-	tkn := token.NewToken(&token.Params{
-		Backend:            contractBackend,
-		PrivateKey:         myBroker.GetPrivateKey(),
-		ContractAddressStr: tokenAddr.Hex(),
-		ChainID:            chanId,
-		UpdCh:              updCh,
-		WaitForTx:          waitForTx,
-	})
-
-	//TODO: wtf is this
-	// if err = tkn.StartUp(); err != nil {
-	// 	return nil, err
-	// }
+	tkn, err := token.NewToken(
+		contractBackend, privateKeyDecoded, tokenAddr.Hex(), chanId, waitForTx,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	return &EVMImplementation{
-		broker: myBroker,
-		token:  tkn,
+		Broker: myBroker,
+		Token:  tkn,
 	}, nil
 }
 
@@ -86,129 +80,122 @@ func NewEVMImplementation(
 }
 
 func (a *EVMImplementation) AddOffer(offer protocol.Offer, callbackUrl string) error {
-	return a.broker.AddOffer(offer, callbackUrl)
+	return a.Broker.AddOffer(offer, callbackUrl)
 }
 
 func (a *EVMImplementation) GetMyOffers() ([]protocol.Offer, error) {
-	return a.broker.GetMyOffers()
+	return a.Broker.GetMyOffers()
 }
 
 func (a *EVMImplementation) UpdateOffer(offer protocol.Offer) error {
-	return a.broker.UpdateOffer(offer)
+	return a.Broker.UpdateOffer(offer)
 }
 
 func (a *EVMImplementation) GetPrivateKey() *ecdsa.PrivateKey {
-	return a.broker.GetPrivateKey()
+	return a.Broker.GetPrivateKey()
 }
 
 func (a *EVMImplementation) ContractAddress() common.Address {
-	return a.broker.ContractAddress()
+	return a.Broker.ContractAddress()
 }
 
 func (a *EVMImplementation) GetBooking(index int) (*protocol.VMBooking, error) {
-	return a.broker.GetBooking(index)
+	return a.Broker.GetBooking(index)
 }
 
 func (a *EVMImplementation) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, error) {
-	return a.broker.GetAvailableOffers(vmTypeId)
+	return a.Broker.GetAvailableOffers(vmTypeId)
 }
 
 func (a *EVMImplementation) RemoveOffer(id int) error {
-	return a.broker.RemoveOffer(id)
+	return a.Broker.RemoveOffer(id)
+}
+
+func (a *EVMImplementation) DepositStablecoin(amount int) error {
+	err := a.Token.Approve(a.Broker.ContractAddress(), amount)
+	if err != nil {
+		return err
+	}
+
+	return a.Broker.DepositStablecoin(amount)
+}
+
+func (a *EVMImplementation) WithdrawStablecoin(amount int) error {
+	return a.Broker.WithdrawStablecoin(amount)
 }
 
 func (a *EVMImplementation) BookVM(offerIndex int) error {
-	return a.broker.BookVM(offerIndex)
+	return a.Broker.BookVM(offerIndex)
 }
 
 func (a *EVMImplementation) GetUsersBookings() ([]protocol.VMBooking, error) {
-	return a.broker.GetUsersBookings()
+	return a.Broker.GetUsersBookings()
 }
 
 func (a *EVMImplementation) GetMyAddress() *common.Address {
-	return a.broker.GetMyAddress()
+	return a.Broker.GetMyAddress()
 }
 
 func (a *EVMImplementation) GetMinerUrl(address *common.Address) (string, error) {
-	return a.broker.GetMinerUrl(address)
+	return a.Broker.GetMinerUrl(address)
 }
 
 func (a *EVMImplementation) SetMinerUrlIfNeeded(newUrl string) error {
-	return a.broker.SetMinerUrlIfNeeded(newUrl)
+	return a.Broker.SetMinerUrlIfNeeded(newUrl)
 }
 
 func (a *EVMImplementation) GetTime() (int, error) {
-	return a.broker.GetTime()
+	return a.Broker.GetTime()
 }
 
 func (a *EVMImplementation) GetMinersBookings() ([]protocol.VMBooking, error) {
-	return a.broker.GetMinersBookings()
+	return a.Broker.GetMinersBookings()
 }
 
-// func (a *EVMImplementation) DepositCoin(coins float64) error {
-// 	if err := a.token.Approve(a.broker.ContractAddress(), coins); err != nil {
-// 		return err
-// 	}
-
-// 	return a.broker.DepositCoin(coins)
-// }
-
-// func (a *EVMImplementation) WithdrawCoin() error {
-// 	return a.broker.WithdrawCoin()
-// }
-
-// func (a *EVMImplementation) Balance() (float64, error) {
-// 	return a.broker.Balance()
-// }
-
-// func (a *EVMImplementation) UserTokenBalance() (float64, error) {
-// 	return a.broker.UserTokenBalance()
-// }
-
-// func (a *EVMImplementation) UserAllowance() (float64, error) {
-// 	return a.broker.UserAllowance()
-// }
+func (a *EVMImplementation) GetStablecoinBalance() (int, int, error) {
+	return a.Broker.GetStablecoinBalance()
+}
 
 // func (a *EVMImplementation) SetStablecoinAddress(address common.Address) error {
-// 	return a.broker.SetStablecoinAddress(address)
+// 	return a.Broker.SetStablecoinAddress(address)
 // }
 
 func (a *EVMImplementation) GetStablecoinAddress() (common.Address, error) {
-	return a.broker.GetStablecoinAddress()
+	return a.Broker.GetStablecoinAddress()
 }
 
 func (a *EVMImplementation) SetCommunityContract(address common.Address) error {
-	return a.broker.SetCommunityContract(address)
+	return a.Broker.SetCommunityContract(address)
 }
 
 func (a *EVMImplementation) GetCommunityContract() (common.Address, error) {
-	return a.broker.GetCommunityContract()
+	return a.Broker.GetCommunityContract()
 }
 
 func (a *EVMImplementation) SetCommunityFee(fee int64) error {
-	return a.broker.SetCommunityFee(fee)
+	return a.Broker.SetCommunityFee(fee)
 }
 
 func (a *EVMImplementation) GetCommunityFee() (int64, error) {
-	return a.broker.GetCommunityFee()
+	return a.Broker.GetCommunityFee()
 }
 
 // func (a *EVMImplementation) AbortBooking(index uint64, abortType protocol.AbortType) error {
-// 	return a.broker.AbortBooking(index, abortType)
+// 	return a.Broker.AbortBooking(index, abortType)
 // }
 
 // func (a *EVMImplementation) ClaimExpired(index uint64) error {
-// 	return a.broker.ClaimExpired(index)
+// 	return a.Broker.ClaimExpired(index)
 // }
 
 // func (a *EVMImplementation) ExtendBooking(index uint64, secs int) error {
-// 	return a.broker.ExtendBooking(index, secs)
+// 	return a.Broker.ExtendBooking(index, secs)
 // }
 
 // func (a *EVMImplementation) DepositBalance() (float64, error) {
-// 	return a.broker.DepositBalance()
+// 	return a.Broker.DepositBalance()
 // }
 
 // func (a *EVMImplementation) LockedBalance() (float64, error) {
-// 	return a.broker.LockedBalance()
+// 	return a.Broker.LockedBalance()
 // }

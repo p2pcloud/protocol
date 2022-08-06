@@ -44,6 +44,11 @@ type P2PCloudProtocolIface interface {
 	GetAvailableOffers(vmTypeId int) ([]Offer, error)
 	RemoveOffer(id int) error
 
+	//Balance
+	GetStablecoinBalance() (int, int, error)
+	DepositStablecoin(amount int) error
+	WithdrawStablecoin(amount int) error
+
 	//WIP
 	// DepositCoin(coins float64) error
 	// WithdrawCoin() error

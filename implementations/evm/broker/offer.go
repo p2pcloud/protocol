@@ -9,21 +9,30 @@ import (
 )
 
 func (b *Broker) AddOffer(offer protocol.Offer, callbackUrl string) error {
-	err := b.SetMinerUrlIfNeeded(callbackUrl)
+	_pps := big.NewInt(int64(offer.PPS))
+	_vmTypeId := big.NewInt(int64(offer.VmTypeId))
+	_aval := big.NewInt(int64(offer.Availablility))
+
+	_, err := b.EstimateGas("AddOffer", _pps, _vmTypeId, _aval)
+	if err != nil {
+		return err
+	}
+
+	err = b.SetMinerUrlIfNeeded(callbackUrl)
 	if err != nil {
 		return err
 	}
 
 	tx, err := b.session.AddOffer(
-		big.NewInt(int64(offer.PPS)),
-		big.NewInt(int64(offer.VmTypeId)),
-		big.NewInt(int64(offer.Availablility)),
+		_pps,
+		_vmTypeId,
+		_aval,
 	)
 	if err != nil {
 		return err
 	}
 
-	return b.waitForTx(tx.Hash())
+	return b.waitForTx(tx)
 }
 
 func (b *Broker) GetMyOffers() ([]protocol.Offer, error) {
@@ -75,7 +84,7 @@ func (b *Broker) RemoveOffer(offerId int) error {
 	if err != nil {
 		return err
 	}
-	return b.waitForTx(tx.Hash())
+	return b.waitForTx(tx)
 }
 
 func (b *Broker) UpdateOffer(offer protocol.Offer) error {
@@ -92,7 +101,7 @@ func (b *Broker) UpdateOffer(offer protocol.Offer) error {
 		return err
 	}
 
-	return b.waitForTx(tx.Hash())
+	return b.waitForTx(tx)
 }
 
 func (b *Broker) GetMinerUrl(address *common.Address) (string, error) {
@@ -124,5 +133,5 @@ func (b *Broker) SetMinerUrlIfNeeded(newUrl string) error {
 		return err
 	}
 
-	return b.waitForTx(tx.Hash())
+	return b.waitForTx(tx)
 }

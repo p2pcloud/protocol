@@ -124,7 +124,7 @@ contract Broker {
         return block.timestamp;
     }
 
-    function addOffer(
+    function AddOffer(
         uint256 pricePerSecond,
         uint256 vmTypeId,
         uint256 machinesAvailable
@@ -161,7 +161,7 @@ contract Broker {
         delete vmOffers[offerIndex];
     }
 
-    function DepositCoins(uint256 numTokens) public returns (bool) {
+    function DepositStablecoin(uint256 numTokens) public returns (bool) {
         if (!stablecoin.transferFrom(msg.sender, address(this), numTokens)) {
             return false;
         }
@@ -180,15 +180,15 @@ contract Broker {
         return userTotalPps[user] * SECONDS_IN_WEEK;
     }
 
-    function WithdrawStablecoin() public returns (bool) {
+    function WithdrawStablecoin(uint256 amt) public returns (bool) {
         uint256 freeBalance = stablecoinBalance[msg.sender] -
             getLockedStablecoinBalance(msg.sender);
 
-        if (!stablecoin.transfer(msg.sender, freeBalance)) {
-            return false;
-        }
+        require(freeBalance >= amt, "Not enough balance to withdraw");
 
-        stablecoinBalance[msg.sender] -= freeBalance;
+        require(stablecoin.transfer(msg.sender, amt), "ERC20 transfer failed");
+
+        stablecoinBalance[msg.sender] -= amt;
         return true;
     }
 

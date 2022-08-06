@@ -15,7 +15,7 @@ func (b *Broker) BookVM(offerIndex int) error {
 		return err
 	}
 
-	return b.waitForTx(tx.Hash())
+	return b.waitForTx(tx)
 }
 
 func (b *Broker) GetUsersBookings() ([]protocol.VMBooking, error) {
@@ -106,7 +106,7 @@ func (b *Broker) GetMinersBookings() ([]protocol.VMBooking, error) {
 // 		return err
 // 	}
 
-// 	return b.waitForTx(tx.Hash())
+// 	return b.waitForTx(tx)
 // }
 
 // func (b *Broker) ClaimExpired(index uint64) error {
@@ -115,7 +115,7 @@ func (b *Broker) GetMinersBookings() ([]protocol.VMBooking, error) {
 // 		return err
 // 	}
 
-// 	return b.waitForTx(tx.Hash())
+// 	return b.waitForTx(tx)
 // }
 
 // func (b *Broker) ExtendBooking(index uint64, secs int) error {
@@ -124,7 +124,7 @@ func (b *Broker) GetMinersBookings() ([]protocol.VMBooking, error) {
 // 		return err
 // 	}
 
-// 	return b.waitForTx(tx.Hash())
+// 	return b.waitForTx(tx)
 // }
 
 func (b *Broker) GetUserBookings() ([]protocol.VMBooking, error) {
