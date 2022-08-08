@@ -10,7 +10,14 @@ import (
 )
 
 func (b *Broker) BookVM(offerIndex int) error {
-	tx, err := b.session.BookVM(big.NewInt(int64(offerIndex)))
+	_offerIndex := big.NewInt(int64(offerIndex))
+
+	_, err := b.EstimateGas("BookVM", _offerIndex)
+	if err != nil {
+		return err
+	}
+
+	tx, err := b.session.BookVM(_offerIndex)
 	if err != nil {
 		return err
 	}

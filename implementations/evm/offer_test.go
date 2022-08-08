@@ -137,3 +137,61 @@ func TestUpdateOffer(t *testing.T) {
 	require.Equal(t, updatedOffers[0].PPS, 400)              //updated
 	require.Equal(t, updatedOffers[0].Availablility, 999999) //updated
 }
+
+func TestAvailableOffers(t *testing.T) {
+	testEnv := CreateTestEnv(t, 3)
+
+	var err error
+
+	miner1 := testEnv.Users[0]
+	miner2 := testEnv.Users[0]
+	user := testEnv.Users[0]
+
+	const OUR_TYPE = 0
+	const OTHER_TYPE = 777
+
+	//0 avalability
+	err = miner1.AddOffer(protocol.Offer{
+		VmTypeId:      OUR_TYPE,
+		PPS:           12,
+		Availablility: 0,
+	}, "https://hello.world")
+	require.NoError(t, err)
+
+	//wrong type
+	err = miner1.AddOffer(protocol.Offer{
+		VmTypeId:      OTHER_TYPE,
+		PPS:           12,
+		Availablility: 1,
+	}, "https://hello.world")
+	require.NoError(t, err)
+
+	//all good
+	err = miner1.AddOffer(protocol.Offer{
+		VmTypeId:      OUR_TYPE,
+		PPS:           11,
+		Availablility: 11,
+	}, "https://hello.world")
+	require.NoError(t, err)
+
+	err = miner2.AddOffer(protocol.Offer{
+		VmTypeId:      OUR_TYPE,
+		PPS:           22,
+		Availablility: 22,
+	}, "https://hello.world")
+	require.NoError(t, err)
+
+	offers, err := user.GetAvailableOffers(OUR_TYPE)
+	require.NoError(t, err)
+	require.Len(t, offers, 2)
+
+	require.Equal(t, offers[0].VmTypeId, OUR_TYPE)
+	require.Equal(t, offers[0].PPS, 11)
+	require.Equal(t, offers[0].Availablility, 11)
+
+	require.Equal(t, offers[1].VmTypeId, OUR_TYPE)
+	require.Equal(t, offers[1].PPS, 22)
+	require.Equal(t, offers[1].Availablility, 22)
+}
+
+//TODO: test offer availability becomes lower with vm booking

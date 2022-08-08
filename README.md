@@ -41,9 +41,9 @@ There are 3 actors - miner, user and community. User books and pays for VM. Mine
 1. User sends a stablecoin to the Broker.
     - Functions: `DepositStablecoin`, `GetBalance`, `WithdrawStablecoin`
 1. User/Miner withdraws a stablecoin from the Broker. Vatiable `totalPPS` get's checked to make sure there is enough money for a week of work.
-    - Functions: `withdrawCoin`
+    - Functions: `WithdrawStablecoin`
 1. User gets list of offers
-    - Functions: `getAvailableOffers`
+    - Functions: `GetAvailableOffers`
 1. User books VM. System checks that he has enough money to pay for all his VMs for 7 days (variable `totalPPS`).
     - Functions: `bookVM`
 1. User aborts booking. With reason (0 - ok, 1 - miner misbehaviour)

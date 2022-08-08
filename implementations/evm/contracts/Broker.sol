@@ -207,11 +207,13 @@ contract Broker {
             "No machines available"
         );
 
+        uint256 willBeLocked = getLockedStablecoinBalance(msg.sender) +
+            vmOffers[offerIndex].pricePerSecond *
+            SECONDS_IN_WEEK;
+
         require(
-            (userTotalPps[msg.sender] + vmOffers[offerIndex].pricePerSecond) *
-                SECONDS_IN_WEEK >=
-                stablecoinBalance[msg.sender],
-            "You don't have enough balance to pay for this and all other VMs for 7 days"
+            willBeLocked <= stablecoinBalance[msg.sender],
+            "You don't have enough balance to pay for this and all other VMs for 7 days "
         );
 
         Booking memory booking = Booking(
@@ -227,6 +229,8 @@ contract Broker {
         nextBookingId++;
 
         userTotalPps[msg.sender] += vmOffers[offerIndex].pricePerSecond;
+
+        vmOffers[offerIndex].machinesAvailable -= 1;
 
         return nextBookingId - 1;
     }
