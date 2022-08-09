@@ -4,59 +4,64 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/p2pcloud/protocol"
-	"github.com/p2pcloud/protocol/implementations/evm/contracts"
-	"github.com/sirupsen/logrus"
 	"math"
 	"math/big"
 	"sync"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/p2pcloud/protocol/implementations/evm/contracts"
 )
 
 type Token struct {
-	coin         *big.Int
 	backend      bind.ContractBackend
 	transactOpts *bind.TransactOpts
 	session      contracts.TokenSession
 	privateKey   *ecdsa.PrivateKey
 
-	waitForTx func(common.Hash) error
-	upd       <-chan common.Address
+	waitForTx func(tx *types.Transaction) error
 
 	mu              *sync.Mutex
-	decimals        uint8
+	decimals        int16
 	contractAddress common.Address
 }
 
-type Params struct {
-	Decimals           *uint8
-	Backend            bind.ContractBackend
-	PrivateKey         *ecdsa.PrivateKey
-	ContractAddressStr string
-	ChainID            int64
-	WaitForTx          func(common.Hash) error
-	UpdCh              <-chan common.Address
-}
-
-func NewToken(params *Params) protocol.TokenIface {
-	transactOpts, _ := bind.NewKeyedTransactorWithChainID(params.PrivateKey, big.NewInt(params.ChainID))
+func NewToken(
+	backend bind.ContractBackend,
+	privateKey *ecdsa.PrivateKey,
+	contractAddressStr string,
+	chainId int64,
+	waitForTx func(tx *types.Transaction) error,
+) (*Token, error) {
+	transactOpts, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(chainId))
 
 	b := &Token{
-		backend:         params.Backend,
+		backend:         backend,
 		transactOpts:    transactOpts,
-		contractAddress: common.HexToAddress(params.ContractAddressStr),
-		privateKey:      params.PrivateKey,
-		waitForTx:       params.WaitForTx,
+		contractAddress: common.HexToAddress(contractAddressStr),
+		privateKey:      privateKey,
+		waitForTx:       waitForTx,
 		mu:              &sync.Mutex{},
-		upd:             params.UpdCh,
+		decimals:        -1,
 	}
 
-	if params.Decimals != nil {
-		b.decimals = *params.Decimals
+	instance, err := contracts.NewToken(b.contractAddress, b.backend)
+	if err != nil {
+		return nil, err
 	}
 
-	return b
+	b.session = contracts.TokenSession{
+		Contract:     instance,
+		TransactOpts: *b.transactOpts,
+		CallOpts: bind.CallOpts{
+			Pending: true,                // Whether to operate on the pending state or the last known one
+			From:    b.transactOpts.From, // Optional the sender address, otherwise the first account is used
+			Context: context.Background(),
+		},
+	}
+
+	return b, nil
 }
 
 func (t *Token) GetPrivateKey() *ecdsa.PrivateKey {
@@ -67,70 +72,44 @@ func (t *Token) GetContractAddress() common.Address {
 	return t.contractAddress
 }
 
-func (t *Token) DeployContract(initialSupply float64) (*common.Address, error) {
+func (t *Token) DeployContract() (*common.Address, error) {
 	address, tx, _, err := contracts.DeployToken(
 		t.transactOpts,
 		t.backend,
-		t.coinsToAmount(initialSupply),
 	)
+
 	if err != nil {
 		return nil, fmt.Errorf("could not deploy token: %v", err)
 	}
 
-	if err = t.waitForTx(tx.Hash()); err != nil {
-		return nil, err
-	}
-
-	if err = t.updateToken(address); err != nil {
-		return nil, err
-	}
-
-	return &address, nil
+	return &address, t.waitForTx(tx)
 }
 
-func (t *Token) RegenerateSession() error {
-	instance, err := contracts.NewToken(t.contractAddress, t.backend)
-	if err != nil {
-		return err
-	}
-
-	t.session = contracts.TokenSession{
-		Contract:     instance,
-		TransactOpts: *t.transactOpts,
-		CallOpts: bind.CallOpts{
-			Pending: false,               // Whether to operate on the pending state or the last known one
-			From:    t.transactOpts.From, // Optional the sender address, otherwise the first account is used
-			Context: context.Background(),
-		},
-	}
-	return nil
-}
-
-func (t *Token) BalanceOf(address common.Address) (float64, error) {
+func (t *Token) BalanceOf(address common.Address) (uint64, error) {
 	amount, err := t.session.BalanceOf(address)
 	if err != nil {
 		return 0, err
 	}
 
-	return t.amountToCoins(amount), nil
+	return amount.Uint64(), nil
 }
 
-func (t *Token) Transfer(to common.Address, coins float64) error {
-	tx, err := t.session.Transfer(to, t.coinsToAmount(coins))
+func (t *Token) Transfer(to common.Address, amount uint64) error {
+	tx, err := t.session.Transfer(to, big.NewInt(0).SetUint64(amount))
 	if err != nil {
 		return err
 	}
 
-	return t.waitForTx(tx.Hash())
+	return t.waitForTx(tx)
 }
 
-func (t *Token) Approve(to common.Address, coins float64) error {
-	tx, err := t.session.Approve(to, t.coinsToAmount(coins))
+func (t *Token) Approve(to common.Address, amount uint64) error {
+	tx, err := t.session.Approve(to, big.NewInt(0).SetUint64(amount))
 	if err != nil {
 		return err
 	}
 
-	return t.waitForTx(tx.Hash())
+	return t.waitForTx(tx)
 }
 
 func (t *Token) Allowance(from, address common.Address) (float64, error) {
@@ -154,36 +133,19 @@ func (t *Token) coinsToAmount(coins float64) *big.Int {
 	return big.NewInt(coinsInt)
 }
 
-func (t *Token) StartUp() error {
-	return t.updateToken(t.contractAddress)
-}
-
-func (t *Token) asyncUpdate() {
-	for {
-		select {
-		case addr := <-t.upd:
-			if err := t.updateToken(addr); err != nil {
-				logrus.WithField("updated", addr.Hex()).Error("failed update token")
-			}
-		}
+func (t *Token) GetDecimals() (int16, error) {
+	if t.decimals != -1 {
+		return t.decimals, nil
 	}
-}
 
-func (t *Token) updateToken(contractAddr common.Address) error {
 	t.mu.Lock()
-	t.contractAddress = contractAddr
-	t.mu.Unlock()
-
-	t.RegenerateSession()
-
 	decimals, err := t.session.Decimals()
 	if err != nil {
-		return err
+		return -1, err
 	}
 
-	t.mu.Lock()
-	t.decimals = decimals
+	t.decimals = int16(decimals)
 	t.mu.Unlock()
 
-	return nil
+	return t.decimals, nil
 }

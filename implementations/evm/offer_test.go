@@ -1,43 +1,32 @@
-package broker_test
+package evm_test
 
 import (
 	"testing"
-
-	"github.com/p2pcloud/protocol/implementations/evm"
 
 	"github.com/p2pcloud/protocol"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAddOffer(t *testing.T) {
-	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+	testEnv := CreateTestEnv(t, 2)
 
-	communityPk, err := blockchain.GetNextPrivateKey()
-	require.NoError(t, err)
+	var err error
 
-	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
-	)
-	require.NoError(t, err)
-
-	contract1 := testInstances.Contracts[0]
-	contract2 := testInstances.Contracts[1]
-
-	//test add offer
-	err = contract1.AddOffer(protocol.Offer{
-		VmTypeId:      3,
-		PPS:           1,
-		Availablility: 1,
-	}, "https://hello.world")
-	require.NoError(t, err)
-	err = contract1.AddOffer(protocol.Offer{
+	err = testEnv.Users[0].AddOffer(protocol.Offer{
 		VmTypeId:      3,
 		PPS:           1,
 		Availablility: 1,
 	}, "https://hello.world")
 	require.NoError(t, err)
 
-	offers, err := contract1.GetMyOffers()
+	err = testEnv.Users[0].AddOffer(protocol.Offer{
+		VmTypeId:      3,
+		PPS:           1,
+		Availablility: 1,
+	}, "https://hello.world")
+	require.NoError(t, err)
+
+	offers, err := testEnv.Users[0].GetMyOffers()
 	require.NoError(t, err)
 	if len(offers) != 2 {
 		t.Fatalf("expected 1 offer, got %d", len(offers))
@@ -49,7 +38,7 @@ func TestAddOffer(t *testing.T) {
 		t.Fatalf("expected 1, got %d", offers[1].Index)
 	}
 
-	offers, err = contract2.GetMyOffers()
+	offers, err = testEnv.Users[1].GetMyOffers()
 	require.NoError(t, err)
 	if len(offers) != 0 {
 		t.Fatalf("expected 0 offer, got %d", len(offers))
@@ -57,18 +46,12 @@ func TestAddOffer(t *testing.T) {
 }
 
 func TestRemoveOffer(t *testing.T) {
-	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+	testEnv := CreateTestEnv(t, 2)
 
-	communityPk, err := blockchain.GetNextPrivateKey()
-	require.NoError(t, err)
+	var err error
 
-	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
-	)
-	require.NoError(t, err)
-
-	contract1 := testInstances.Contracts[0]
-	contract2 := testInstances.Contracts[1]
+	contract1 := testEnv.Users[0]
+	contract2 := testEnv.Users[1]
 
 	//test add offer
 	err = contract1.AddOffer(protocol.Offer{
@@ -90,17 +73,11 @@ func TestRemoveOffer(t *testing.T) {
 }
 
 func TestUrlUpdate(t *testing.T) {
-	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+	testEnv := CreateTestEnv(t, 1)
 
-	communityPk, err := blockchain.GetNextPrivateKey()
-	require.NoError(t, err)
+	var err error
 
-	testInstances, err := evm.InitializeTestInstances(
-		1, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
-	)
-	require.NoError(t, err)
-
-	contract := testInstances.Contracts[0]
+	contract := testEnv.Users[0]
 
 	//test add offer
 	err = contract.AddOffer(protocol.Offer{
@@ -126,17 +103,11 @@ func TestUrlUpdate(t *testing.T) {
 }
 
 func TestUpdateOffer(t *testing.T) {
-	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+	testEnv := CreateTestEnv(t, 2)
 
-	communityPk, err := blockchain.GetNextPrivateKey()
-	require.NoError(t, err)
+	var err error
 
-	testInstances, err := evm.InitializeTestInstances(
-		2, 6, nil, blockchain.Origin.Backend, blockchain, communityPk,
-	)
-	require.NoError(t, err)
-
-	contract1 := testInstances.Contracts[0]
+	contract1 := testEnv.Users[0]
 
 	//test add offer
 	err = contract1.AddOffer(protocol.Offer{
@@ -162,7 +133,65 @@ func TestUpdateOffer(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, offers, 1)
 
-	require.Equal(t, updatedOffers[0].VmTypeId, 3)           //still the same
-	require.Equal(t, updatedOffers[0].PPS, 400)              //updated
-	require.Equal(t, updatedOffers[0].Availablility, 999999) //updated
+	require.EqualValues(t, updatedOffers[0].VmTypeId, 3)           //still the same
+	require.EqualValues(t, updatedOffers[0].PPS, 400)              //updated
+	require.EqualValues(t, updatedOffers[0].Availablility, 999999) //updated
 }
+
+func TestAvailableOffers(t *testing.T) {
+	testEnv := CreateTestEnv(t, 3)
+
+	var err error
+
+	miner1 := testEnv.Users[0]
+	miner2 := testEnv.Users[0]
+	user := testEnv.Users[0]
+
+	const OUR_TYPE = 0
+	const OTHER_TYPE = 777
+
+	//0 avalability
+	err = miner1.AddOffer(protocol.Offer{
+		VmTypeId:      OUR_TYPE,
+		PPS:           12,
+		Availablility: 0,
+	}, "https://hello.world")
+	require.NoError(t, err)
+
+	//wrong type
+	err = miner1.AddOffer(protocol.Offer{
+		VmTypeId:      OTHER_TYPE,
+		PPS:           12,
+		Availablility: 1,
+	}, "https://hello.world")
+	require.NoError(t, err)
+
+	//all good
+	err = miner1.AddOffer(protocol.Offer{
+		VmTypeId:      OUR_TYPE,
+		PPS:           11,
+		Availablility: 11,
+	}, "https://hello.world")
+	require.NoError(t, err)
+
+	err = miner2.AddOffer(protocol.Offer{
+		VmTypeId:      OUR_TYPE,
+		PPS:           22,
+		Availablility: 22,
+	}, "https://hello.world")
+	require.NoError(t, err)
+
+	offers, err := user.GetAvailableOffers(OUR_TYPE)
+	require.NoError(t, err)
+	require.Len(t, offers, 2)
+
+	require.EqualValues(t, offers[0].VmTypeId, OUR_TYPE)
+	require.EqualValues(t, offers[0].PPS, 11)
+	require.EqualValues(t, offers[0].Availablility, 11)
+
+	require.EqualValues(t, offers[1].VmTypeId, OUR_TYPE)
+	require.EqualValues(t, offers[1].PPS, 22)
+	require.EqualValues(t, offers[1].Availablility, 22)
+}
+
+//TODO: test offer availability becomes lower with vm booking

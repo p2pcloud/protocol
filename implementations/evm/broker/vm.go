@@ -2,26 +2,30 @@ package broker
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/p2pcloud/protocol"
 )
 
-func (b *Broker) BookVM(offerIndex, seconds int) error {
-	tx, err := b.session.BookVM(big.NewInt(int64(offerIndex)), big.NewInt(int64(seconds)))
+func (b *Broker) BookVM(offerIndex uint64) error {
+	_, err := b.EstimateGas("BookVM", offerIndex)
 	if err != nil {
 		return err
 	}
 
-	return b.waitForTx(tx.Hash())
+	tx, err := b.session.BookVM(offerIndex)
+	if err != nil {
+		return err
+	}
+
+	return b.waitForTx(tx)
 }
 
 func (b *Broker) GetUsersBookings() ([]protocol.VMBooking, error) {
-	if err := b.setDecimals(); err != nil {
-		return nil, err
-	}
+	// if err := b.setDecimals(); err != nil {
+	// 	return nil, err
+	// }
 
 	bookings, err := b.session.FindBookingsByUser(b.transactOpts.From)
 	if err != nil {
@@ -30,24 +34,20 @@ func (b *Broker) GetUsersBookings() ([]protocol.VMBooking, error) {
 	var result []protocol.VMBooking
 	for _, booking := range bookings {
 		result = append(result, protocol.VMBooking{
-			VmTypeId:   int(booking.VmTypeId.Int64()),
-			PPS:        int(booking.PricePerSecond.Int64()),
-			Miner:      &booking.Miner,
-			Index:      int(booking.Index.Int64()),
-			User:       &booking.User,
-			BookedAt:   int(booking.BookedAt.Int64()),
-			BookedTill: int(booking.BookedTill.Int64()),
+			VmTypeId:    booking.VmTypeId,
+			PPS:         booking.PricePerSecond,
+			Miner:       &booking.Miner,
+			Index:       booking.Index,
+			User:        &booking.User,
+			BookedAt:    booking.BookedAt.Uint64(),
+			LastPayment: booking.LastPayment.Uint64(),
 		})
 	}
 	return result, nil
 }
 
-func (b *Broker) GetBooking(index int) (*protocol.VMBooking, error) {
-	if err := b.setDecimals(); err != nil {
-		return nil, err
-	}
-
-	booking, err := b.session.GetBooking(uint64(index))
+func (b *Broker) GetBooking(index uint64) (*protocol.VMBooking, error) {
+	booking, err := b.session.GetBooking(index)
 	if err != nil {
 		return nil, err
 	}
@@ -57,28 +57,28 @@ func (b *Broker) GetBooking(index int) (*protocol.VMBooking, error) {
 	}
 
 	return &protocol.VMBooking{
-		VmTypeId:   int(booking.VmTypeId.Int64()),
-		PPS:        int(booking.PricePerSecond.Int64()),
-		Miner:      &booking.Miner,
-		Index:      int(booking.Index.Int64()),
-		User:       &booking.User,
-		BookedAt:   int(booking.BookedAt.Int64()),
-		BookedTill: int(booking.BookedTill.Int64()),
+		VmTypeId:    booking.VmTypeId,
+		PPS:         booking.PricePerSecond,
+		Miner:       &booking.Miner,
+		Index:       booking.Index,
+		User:        &booking.User,
+		BookedAt:    booking.BookedAt.Uint64(),
+		LastPayment: booking.LastPayment.Uint64(),
 	}, nil
 }
 
-func (b *Broker) GetTime() (int, error) {
+func (b *Broker) GetTime() (uint64, error) {
 	t, err := b.session.GetTime()
 	if err != nil {
 		return 0, err
 	}
-	return int(t.Int64()), nil
+	return t.Uint64(), nil
 }
 
 func (b *Broker) GetMinersBookings() ([]protocol.VMBooking, error) {
-	if err := b.setDecimals(); err != nil {
-		return nil, err
-	}
+	// if err := b.setDecimals(); err != nil {
+	// 	return nil, err
+	// }
 
 	bookings, err := b.session.FindBookingsByMiner(b.transactOpts.From)
 	if err != nil {
@@ -88,44 +88,44 @@ func (b *Broker) GetMinersBookings() ([]protocol.VMBooking, error) {
 	for _, booking := range bookings {
 
 		result = append(result, protocol.VMBooking{
-			VmTypeId:   int(booking.VmTypeId.Int64()),
-			PPS:        int(booking.PricePerSecond.Int64()),
-			Miner:      &booking.Miner,
-			Index:      int(booking.Index.Int64()),
-			User:       &booking.User,
-			BookedAt:   int(booking.BookedAt.Int64()),
-			BookedTill: int(booking.BookedTill.Int64()),
+			VmTypeId:    booking.VmTypeId,
+			PPS:         booking.PricePerSecond,
+			Miner:       &booking.Miner,
+			Index:       booking.Index,
+			User:        &booking.User,
+			BookedAt:    booking.BookedAt.Uint64(),
+			LastPayment: booking.LastPayment.Uint64(),
 		})
 	}
 	return result, nil
 }
 
-func (b *Broker) AbortBooking(index uint64, abortType protocol.AbortType) error {
-	tx, err := b.session.AbortBooking(index, abortType.ToSolidityType())
-	if err != nil {
-		return err
-	}
+// func (b *Broker) AbortBooking(index uint64, abortType protocol.AbortType) error {
+// 	tx, err := b.session.AbortBooking(index, abortType.ToSolidityType())
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return b.waitForTx(tx.Hash())
-}
+// 	return b.waitForTx(tx)
+// }
 
-func (b *Broker) ClaimExpired(index uint64) error {
-	tx, err := b.session.ClaimExpired(index)
-	if err != nil {
-		return err
-	}
+// func (b *Broker) ClaimExpired(index uint64) error {
+// 	tx, err := b.session.ClaimExpired(index)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return b.waitForTx(tx.Hash())
-}
+// 	return b.waitForTx(tx)
+// }
 
-func (b *Broker) ExtendBooking(index uint64, secs int) error {
-	tx, err := b.session.ExtendBooking(index, big.NewInt(int64(secs)))
-	if err != nil {
-		return err
-	}
+// func (b *Broker) ExtendBooking(index uint64, secs int) error {
+// 	tx, err := b.session.ExtendBooking(index, big.NewInt(int64(secs)))
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return b.waitForTx(tx.Hash())
-}
+// 	return b.waitForTx(tx)
+// }
 
 func (b *Broker) GetUserBookings() ([]protocol.VMBooking, error) {
 	userBookings, err := b.session.GetUsersBookings(crypto.PubkeyToAddress(b.GetPrivateKey().PublicKey))
@@ -137,13 +137,13 @@ func (b *Broker) GetUserBookings() ([]protocol.VMBooking, error) {
 
 	for i := range userBookings {
 		result = append(result, protocol.VMBooking{
-			VmTypeId:   int(userBookings[i].VmTypeId.Int64()),
-			PPS:        int(userBookings[i].PricePerSecond.Int64()),
-			Miner:      &userBookings[i].Miner,
-			Index:      int(userBookings[i].Index.Int64()),
-			User:       &userBookings[i].User,
-			BookedAt:   int(userBookings[i].BookedAt.Int64()),
-			BookedTill: int(userBookings[i].BookedTill.Int64()),
+			VmTypeId:    userBookings[i].VmTypeId,
+			PPS:         userBookings[i].PricePerSecond,
+			Miner:       &userBookings[i].Miner,
+			Index:       userBookings[i].Index,
+			User:        &userBookings[i].User,
+			BookedAt:    userBookings[i].BookedAt.Uint64(),
+			LastPayment: userBookings[i].LastPayment.Uint64(),
 		})
 	}
 

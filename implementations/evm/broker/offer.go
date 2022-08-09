@@ -1,39 +1,38 @@
 package broker
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/p2pcloud/protocol"
 	"github.com/p2pcloud/protocol/pkg/converters"
 )
 
 func (b *Broker) AddOffer(offer protocol.Offer, callbackUrl string) error {
-	err := b.SetMinerUrlIfNeeded(callbackUrl)
+	_, err := b.EstimateGas("AddOffer", offer.PPS, offer.VmTypeId, offer.Availablility)
 	if err != nil {
 		return err
 	}
 
-	if err = b.setDecimals(); err != nil {
+	err = b.SetMinerUrlIfNeeded(callbackUrl)
+	if err != nil {
 		return err
 	}
 
 	tx, err := b.session.AddOffer(
-		big.NewInt(int64(offer.PPS)),
-		big.NewInt(int64(offer.VmTypeId)),
-		big.NewInt(int64(offer.Availablility)),
+		offer.PPS,
+		offer.VmTypeId,
+		offer.Availablility,
 	)
 	if err != nil {
 		return err
 	}
 
-	return b.waitForTx(tx.Hash())
+	return b.waitForTx(tx)
 }
 
 func (b *Broker) GetMyOffers() ([]protocol.Offer, error) {
-	if err := b.setDecimals(); err != nil {
-		return nil, err
-	}
+	// if err := b.setDecimals(); err != nil {
+	// 	return nil, err
+	// }
 
 	offers, err := b.session.GetMinersOffers(b.transactOpts.From)
 	if err != nil {
@@ -42,61 +41,66 @@ func (b *Broker) GetMyOffers() ([]protocol.Offer, error) {
 	var result []protocol.Offer
 	for _, offer := range offers {
 		result = append(result, protocol.Offer{
-			VmTypeId:      int(offer.VmTypeId.Int64()),
-			PPS:           int(offer.PricePerSecond.Int64()),
-			Availablility: int(offer.MachinesAvailable.Int64()),
+			VmTypeId:      offer.VmTypeId,
+			PPS:           offer.PricePerSecond,
+			Availablility: offer.MachinesAvailable,
 			Miner:         offer.Miner,
-			Index:         int(offer.Index.Int64()),
+			Index:         offer.Index,
 		})
 	}
 	return result, nil
 }
 
-func (b *Broker) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, error) {
-	if err := b.setDecimals(); err != nil {
-		return nil, err
-	}
+func (b *Broker) GetAvailableOffers(vmTypeId uint64) ([]protocol.Offer, error) {
+	// if err := b.setDecimals(); err != nil {
+	// 	return nil, err
+	// }
 
-	offers, err := b.session.GetAvailableOffers(big.NewInt(int64(vmTypeId)))
+	offers, err := b.session.GetAvailableOffersByType(vmTypeId)
 	if err != nil {
 		return nil, err
 	}
 	var result []protocol.Offer
 	for _, offer := range offers {
 		result = append(result, protocol.Offer{
-			VmTypeId:      int(offer.VmTypeId.Int64()),
-			PPS:           int(offer.PricePerSecond.Int64()),
-			Availablility: int(offer.MachinesAvailable.Int64()),
+			VmTypeId:      offer.VmTypeId,
+			PPS:           offer.PricePerSecond,
+			Availablility: offer.MachinesAvailable,
 			Miner:         offer.Miner,
-			Index:         int(offer.Index.Int64()),
+			Index:         offer.Index,
 		})
 	}
 	return result, nil
 }
 
-func (b *Broker) RemoveOffer(offerId int) error {
-	tx, err := b.session.RemoveOffer(big.NewInt(int64(offerId)))
+func (b *Broker) RemoveOffer(offerId uint64) error {
+	_, err := b.EstimateGas("RemoveOffer", offerId)
 	if err != nil {
 		return err
 	}
-	return b.waitForTx(tx.Hash())
+
+	tx, err := b.session.RemoveOffer(offerId)
+	if err != nil {
+		return err
+	}
+	return b.waitForTx(tx)
 }
 
 func (b *Broker) UpdateOffer(offer protocol.Offer) error {
-	if err := b.setDecimals(); err != nil {
-		return err
-	}
+	// if err := b.setDecimals(); err != nil {
+	// 	return err
+	// }
 
 	tx, err := b.session.UpdateOffer(
-		big.NewInt(int64(offer.Index)),
-		big.NewInt(int64(offer.Availablility)),
-		big.NewInt(int64(offer.PPS)),
+		offer.Index,
+		offer.Availablility,
+		offer.PPS,
 	)
 	if err != nil {
 		return err
 	}
 
-	return b.waitForTx(tx.Hash())
+	return b.waitForTx(tx)
 }
 
 func (b *Broker) GetMinerUrl(address *common.Address) (string, error) {
@@ -128,5 +132,5 @@ func (b *Broker) SetMinerUrlIfNeeded(newUrl string) error {
 		return err
 	}
 
-	return b.waitForTx(tx.Hash())
+	return b.waitForTx(tx)
 }

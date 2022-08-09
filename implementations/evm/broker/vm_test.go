@@ -1,159 +1,150 @@
 package broker_test
 
-import (
-	"testing"
+// func TestBookingNotFound(t *testing.T) {
+// 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	"github.com/p2pcloud/protocol/implementations/evm"
+// 	communityPk, err := blockchain.GetNextPrivateKey()
+// 	require.NoError(t, err)
 
-	"github.com/p2pcloud/protocol"
-	"github.com/stretchr/testify/require"
-)
+// 	gifts := evm.NewGifts(
+// 		map[int]float64{1: 1000},
+// 		map[int]float64{1: 1000},
+// 	)
 
-func TestBookingNotFound(t *testing.T) {
-	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+// 	testInstances, err := evm.InitializeTestInstances(
+// 		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
+// 	)
+// 	require.NoError(t, err)
 
-	communityPk, err := blockchain.GetNextPrivateKey()
-	require.NoError(t, err)
+// 	minerContr := testInstances.Contracts[0]
+// 	userContr := testInstances.Contracts[1]
 
-	gifts := evm.NewGifts(
-		map[int]float64{1: 1000},
-		map[int]float64{1: 1000},
-	)
+// 	//test add offer
+// 	err = minerContr.AddOffer(protocol.Offer{
+// 		VmTypeId:      3,
+// 		PPS:           1,
+// 		Availablility: 1,
+// 	}, "https://hello.world")
+// 	require.NoError(t, err)
 
-	testInstances, err := evm.InitializeTestInstances(
-		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
-	)
-	require.NoError(t, err)
+// 	require.NoError(t, userContr.DepositCoin(1000))
 
-	minerContr := testInstances.Contracts[0]
-	userContr := testInstances.Contracts[1]
+// 	offers, err := userContr.GetAvailableOffers(3)
+// 	require.NoError(t, err)
+// 	if len(offers) != 1 {
+// 		t.Errorf("Expected 1 offer, got %d", len(offers))
+// 	}
 
-	//test add offer
-	err = minerContr.AddOffer(protocol.Offer{
-		VmTypeId:      3,
-		PPS:           1,
-		Availablility: 1,
-	}, "https://hello.world")
-	require.NoError(t, err)
+// 	//test book
+// 	err = userContr.BookVM(offers[0].Index, 1000)
+// 	require.NoError(t, err)
 
-	require.NoError(t, userContr.DepositCoin(1000))
+// 	_, err = userContr.GetBooking(99999)
+// 	if err == nil {
+// 		t.Fatal("Expected error for non existent booking")
+// 	}
+// }
 
-	offers, err := userContr.GetAvailableOffers(3)
-	require.NoError(t, err)
-	if len(offers) != 1 {
-		t.Errorf("Expected 1 offer, got %d", len(offers))
-	}
+// func TestGetBooking(t *testing.T) {
+// 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	//test book
-	err = userContr.BookVM(offers[0].Index, 1000)
-	require.NoError(t, err)
+// 	communityPk, err := blockchain.GetNextPrivateKey()
+// 	require.NoError(t, err)
 
-	_, err = userContr.GetBooking(99999)
-	if err == nil {
-		t.Fatal("Expected error for non existent booking")
-	}
-}
+// 	gifts := evm.NewGifts(
+// 		map[int]float64{1: 1000},
+// 		map[int]float64{1: 1000},
+// 	)
 
-func TestGetBooking(t *testing.T) {
-	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+// 	testInstances, err := evm.InitializeTestInstances(
+// 		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
+// 	)
+// 	require.NoError(t, err)
 
-	communityPk, err := blockchain.GetNextPrivateKey()
-	require.NoError(t, err)
+// 	minerContr := testInstances.Contracts[0]
+// 	userContr := testInstances.Contracts[1]
 
-	gifts := evm.NewGifts(
-		map[int]float64{1: 1000},
-		map[int]float64{1: 1000},
-	)
+// 	//test add offer
+// 	err = minerContr.AddOffer(protocol.Offer{
+// 		VmTypeId:      3,
+// 		PPS:           1,
+// 		Availablility: 1,
+// 	}, "https://hello.world")
+// 	require.NoError(t, err)
 
-	testInstances, err := evm.InitializeTestInstances(
-		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
-	)
-	require.NoError(t, err)
+// 	offers, err := userContr.GetAvailableOffers(3)
+// 	require.NoError(t, err)
+// 	if len(offers) != 1 {
+// 		t.Errorf("Expected 1 offer, got %d", len(offers))
+// 	}
 
-	minerContr := testInstances.Contracts[0]
-	userContr := testInstances.Contracts[1]
+// 	require.NoError(t, userContr.DepositCoin(1000))
 
-	//test add offer
-	err = minerContr.AddOffer(protocol.Offer{
-		VmTypeId:      3,
-		PPS:           1,
-		Availablility: 1,
-	}, "https://hello.world")
-	require.NoError(t, err)
+// 	//test book
+// 	err = userContr.BookVM(offers[0].Index, 1000)
+// 	require.NoError(t, err)
 
-	offers, err := userContr.GetAvailableOffers(3)
-	require.NoError(t, err)
-	if len(offers) != 1 {
-		t.Errorf("Expected 1 offer, got %d", len(offers))
-	}
+// 	booking, err := userContr.GetBooking(0)
+// 	require.NoError(t, err)
+// 	require.Equal(t, 0, booking.Index)
+// 	require.Equal(t, 1.0, booking.PPS)
+// 	require.Equal(t, 3, booking.VmTypeId)
+// }
 
-	require.NoError(t, userContr.DepositCoin(1000))
+// func TestBook(t *testing.T) {
+// 	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
 
-	//test book
-	err = userContr.BookVM(offers[0].Index, 1000)
-	require.NoError(t, err)
+// 	communityPk, err := blockchain.GetNextPrivateKey()
+// 	require.NoError(t, err)
 
-	booking, err := userContr.GetBooking(0)
-	require.NoError(t, err)
-	require.Equal(t, 0, booking.Index)
-	require.Equal(t, 1.0, booking.PPS)
-	require.Equal(t, 3, booking.VmTypeId)
-}
+// 	gifts := evm.NewGifts(
+// 		map[int]float64{1: 17777},
+// 		map[int]float64{1: 17777},
+// 	)
 
-func TestBook(t *testing.T) {
-	blockchain := evm.NewWrappedSimulatedBlockchainEnv(t)
+// 	testInstances, err := evm.InitializeTestInstances(
+// 		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
+// 	)
+// 	require.NoError(t, err)
 
-	communityPk, err := blockchain.GetNextPrivateKey()
-	require.NoError(t, err)
+// 	minerContr := testInstances.Contracts[0]
+// 	userContr := testInstances.Contracts[1]
 
-	gifts := evm.NewGifts(
-		map[int]float64{1: 17777},
-		map[int]float64{1: 17777},
-	)
+// 	//test add offer
+// 	err = minerContr.AddOffer(protocol.Offer{
+// 		VmTypeId:      3,
+// 		PPS:           1,
+// 		Availablility: 1,
+// 	}, "https://hello.world")
+// 	require.NoError(t, err)
 
-	testInstances, err := evm.InitializeTestInstances(
-		2, 6, gifts, blockchain.Origin.Backend, blockchain, communityPk,
-	)
-	require.NoError(t, err)
+// 	offers, err := userContr.GetAvailableOffers(3)
+// 	require.NoError(t, err)
+// 	if len(offers) != 1 {
+// 		t.Errorf("Expected 1 offer, got %d", len(offers))
+// 	}
 
-	minerContr := testInstances.Contracts[0]
-	userContr := testInstances.Contracts[1]
+// 	userContr.DepositCoin(17777)
 
-	//test add offer
-	err = minerContr.AddOffer(protocol.Offer{
-		VmTypeId:      3,
-		PPS:           1,
-		Availablility: 1,
-	}, "https://hello.world")
-	require.NoError(t, err)
+// 	//test book
+// 	err = userContr.BookVM(offers[0].Index, 17777)
+// 	require.NoError(t, err)
 
-	offers, err := userContr.GetAvailableOffers(3)
-	require.NoError(t, err)
-	if len(offers) != 1 {
-		t.Errorf("Expected 1 offer, got %d", len(offers))
-	}
+// 	bookings, err := userContr.GetUsersBookings()
+// 	require.NoError(t, err)
+// 	if len(bookings) != 1 {
+// 		t.Errorf("Expected 1 booking, got %d", len(bookings))
+// 	}
 
-	userContr.DepositCoin(17777)
+// 	//check time
+// 	now, err := userContr.GetTime()
+// 	require.NoError(t, err)
 
-	//test book
-	err = userContr.BookVM(offers[0].Index, 17777)
-	require.NoError(t, err)
+// 	require.Equal(t, 17777, bookings[0].BookedTill-now)
 
-	bookings, err := userContr.GetUsersBookings()
-	require.NoError(t, err)
-	if len(bookings) != 1 {
-		t.Errorf("Expected 1 booking, got %d", len(bookings))
-	}
-
-	//check time
-	now, err := userContr.GetTime()
-	require.NoError(t, err)
-
-	require.Equal(t, 17777, bookings[0].BookedTill-now)
-
-	bookings, err = minerContr.GetMinersBookings()
-	require.NoError(t, err)
-	if len(bookings) != 1 {
-		t.Errorf("Expected 1 booking, got %d", len(bookings))
-	}
-}
+// 	bookings, err = minerContr.GetMinersBookings()
+// 	require.NoError(t, err)
+// 	if len(bookings) != 1 {
+// 		t.Errorf("Expected 1 booking, got %d", len(bookings))
+// 	}
+// }

@@ -4,15 +4,16 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"math"
 	"math/big"
+	"strings"
 	"sync"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/sirupsen/logrus"
+	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/p2pcloud/protocol"
 	"github.com/p2pcloud/protocol/implementations/evm/contracts"
 )
 
@@ -22,11 +23,10 @@ type Broker struct {
 	contractAddress common.Address
 	session         contracts.BrokerSession
 	privateKey      *ecdsa.PrivateKey
-	waitForTx       func(hash common.Hash) error
+	waitForTx       func(tx *types.Transaction) error
 	updateCh        chan<- common.Address
 
 	mu                *sync.Mutex
-	decimals          uint8
 	stableCoinAddress *common.Address
 }
 
@@ -35,9 +35,9 @@ func NewBroker(
 	privateKey *ecdsa.PrivateKey,
 	contractAddressStr string,
 	chanId int64,
-	waitForTx func(hash common.Hash) error,
+	waitForTx func(tx *types.Transaction) error,
 	updCh chan<- common.Address,
-) (protocol.P2PCloudProtocolIface, error) {
+) (*Broker, error) {
 	if chanId == 0 {
 		return nil, fmt.Errorf("chanId is 0. please set it to a valid value")
 	}
@@ -57,9 +57,46 @@ func NewBroker(
 		updateCh:        updCh,
 	}
 
-	b.RegenerateSession()
+	instance, err := contracts.NewBroker(b.contractAddress, b.backend)
+	if err != nil {
+		return nil, err
+	}
+
+	b.session = contracts.BrokerSession{
+		Contract:     instance,
+		TransactOpts: *b.transactOpts,
+		CallOpts: bind.CallOpts{
+			Pending: false,                // Whether to operate on the pending state or the last known one
+			From:    b.transactOpts.From, // Optional the sender address, otherwise the first account is used
+			Context: context.Background(),
+		},
+	}
 
 	return b, nil
+}
+
+func (b *Broker) EstimateGas(method string, args ...interface{}) (uint64, error) {
+	abi, err := abi.JSON(strings.NewReader(contracts.BrokerABI))
+	if err != nil {
+		return 0, err
+	}
+
+	input, err := abi.Pack(method, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	callMsg := ethereum.CallMsg{
+		From:     b.transactOpts.From,
+		To:       &b.contractAddress,
+		Gas:      0,
+		GasPrice: big.NewInt(0),
+		Value:    big.NewInt(0),
+		Data:     input,
+	}
+
+	gasLimit, err := b.backend.EstimateGas(context.Background(), callMsg)
+	return gasLimit, err
 }
 
 func (b *Broker) GetPrivateKey() *ecdsa.PrivateKey {
@@ -70,235 +107,62 @@ func (b *Broker) ContractAddress() common.Address {
 	return b.contractAddress
 }
 
-func (b *Broker) RegenerateSession() error {
-	instance, err := contracts.NewBroker(b.contractAddress, b.backend)
-	if err != nil {
-		return err
-	}
-
-	b.session = contracts.BrokerSession{
-		Contract:     instance,
-		TransactOpts: *b.transactOpts,
-		CallOpts: bind.CallOpts{
-			Pending: false,               // Whether to operate on the pending state or the last known one
-			From:    b.transactOpts.From, // Optional the sender address, otherwise the first account is used
-			Context: context.Background(),
-		},
-	}
-	return nil
-}
-
-func (b *Broker) DeployContracts(community common.Address) ([]string, error) {
+func (b *Broker) DeployContract() (string, error) {
 	address, tx, _, err := contracts.DeployBroker(
 		b.transactOpts,
 		b.backend,
-		community,
+		// community,
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("could not deploy broker: %v", err)
+		return "", fmt.Errorf("could not deploy broker: %v", err)
 	}
 	b.contractAddress = address
 
-	b.RegenerateSession()
-
-	return []string{address.String()}, b.waitForTx(tx.Hash())
+	return address.String(), b.waitForTx(tx)
 }
 
 func (b *Broker) GetMyAddress() *common.Address {
 	return &b.transactOpts.From
 }
 
-func (b *Broker) DepositCoin(coins float64) error {
-	if err := b.setDecimals(); err != nil {
-		return err
-	}
+// func (b *Broker) DepositCoin(coins float64) error {
+// 	if err := b.setDecimals(); err != nil {
+// 		return err
+// 	}
 
-	tx, err := b.session.DepositCoin(b.coinsToAmount(coins))
-	if err != nil {
-		return err
-	}
+// 	tx, err := b.session.DepositCoin(b.coinsToAmount(coins))
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return b.waitForTx(tx.Hash())
-}
+// 	return b.waitForTx(tx)
+// }
 
-func (b *Broker) WithdrawCoin(coins float64) error {
-	if err := b.setDecimals(); err != nil {
-		return err
-	}
+// func (b *Broker) UserAllowance() (float64, error) {
+// 	if err := b.setDecimals(); err != nil {
+// 		return 0, err
+// 	}
 
-	tx, err := b.session.WithdrawCoin(b.coinsToAmount(coins))
-	if err != nil {
-		return err
-	}
+// 	amount, err := b.session.UserAllowance()
+// 	if err != nil {
+// 		return 0, err
+// 	}
 
-	return b.waitForTx(tx.Hash())
-}
+// 	return b.amountToCoins(amount), nil
+// }
 
-func (b *Broker) Balance() (float64, error) {
-	if err := b.setDecimals(); err != nil {
-		return 0, err
-	}
+// func (b *Broker) setDecimals() error {
+// 	if b.decimals > 0 {
+// 		return nil
+// 	}
 
-	amount, err := b.session.UserBalance()
-	if err != nil {
-		return 0, err
-	}
+// 	decimals, err := b.session.GetCoinDecimals()
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return b.amountToCoins(amount), nil
-}
+// 	b.decimals = decimals
 
-func (b *Broker) DepositBalance() (float64, error) {
-	if err := b.setDecimals(); err != nil {
-		return 0, err
-	}
-
-	amount, err := b.session.UserDeposit()
-	if err != nil {
-		return 0, err
-	}
-
-	return b.amountToCoins(amount), nil
-}
-
-func (b *Broker) LockedBalance() (float64, error) {
-	if err := b.setDecimals(); err != nil {
-		return 0, err
-	}
-
-	amount, err := b.session.UserLockedBalance()
-	if err != nil {
-		return 0, err
-	}
-
-	return b.amountToCoins(amount), nil
-}
-
-func (b *Broker) UserTokenBalance() (float64, error) {
-	if err := b.setDecimals(); err != nil {
-		return 0, err
-	}
-
-	amount, err := b.session.UserTokenBalance()
-	if err != nil {
-		return 0, err
-	}
-
-	return b.amountToCoins(amount), nil
-}
-
-func (b *Broker) UserAllowance() (float64, error) {
-	if err := b.setDecimals(); err != nil {
-		return 0, err
-	}
-
-	amount, err := b.session.UserAllowance()
-	if err != nil {
-		return 0, err
-	}
-
-	return b.amountToCoins(amount), nil
-}
-
-func (b *Broker) SetStablecoinAddress(address common.Address) error {
-	tx, err := b.session.SetStablecoinAddress(address)
-	if err != nil {
-		return err
-	}
-
-	if err = b.waitForTx(tx.Hash()); err != nil {
-		return err
-	}
-
-	decimals, err := b.session.GetCoinDecimals()
-	if err != nil {
-		return err
-	}
-
-	select {
-	case b.updateCh <- address:
-	default:
-		logrus.WithField("updated", address.Hex()).Error("failed to send to upd ch")
-	}
-
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	b.stableCoinAddress = nil
-	b.decimals = decimals
-
-	return nil
-}
-
-func (b *Broker) GetStablecoinAddress() (common.Address, error) {
-	if b.stableCoinAddress != nil {
-		return *b.stableCoinAddress, nil
-	}
-
-	addr, err := b.session.GetStablecoinAddress()
-	if err != nil {
-		return [20]byte{}, err
-	}
-
-	b.stableCoinAddress = &addr
-
-	return addr, nil
-}
-
-func (b *Broker) SetCommunityContract(address common.Address) error {
-	tx, err := b.session.SetCommunityContract(address)
-	if err != nil {
-		return err
-	}
-
-	return b.waitForTx(tx.Hash())
-}
-
-func (b *Broker) GetCommunityContract() (common.Address, error) {
-	return b.session.GetCommunityContract()
-}
-
-func (b *Broker) SetCommunityFee(fee int64) error {
-	tx, err := b.session.SetCommunityFee(big.NewInt(fee))
-	if err != nil {
-		return err
-	}
-
-	return b.waitForTx(tx.Hash())
-}
-
-func (b *Broker) GetCommunityFee() (int64, error) {
-	fee, err := b.session.GetCommunityFee()
-	if err != nil {
-		return 0, err
-	}
-
-	return fee.Int64(), nil
-}
-
-func (b *Broker) setDecimals() error {
-	if b.decimals > 0 {
-		return nil
-	}
-
-	decimals, err := b.session.GetCoinDecimals()
-	if err != nil {
-		return err
-	}
-
-	b.decimals = decimals
-
-	return nil
-}
-
-func (b *Broker) amountToCoins(amount *big.Int) float64 {
-	coin := math.Pow(10, float64(b.decimals))
-
-	return float64(amount.Int64()) / coin
-}
-
-func (b *Broker) coinsToAmount(coins float64) *big.Int {
-	coinsInt := int64(coins * math.Pow(10, float64(b.decimals)))
-
-	return big.NewInt(coinsInt)
-}
+// 	return nil
+// }
