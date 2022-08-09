@@ -101,3 +101,5 @@ func TestPayment(t *testing.T) {
 }
 
 //TODO: try to claim stopped booking
+//TODO: test other values community fee
+//TODO: try to break math in ClaimPayment method
