@@ -19,21 +19,21 @@ func (a AbortType) ToSolidityType() uint8 {
 }
 
 type Offer struct {
-	VmTypeId      int
-	PPS           int
-	Availablility int
+	VmTypeId      uint64
+	PPS           uint64
+	Availablility uint64
 	Miner         common.Address
-	Index         int
+	Index         uint64
 }
 
 type VMBooking struct {
-	VmTypeId    int
-	PPS         int
+	VmTypeId    uint64
+	PPS         uint64
 	Miner       *common.Address
-	Index       int
+	Index       uint64
 	User        *common.Address
-	BookedAt    int
-	LastPayment int
+	BookedAt    uint64
+	LastPayment uint64
 }
 
 type P2PCloudProtocolIface interface {
@@ -41,18 +41,25 @@ type P2PCloudProtocolIface interface {
 	AddOffer(offer Offer, callbackUrl string) error
 	GetMyOffers() ([]Offer, error)
 	UpdateOffer(offer Offer) error
-	GetAvailableOffers(vmTypeId int) ([]Offer, error)
-	RemoveOffer(id int) error
+	GetAvailableOffers(vmTypeId uint64) ([]Offer, error)
+	RemoveOffer(id uint64) error
 
 	//Balance
-	GetStablecoinBalance() (int, int, error)
-	DepositStablecoin(amount int) error
-	WithdrawStablecoin(amount int) error
+	GetStablecoinBalance() (uint64, uint64, error)
+	DepositStablecoin(amount uint64) error
+	WithdrawStablecoin(amount uint64) error
+
+	//Booking
+	BookVM(offerIndex uint64) error
+	ClaimPayment(bookingIndex uint64) error
+
+	//Wallet
+	GetPrivateKey() *ecdsa.PrivateKey
+	GetMyAddress() *common.Address
 
 	//WIP
 	// DepositCoin(coins float64) error
 	// WithdrawCoin() error
-	BookVM(offerIndex int) error
 	// Balance() (float64, error)
 	// DepositBalance() (float64, error)
 	// LockedBalance() (float64, error)
@@ -62,20 +69,18 @@ type P2PCloudProtocolIface interface {
 	// UserTokenBalance() (float64, error)
 
 	//Non-refactored yet
-	GetPrivateKey() *ecdsa.PrivateKey
 	ContractAddress() common.Address
-	GetBooking(index int) (*VMBooking, error)
+	GetBooking(index uint64) (*VMBooking, error)
 	GetUsersBookings() ([]VMBooking, error)
-	GetMyAddress() *common.Address
 	GetMinerUrl(address *common.Address) (string, error)
 	SetMinerUrlIfNeeded(newUrl string) error
-	GetTime() (int, error)
+	GetTime() (uint64, error)
 	GetMinersBookings() ([]VMBooking, error)
 	SetCommunityContract(address common.Address) error
 	GetCommunityContract() (common.Address, error)
-	SetCommunityFee(fee int64) error
-	GetCommunityFee() (int64, error)
+	SetCommunityFee(fee uint64) error
+	GetCommunityFee() (uint64, error)
 	// AbortBooking(index uint64, abortType AbortType) error
 	// ClaimExpired(index uint64) error
-	// ExtendBooking(index uint64, secs int) error
+	// ExtendBooking(index uint64, secs uint64) error
 }

@@ -26,8 +26,8 @@ func TestDepositWithdraw(t *testing.T) {
 
 	free, locked, err := user.GetStablecoinBalance()
 	require.NoError(t, err)
-	require.Equal(t, 0, locked)
-	require.Equal(t, 0, free)
+	require.EqualValues(t, 0, locked)
+	require.EqualValues(t, 0, free)
 
 	err = user.DepositStablecoin(1000)
 	require.NoError(t, err)
@@ -36,16 +36,16 @@ func TestDepositWithdraw(t *testing.T) {
 
 	free, locked, err = user.GetStablecoinBalance()
 	require.NoError(t, err)
-	require.Equal(t, 0, locked)
-	require.Equal(t, 1000, free)
+	require.EqualValues(t, 0, locked)
+	require.EqualValues(t, 1000, free)
 
 	err = user.WithdrawStablecoin(300)
 	require.NoError(t, err)
 
 	free, locked, err = user.GetStablecoinBalance()
 	require.NoError(t, err)
-	require.Equal(t, 0, locked)
-	require.Equal(t, 700, free)
+	require.EqualValues(t, 0, locked)
+	require.EqualValues(t, 700, free)
 
 	testEnv.RequireStablecoinBalance(*testEnv.Users[0].GetMyAddress(), 300)
 
@@ -58,8 +58,8 @@ func TestDepositWithdraw(t *testing.T) {
 
 	free, locked, err = user.GetStablecoinBalance()
 	require.NoError(t, err)
-	require.Equal(t, 0, locked)
-	require.Equal(t, 0, free)
+	require.EqualValues(t, 0, locked)
+	require.EqualValues(t, 0, free)
 }
 
 //book a VM and check that you cannot withdraw pps*week funds
@@ -67,8 +67,8 @@ func TestWithdrawLocked(t *testing.T) {
 	var err error
 
 	const PPS = 1
-	const INITATL_BALANCE = 10000000
-	const BALANCE_REQUIRED_FOR_1_VM = 60 * 60 * 24 * 7 * PPS
+	const INITATL_BALANCE = uint64(10000000)
+	const BALANCE_REQUIRED_FOR_1_VM = uint64(60 * 60 * 24 * 7 * PPS)
 
 	testEnv := CreateTestEnv(t, 2)
 	user := testEnv.Users[0]
@@ -91,7 +91,7 @@ func TestWithdrawLocked(t *testing.T) {
 
 	free, locked, err := user.GetStablecoinBalance()
 	require.NoError(t, err)
-	require.Equal(t, 0, locked)
+	require.EqualValues(t, 0, locked)
 	require.Equal(t, INITATL_BALANCE, free)
 
 	err = user.BookVM(0)

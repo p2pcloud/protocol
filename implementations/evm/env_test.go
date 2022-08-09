@@ -3,6 +3,7 @@ package evm_test
 import (
 	"crypto/ecdsa"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/p2pcloud/protocol"
@@ -41,12 +42,18 @@ func CreateTestEnv(t *testing.T, usersCount int) *TestEnv {
 	return testEnv
 }
 
-func (te *TestEnv) AddSomeStablecoin(to common.Address, amount int) {
+func (te *TestEnv) AdjustTime(adjustment time.Duration) {
+	err := te.blockchain.Origin.Backend.AdjustTime(adjustment)
+	require.NoError(te.t, err)
+	te.blockchain.Origin.Backend.Commit()
+}
+
+func (te *TestEnv) AddSomeStablecoin(to common.Address, amount uint64) {
 	err := te.adminStablecoinContract.Transfer(to, amount)
 	require.NoError(te.t, err)
 }
 
-func (te *TestEnv) RequireStablecoinBalance(address common.Address, expectedBalance int) {
+func (te *TestEnv) RequireStablecoinBalance(address common.Address, expectedBalance uint64) {
 	balance, err := te.adminStablecoinContract.BalanceOf(address)
 	require.NoError(te.t, err)
 	require.Equal(te.t, expectedBalance, balance)

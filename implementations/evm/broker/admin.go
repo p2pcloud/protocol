@@ -1,8 +1,6 @@
 package broker
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -66,8 +64,8 @@ func (b *Broker) GetCommunityContract() (common.Address, error) {
 	return b.session.GetCommunityContract()
 }
 
-func (b *Broker) SetCommunityFee(fee int64) error {
-	tx, err := b.session.SetCommunityFee(big.NewInt(fee))
+func (b *Broker) SetCommunityFee(fee uint64) error {
+	tx, err := b.session.SetCommunityFee(fee)
 	if err != nil {
 		return err
 	}
@@ -75,11 +73,11 @@ func (b *Broker) SetCommunityFee(fee int64) error {
 	return b.waitForTx(tx)
 }
 
-func (b *Broker) GetCommunityFee() (int64, error) {
+func (b *Broker) GetCommunityFee() (uint64, error) {
 	fee, err := b.session.GetCommunityFee()
 	if err != nil {
 		return 0, err
 	}
 
-	return fee.Int64(), nil
+	return fee, nil
 }

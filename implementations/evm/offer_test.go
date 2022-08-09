@@ -133,9 +133,9 @@ func TestUpdateOffer(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, offers, 1)
 
-	require.Equal(t, updatedOffers[0].VmTypeId, 3)           //still the same
-	require.Equal(t, updatedOffers[0].PPS, 400)              //updated
-	require.Equal(t, updatedOffers[0].Availablility, 999999) //updated
+	require.EqualValues(t, updatedOffers[0].VmTypeId, 3)           //still the same
+	require.EqualValues(t, updatedOffers[0].PPS, 400)              //updated
+	require.EqualValues(t, updatedOffers[0].Availablility, 999999) //updated
 }
 
 func TestAvailableOffers(t *testing.T) {
@@ -185,13 +185,13 @@ func TestAvailableOffers(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, offers, 2)
 
-	require.Equal(t, offers[0].VmTypeId, OUR_TYPE)
-	require.Equal(t, offers[0].PPS, 11)
-	require.Equal(t, offers[0].Availablility, 11)
+	require.EqualValues(t, offers[0].VmTypeId, OUR_TYPE)
+	require.EqualValues(t, offers[0].PPS, 11)
+	require.EqualValues(t, offers[0].Availablility, 11)
 
-	require.Equal(t, offers[1].VmTypeId, OUR_TYPE)
-	require.Equal(t, offers[1].PPS, 22)
-	require.Equal(t, offers[1].Availablility, 22)
+	require.EqualValues(t, offers[1].VmTypeId, OUR_TYPE)
+	require.EqualValues(t, offers[1].PPS, 22)
+	require.EqualValues(t, offers[1].Availablility, 22)
 }
 
 //TODO: test offer availability becomes lower with vm booking

@@ -85,17 +85,17 @@ func (t *Token) DeployContract() (*common.Address, error) {
 	return &address, t.waitForTx(tx)
 }
 
-func (t *Token) BalanceOf(address common.Address) (int, error) {
+func (t *Token) BalanceOf(address common.Address) (uint64, error) {
 	amount, err := t.session.BalanceOf(address)
 	if err != nil {
 		return 0, err
 	}
 
-	return int(amount.Int64()), nil
+	return amount.Uint64(), nil
 }
 
-func (t *Token) Transfer(to common.Address, amount int) error {
-	tx, err := t.session.Transfer(to, big.NewInt(int64(amount)))
+func (t *Token) Transfer(to common.Address, amount uint64) error {
+	tx, err := t.session.Transfer(to, big.NewInt(0).SetUint64(amount))
 	if err != nil {
 		return err
 	}
@@ -103,8 +103,8 @@ func (t *Token) Transfer(to common.Address, amount int) error {
 	return t.waitForTx(tx)
 }
 
-func (t *Token) Approve(to common.Address, amount int) error {
-	tx, err := t.session.Approve(to, big.NewInt(int64(amount)))
+func (t *Token) Approve(to common.Address, amount uint64) error {
+	tx, err := t.session.Approve(to, big.NewInt(0).SetUint64(amount))
 	if err != nil {
 		return err
 	}

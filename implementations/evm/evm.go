@@ -99,19 +99,19 @@ func (a *EVMImplementation) ContractAddress() common.Address {
 	return a.Broker.ContractAddress()
 }
 
-func (a *EVMImplementation) GetBooking(index int) (*protocol.VMBooking, error) {
+func (a *EVMImplementation) GetBooking(index uint64) (*protocol.VMBooking, error) {
 	return a.Broker.GetBooking(index)
 }
 
-func (a *EVMImplementation) GetAvailableOffers(vmTypeId int) ([]protocol.Offer, error) {
+func (a *EVMImplementation) GetAvailableOffers(vmTypeId uint64) ([]protocol.Offer, error) {
 	return a.Broker.GetAvailableOffers(vmTypeId)
 }
 
-func (a *EVMImplementation) RemoveOffer(id int) error {
+func (a *EVMImplementation) RemoveOffer(id uint64) error {
 	return a.Broker.RemoveOffer(id)
 }
 
-func (a *EVMImplementation) DepositStablecoin(amount int) error {
+func (a *EVMImplementation) DepositStablecoin(amount uint64) error {
 	err := a.Token.Approve(a.Broker.ContractAddress(), amount)
 	if err != nil {
 		return err
@@ -120,12 +120,16 @@ func (a *EVMImplementation) DepositStablecoin(amount int) error {
 	return a.Broker.DepositStablecoin(amount)
 }
 
-func (a *EVMImplementation) WithdrawStablecoin(amount int) error {
+func (a *EVMImplementation) WithdrawStablecoin(amount uint64) error {
 	return a.Broker.WithdrawStablecoin(amount)
 }
 
-func (a *EVMImplementation) BookVM(offerIndex int) error {
+func (a *EVMImplementation) BookVM(offerIndex uint64) error {
 	return a.Broker.BookVM(offerIndex)
+}
+
+func (a *EVMImplementation) ClaimPayment(offerIndex uint64) error {
+	return a.Broker.ClaimPayment(offerIndex)
 }
 
 func (a *EVMImplementation) GetUsersBookings() ([]protocol.VMBooking, error) {
@@ -144,7 +148,7 @@ func (a *EVMImplementation) SetMinerUrlIfNeeded(newUrl string) error {
 	return a.Broker.SetMinerUrlIfNeeded(newUrl)
 }
 
-func (a *EVMImplementation) GetTime() (int, error) {
+func (a *EVMImplementation) GetTime() (uint64, error) {
 	return a.Broker.GetTime()
 }
 
@@ -152,7 +156,7 @@ func (a *EVMImplementation) GetMinersBookings() ([]protocol.VMBooking, error) {
 	return a.Broker.GetMinersBookings()
 }
 
-func (a *EVMImplementation) GetStablecoinBalance() (int, int, error) {
+func (a *EVMImplementation) GetStablecoinBalance() (uint64, uint64, error) {
 	return a.Broker.GetStablecoinBalance()
 }
 
@@ -172,11 +176,11 @@ func (a *EVMImplementation) GetCommunityContract() (common.Address, error) {
 	return a.Broker.GetCommunityContract()
 }
 
-func (a *EVMImplementation) SetCommunityFee(fee int64) error {
+func (a *EVMImplementation) SetCommunityFee(fee uint64) error {
 	return a.Broker.SetCommunityFee(fee)
 }
 
-func (a *EVMImplementation) GetCommunityFee() (int64, error) {
+func (a *EVMImplementation) GetCommunityFee() (uint64, error) {
 	return a.Broker.GetCommunityFee()
 }
 

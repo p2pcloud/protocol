@@ -2,22 +2,19 @@ package broker
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/p2pcloud/protocol"
 )
 
-func (b *Broker) BookVM(offerIndex int) error {
-	_offerIndex := big.NewInt(int64(offerIndex))
-
-	_, err := b.EstimateGas("BookVM", _offerIndex)
+func (b *Broker) BookVM(offerIndex uint64) error {
+	_, err := b.EstimateGas("BookVM", offerIndex)
 	if err != nil {
 		return err
 	}
 
-	tx, err := b.session.BookVM(_offerIndex)
+	tx, err := b.session.BookVM(offerIndex)
 	if err != nil {
 		return err
 	}
@@ -37,24 +34,20 @@ func (b *Broker) GetUsersBookings() ([]protocol.VMBooking, error) {
 	var result []protocol.VMBooking
 	for _, booking := range bookings {
 		result = append(result, protocol.VMBooking{
-			VmTypeId:    int(booking.VmTypeId.Int64()),
-			PPS:         int(booking.PricePerSecond.Int64()),
+			VmTypeId:    booking.VmTypeId,
+			PPS:         booking.PricePerSecond,
 			Miner:       &booking.Miner,
-			Index:       int(booking.Index.Int64()),
+			Index:       booking.Index,
 			User:        &booking.User,
-			BookedAt:    int(booking.BookedAt.Int64()),
-			LastPayment: int(booking.LastPayment.Int64()),
+			BookedAt:    booking.BookedAt.Uint64(),
+			LastPayment: booking.LastPayment.Uint64(),
 		})
 	}
 	return result, nil
 }
 
-func (b *Broker) GetBooking(index int) (*protocol.VMBooking, error) {
-	// if err := b.setDecimals(); err != nil {
-	// 	return nil, err
-	// }
-
-	booking, err := b.session.GetBooking(uint64(index))
+func (b *Broker) GetBooking(index uint64) (*protocol.VMBooking, error) {
+	booking, err := b.session.GetBooking(index)
 	if err != nil {
 		return nil, err
 	}
@@ -64,22 +57,22 @@ func (b *Broker) GetBooking(index int) (*protocol.VMBooking, error) {
 	}
 
 	return &protocol.VMBooking{
-		VmTypeId:    int(booking.VmTypeId.Int64()),
-		PPS:         int(booking.PricePerSecond.Int64()),
+		VmTypeId:    booking.VmTypeId,
+		PPS:         booking.PricePerSecond,
 		Miner:       &booking.Miner,
-		Index:       int(booking.Index.Int64()),
+		Index:       booking.Index,
 		User:        &booking.User,
-		BookedAt:    int(booking.BookedAt.Int64()),
-		LastPayment: int(booking.LastPayment.Int64()),
+		BookedAt:    booking.BookedAt.Uint64(),
+		LastPayment: booking.LastPayment.Uint64(),
 	}, nil
 }
 
-func (b *Broker) GetTime() (int, error) {
+func (b *Broker) GetTime() (uint64, error) {
 	t, err := b.session.GetTime()
 	if err != nil {
 		return 0, err
 	}
-	return int(t.Int64()), nil
+	return t.Uint64(), nil
 }
 
 func (b *Broker) GetMinersBookings() ([]protocol.VMBooking, error) {
@@ -95,13 +88,13 @@ func (b *Broker) GetMinersBookings() ([]protocol.VMBooking, error) {
 	for _, booking := range bookings {
 
 		result = append(result, protocol.VMBooking{
-			VmTypeId:    int(booking.VmTypeId.Int64()),
-			PPS:         int(booking.PricePerSecond.Int64()),
+			VmTypeId:    booking.VmTypeId,
+			PPS:         booking.PricePerSecond,
 			Miner:       &booking.Miner,
-			Index:       int(booking.Index.Int64()),
+			Index:       booking.Index,
 			User:        &booking.User,
-			BookedAt:    int(booking.BookedAt.Int64()),
-			LastPayment: int(booking.LastPayment.Int64()),
+			BookedAt:    booking.BookedAt.Uint64(),
+			LastPayment: booking.LastPayment.Uint64(),
 		})
 	}
 	return result, nil
@@ -144,13 +137,13 @@ func (b *Broker) GetUserBookings() ([]protocol.VMBooking, error) {
 
 	for i := range userBookings {
 		result = append(result, protocol.VMBooking{
-			VmTypeId:    int(userBookings[i].VmTypeId.Int64()),
-			PPS:         int(userBookings[i].PricePerSecond.Int64()),
+			VmTypeId:    userBookings[i].VmTypeId,
+			PPS:         userBookings[i].PricePerSecond,
 			Miner:       &userBookings[i].Miner,
-			Index:       int(userBookings[i].Index.Int64()),
+			Index:       userBookings[i].Index,
 			User:        &userBookings[i].User,
-			BookedAt:    int(userBookings[i].BookedAt.Int64()),
-			LastPayment: int(userBookings[i].LastPayment.Int64()),
+			BookedAt:    userBookings[i].BookedAt.Uint64(),
+			LastPayment: userBookings[i].LastPayment.Uint64(),
 		})
 	}
 
