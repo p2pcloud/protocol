@@ -6,13 +6,6 @@
 ## What is p2pcloud
 [p2pcloud.io](https://p2pcloud.io) is a protocol and utility set for booking and securing trustless virtual machines over the blockchain.
 
-## Development 
-### Agreements
-- All implementations should be in the implementations folder in a separate subfolder;
-- All implementations should comply with `BlockchainIface`;
-- Good test coverage with edge cases;
-- Deliver changes through pull reqeusts.
-
 ### How to 
 Compile contracts
 ```
