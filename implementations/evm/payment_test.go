@@ -1,27 +1,12 @@
 package evm_test
 
 import (
-	"log"
 	"testing"
 	"time"
 
 	"github.com/p2pcloud/protocol"
 	"github.com/stretchr/testify/require"
 )
-
-/*
-book, skip time, stop
-check money withdrawn from client to miner
-check percentage is sent to community
-*/
-
-/*
-stop when not enough money to pay
-*/
-
-/*
-
- */
 
 func TestPayment(t *testing.T) {
 	var err error
@@ -85,21 +70,29 @@ func TestPayment(t *testing.T) {
 	//check time
 	ts, err = miner.GetTime()
 	require.NoError(t, err)
+
+	//check last payment date updates
+	booking, err = user.GetBooking(0)
+	require.NoError(t, err)
+	require.Equal(t, ts, booking.LastPayment)
+
+	//check balance
 	secondsPassed = ts - booking.BookedAt
-
 	minerCoins, _, err = miner.GetStablecoinBalance()
-	log.Println("miner coins", minerCoins)
-	log.Println("secondsPassed", secondsPassed)
-	log.Println("secondsPassed*PPS*95/100", secondsPassed*PPS*95/100)
 
+	//miner gets 95% of payment
 	require.NoError(t, err)
 	require.Equal(t, secondsPassed*PPS*95/100, minerCoins) //95%
 
+	//community gets 5% of payment
 	communityCoins, _, err = testEnv.Admin.GetStablecoinBalance()
 	require.NoError(t, err)
 	require.Equal(t, secondsPassed*PPS*5/100, communityCoins) //5%
 }
 
+//TODO: check for events
 //TODO: try to claim stopped booking
 //TODO: test other values community fee
 //TODO: try to break math in ClaimPayment method
+//TODO: check for rounding errors
+//TODO: check booking gets deleted if it is not enough money to cover all costs

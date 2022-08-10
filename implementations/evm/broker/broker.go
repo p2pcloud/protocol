@@ -28,6 +28,8 @@ type Broker struct {
 
 	mu                *sync.Mutex
 	stableCoinAddress *common.Address
+
+	EventsFilter *contracts.BrokerFilterer
 }
 
 func NewBroker(
@@ -66,10 +68,15 @@ func NewBroker(
 		Contract:     instance,
 		TransactOpts: *b.transactOpts,
 		CallOpts: bind.CallOpts{
-			Pending: false,                // Whether to operate on the pending state or the last known one
+			Pending: false,               // Whether to operate on the pending state or the last known one
 			From:    b.transactOpts.From, // Optional the sender address, otherwise the first account is used
 			Context: context.Background(),
 		},
+	}
+
+	b.EventsFilter, err = contracts.NewBrokerFilterer(b.contractAddress, b.backend)
+	if err != nil {
+		return nil, err
 	}
 
 	return b, nil
