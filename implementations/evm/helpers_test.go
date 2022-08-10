@@ -73,6 +73,7 @@ func (te *TestEnv) deployBroker(adminPk *ecdsa.PrivateKey, tokenAddress common.A
 	require.NoError(te.t, err)
 
 	brokerContractAddress, err := adminBrokerContract.DeployContract()
+	require.NoError(te.t, err)
 
 	adminBrokerContract, err = broker.NewBroker(
 		te.blockchain.Origin.Backend,

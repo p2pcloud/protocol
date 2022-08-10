@@ -99,7 +99,7 @@ func (a *EVMImplementation) ContractAddress() common.Address {
 	return a.Broker.ContractAddress()
 }
 
-func (a *EVMImplementation) GetBooking(index uint64) (*protocol.VMBooking, error) {
+func (a *EVMImplementation) GetBooking(index uint64) (protocol.VMBooking, error) {
 	return a.Broker.GetBooking(index)
 }
 
@@ -128,6 +128,10 @@ func (a *EVMImplementation) BookVM(offerIndex uint64) error {
 	return a.Broker.BookVM(offerIndex)
 }
 
+func (a *EVMImplementation) StopVM(offerIndex uint64, reason protocol.StopReason) error {
+	return a.Broker.StopVM(offerIndex, uint8(reason))
+}
+
 func (a *EVMImplementation) ClaimPayment(offerIndex uint64) error {
 	return a.Broker.ClaimPayment(offerIndex)
 }
@@ -142,6 +146,14 @@ func (a *EVMImplementation) GetMyAddress() *common.Address {
 
 func (a *EVMImplementation) GetMinerUrl(address *common.Address) (string, error) {
 	return a.Broker.GetMinerUrl(address)
+}
+
+func (a *EVMImplementation) GetComplainEvents(filter protocol.ComplainFilterOpts) ([]protocol.ComplainEvent, error) {
+	return a.Broker.GetComplainEvents(filter)
+}
+
+func (a *EVMImplementation) GetPaymentEvents(filter protocol.PaymentFilterOpts) ([]protocol.PaymentEvent, error) {
+	return a.Broker.GetPaymentEvents(filter)
 }
 
 func (a *EVMImplementation) SetMinerUrlIfNeeded(newUrl string) error {

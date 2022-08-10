@@ -42,6 +42,7 @@ contract Broker {
         uint64 pricePerSecond;
         uint256 bookedAt;
         uint256 lastPayment;
+        uint64 offerIndex;
     }
 
     struct VMOffer {
@@ -52,45 +53,15 @@ contract Broker {
         uint64 vmTypeId;
     }
 
-    event BookingStarted(
-        uint64 index,
-        address indexed miner,
+    event Payment(address indexed user, address indexed miner, uint256 amount);
+
+    event Complain(
         address indexed user,
-        uint64 vmTypeId
-    );
-    event BookingReported(
-        uint64 minerPayout,
-        uint64 index,
         address indexed miner,
-        address indexed user,
-        uint64 timeUsed,
-        uint64 vmTypeId
-    );
-    event BookingStopped(
-        uint64 minerPayout,
-        uint64 index,
-        address indexed miner,
-        address indexed user,
-        uint64 timeUsed,
-        uint64 vmTypeId
-    );
-    event BookingClaimed(
-        uint64 minerPayout,
-        uint64 index,
-        address indexed miner,
-        address indexed user,
-        uint64 timeUsed,
-        uint64 vmTypeId
-    );
-    event BookingExtended(
-        uint64 index,
-        address indexed miner,
-        address indexed user,
-        uint64 vmTypeId
+        uint8 indexed reason
     );
 
     uint64 public constant SECONDS_IN_WEEK = 604800;
-
     uint64 public constant version = 1;
 
     mapping(uint64 => VMOffer) vmOffers;
@@ -200,7 +171,10 @@ contract Broker {
             bookings[bookingId].miner == msg.sender,
             "Only the miner can claim a payment"
         );
+        executeClaimPayment(bookingId);
+    }
 
+    function executeClaimPayment(uint64 bookingId) private {
         uint256 timeUsed = block.timestamp - bookings[bookingId].lastPayment;
 
         uint256 totalPayout = timeUsed * bookings[bookingId].pricePerSecond;
@@ -217,6 +191,12 @@ contract Broker {
         stablecoinBalance[communityContract] += communityPayout;
         stablecoinBalance[bookings[bookingId].miner] += minerPayout;
         stablecoinBalance[bookings[bookingId].user] -= totalPayout;
+
+        emit Payment(
+            bookings[bookingId].user,
+            bookings[bookingId].miner,
+            minerPayout
+        );
     }
 
     function GetStablecoinBalance(address user)
@@ -250,7 +230,8 @@ contract Broker {
             msg.sender,
             vmOffers[offerIndex].pricePerSecond,
             block.timestamp,
-            block.timestamp
+            block.timestamp,
+            offerIndex
         );
         bookings[nextBookingId] = booking;
         nextBookingId++;
@@ -260,6 +241,29 @@ contract Broker {
         vmOffers[offerIndex].machinesAvailable -= 1;
 
         return nextBookingId - 1;
+    }
+
+    function executeBookingDelete(uint64 bookingId) private {
+        vmOffers[bookings[bookingId].offerIndex].machinesAvailable += 1;
+        delete bookings[bookingId];
+    }
+
+    function StopVM(uint64 bookingId, uint8 reason) public {
+        require(
+            bookings[bookingId].user == msg.sender,
+            "Only the user can stop a VM"
+        );
+
+        if (reason != 0) {
+            emit Complain(
+                bookings[bookingId].user,
+                bookings[bookingId].miner,
+                reason
+            );
+        }
+
+        executeClaimPayment(bookingId);
+        executeBookingDelete(bookingId);
     }
 
     function FindBookingsByUser(address _owner)
@@ -309,120 +313,6 @@ contract Broker {
     {
         booking = bookings[index];
     }
-
-    // function extendBooking(uint64 index, uint256 secs) public {
-    //     Booking memory booking = bookings[index];
-    //     uint256 currentTime = GetTime();
-
-    //     require(msg.sender == booking.user, "only owner of booking can extend");
-    //     require(currentTime < booking.bookedTill, "booking is expired");
-    //     require(
-    //         userBalance() >= booking.pricePerSecond * secs,
-    //         "insufficient funds to extend booking"
-    //     );
-
-    //     locked[msg.sender] += booking.pricePerSecond * secs;
-
-    //     booking.bookedTill += secs;
-    //     bookings[index] = booking;
-
-    //     emit BookingExtended(
-    //         booking.index,
-    //         booking.miner,
-    //         booking.user,
-    //         booking.vmTypeId
-    //     );
-    // }
-
-    // function stopBooking(uint64 index, bool complain) public {
-    //     Booking memory booking = bookings[index];
-    //     uint256 currentTime = GetTime();
-
-    //     require(
-    //         msg.sender == booking.user,
-    //         "only owner of booking can stop it"
-    //     );
-
-    //     //TODO: pay to miner
-    //     uint256 toPay = booking.pricePerSecond *
-    //         (currentTime - booking.bookedAt);
-
-    //     uint256 minerPayout = (toPay * minersPercentage) / 100;
-    //     uint256 communityPayout = toPay - minerPayout;
-
-    //     deposits[msg.sender] -= toPay;
-    //     locked[msg.sender] -=
-    //         booking.pricePerSecond *
-    //         (booking.bookedTill - booking.bookedAt);
-
-    //     delete bookings[booking.index];
-
-    //     if (abortType == 1) {
-    //         emit BookingReported(
-    //             minerPayout,
-    //             booking.index,
-    //             booking.miner,
-    //             booking.user,
-    //             currentTime - booking.bookedAt,
-    //             booking.vmTypeId
-    //         );
-    //     } else {
-    //         emit BookingStopped(
-    //             minerPayout,
-    //             booking.index,
-    //             booking.miner,
-    //             booking.user,
-    //             currentTime - booking.bookedAt,
-    //             booking.vmTypeId
-    //         );
-    //     }
-
-    //     if (!token.transfer(booking.miner, minerPayout)) {
-    //         revert("could not payout for miner");
-    //     }
-
-    //     if (!token.transfer(community, communityPayout)) {
-    //         revert("could not payout for community");
-    //     }
-    // }
-
-    // function claimExpired(uint64 index) public {
-    //     Booking memory booking = bookings[index];
-
-    //     require(msg.sender == booking.miner, "only miner of booking can claim");
-    //     require(
-    //         block.timestamp >= booking.bookedTill,
-    //         "booking is still in use"
-    //     );
-
-    //     uint256 toPay = booking.pricePerSecond *
-    //         (booking.bookedTill - booking.bookedAt);
-
-    //     uint256 minerPayout = (toPay * (100 - communityFee)) / 100;
-    //     uint256 communityPayout = toPay - minerPayout;
-
-    //     deposits[booking.user] -= toPay;
-    //     locked[booking.user] -= toPay;
-
-    //     delete bookings[booking.index];
-
-    //     emit BookingClaimed(
-    //         minerPayout,
-    //         booking.index,
-    //         booking.miner,
-    //         booking.user,
-    //         booking.bookedTill - booking.bookedAt,
-    //         booking.vmTypeId
-    //     );
-
-    //     if (!token.transfer(booking.miner, minerPayout)) {
-    //         revert("could not payout for miner");
-    //     }
-
-    //     if (!token.transfer(community, communityPayout)) {
-    //         revert("could not payout for community");
-    //     }
-    // }
 
     function GetAvailableOffersByType(uint64 _vmTypeId)
         public

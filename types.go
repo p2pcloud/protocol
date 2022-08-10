@@ -6,16 +6,37 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+type StopReason uint8
+
 const (
-	UnknownAbortType AbortType = 0
-	ReportAbortType  AbortType = 1
-	StopAbortType    AbortType = 2
+	StopReasonNotNeeded StopReason = 0
+	StopReasonComplain  StopReason = 1
 )
 
-type AbortType uint8
+type ComplainEvent struct {
+	User   *common.Address
+	Miner  *common.Address
+	Reason StopReason
+}
 
-func (a AbortType) ToSolidityType() uint8 {
-	return uint8(a)
+type PaymentEvent struct {
+	User   *common.Address
+	Miner  *common.Address
+	Amount uint64
+}
+type PaymentFilterOpts struct {
+	User       *common.Address
+	Miner      *common.Address
+	StartBlock uint64
+	EndBlock   *uint64
+}
+
+type ComplainFilterOpts struct {
+	User       *common.Address
+	Miner      *common.Address
+	StopReason *StopReason
+	StartBlock uint64
+	EndBlock   *uint64
 }
 
 type Offer struct {
@@ -52,35 +73,28 @@ type P2PCloudProtocolIface interface {
 	//Booking
 	BookVM(offerIndex uint64) error
 	ClaimPayment(bookingIndex uint64) error
+	StopVM(index uint64, reason StopReason) error
+	GetBooking(index uint64) (VMBooking, error)
+	GetUsersBookings() ([]VMBooking, error)
+	GetMinerUrl(address *common.Address) (string, error)
+	SetMinerUrlIfNeeded(newUrl string) error
+	GetMinersBookings() ([]VMBooking, error)
 
 	//Wallet
 	GetPrivateKey() *ecdsa.PrivateKey
 	GetMyAddress() *common.Address
 
-	//WIP
-	// DepositCoin(coins float64) error
-	// WithdrawCoin() error
-	// Balance() (float64, error)
-	// DepositBalance() (float64, error)
-	// LockedBalance() (float64, error)
-	// SetStablecoinAddress(address common.Address) error
-	// GetStablecoinAddress() (common.Address, error)
-	// UserAllowance() (float64, error)
-	// UserTokenBalance() (float64, error)
-
-	//Non-refactored yet
-	ContractAddress() common.Address
-	GetBooking(index uint64) (*VMBooking, error)
-	GetUsersBookings() ([]VMBooking, error)
-	GetMinerUrl(address *common.Address) (string, error)
-	SetMinerUrlIfNeeded(newUrl string) error
-	GetTime() (uint64, error)
-	GetMinersBookings() ([]VMBooking, error)
+	//Admin
 	SetCommunityContract(address common.Address) error
 	GetCommunityContract() (common.Address, error)
 	SetCommunityFee(fee uint64) error
 	GetCommunityFee() (uint64, error)
-	// AbortBooking(index uint64, abortType AbortType) error
-	// ClaimExpired(index uint64) error
-	// ExtendBooking(index uint64, secs uint64) error
+
+	//Utility
+	GetTime() (uint64, error)
+	ContractAddress() common.Address
+
+	//Events
+	GetComplainEvents(filter ComplainFilterOpts) ([]ComplainEvent, error)
+	GetPaymentEvents(filter PaymentFilterOpts) ([]PaymentEvent, error)
 }

@@ -22,6 +22,20 @@ func (b *Broker) BookVM(offerIndex uint64) error {
 	return b.waitForTx(tx)
 }
 
+func (b *Broker) StopVM(offerIndex uint64, reason uint8) error {
+	_, err := b.EstimateGas("StopVM", offerIndex, reason)
+	if err != nil {
+		return err
+	}
+
+	tx, err := b.session.StopVM(offerIndex, reason)
+	if err != nil {
+		return err
+	}
+
+	return b.waitForTx(tx)
+}
+
 func (b *Broker) GetUsersBookings() ([]protocol.VMBooking, error) {
 	// if err := b.setDecimals(); err != nil {
 	// 	return nil, err
@@ -46,17 +60,17 @@ func (b *Broker) GetUsersBookings() ([]protocol.VMBooking, error) {
 	return result, nil
 }
 
-func (b *Broker) GetBooking(index uint64) (*protocol.VMBooking, error) {
+func (b *Broker) GetBooking(index uint64) (protocol.VMBooking, error) {
 	booking, err := b.session.GetBooking(index)
 	if err != nil {
-		return nil, err
+		return protocol.VMBooking{}, err
 	}
 
 	if booking.Miner.Hex() == "0x0000000000000000000000000000000000000000" {
-		return nil, fmt.Errorf("booking %d not found", index)
+		return protocol.VMBooking{}, fmt.Errorf("booking %d not found", index)
 	}
 
-	return &protocol.VMBooking{
+	return protocol.VMBooking{
 		VmTypeId:    booking.VmTypeId,
 		PPS:         booking.PricePerSecond,
 		Miner:       &booking.Miner,
