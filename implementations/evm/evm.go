@@ -148,8 +148,8 @@ func (a *EVMImplementation) GetMinerUrl(address *common.Address) (string, error)
 	return a.Broker.GetMinerUrl(address)
 }
 
-func (a *EVMImplementation) GetComplainEvents(filter protocol.ComplainFilterOpts) ([]protocol.ComplainEvent, error) {
-	return a.Broker.GetComplainEvents(filter)
+func (a *EVMImplementation) GetComplaintEvents(filter protocol.ComplaintFilterOpts) ([]protocol.ComplaintEvent, error) {
+	return a.Broker.GetComplaintEvents(filter)
 }
 
 func (a *EVMImplementation) GetPaymentEvents(filter protocol.PaymentFilterOpts) ([]protocol.PaymentEvent, error) {

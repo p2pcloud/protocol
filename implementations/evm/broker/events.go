@@ -6,7 +6,7 @@ import (
 	"github.com/p2pcloud/protocol"
 )
 
-func (b *Broker) GetComplainEvents(filter protocol.ComplainFilterOpts) ([]protocol.ComplainEvent, error) {
+func (b *Broker) GetComplaintEvents(filter protocol.ComplaintFilterOpts) ([]protocol.ComplaintEvent, error) {
 	var usersFilter []common.Address
 	if filter.User != nil {
 		usersFilter = make([]common.Address, 0)
@@ -31,15 +31,15 @@ func (b *Broker) GetComplainEvents(filter protocol.ComplainFilterOpts) ([]protoc
 		Context: nil,
 	}
 
-	filterer, err := b.EventsFilter.FilterComplain(opts, usersFilter, minersFilter, reasonsFilter)
+	filterer, err := b.EventsFilter.FilterComplaint(opts, usersFilter, minersFilter, reasonsFilter)
 	if err != nil {
 		return nil, err
 	}
-	events := make([]protocol.ComplainEvent, 0)
+	events := make([]protocol.ComplaintEvent, 0)
 
 	for filterer.Next() {
 		event := filterer.Event
-		events = append(events, protocol.ComplainEvent{
+		events = append(events, protocol.ComplaintEvent{
 			User:   &event.User,
 			Miner:  &event.Miner,
 			Reason: protocol.StopReason(event.Reason),

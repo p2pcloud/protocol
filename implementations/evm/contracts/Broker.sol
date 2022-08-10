@@ -55,7 +55,7 @@ contract Broker {
 
     event Payment(address indexed user, address indexed miner, uint256 amount);
 
-    event Complain(
+    event Complaint(
         address indexed user,
         address indexed miner,
         uint8 indexed reason
@@ -255,7 +255,7 @@ contract Broker {
         );
 
         if (reason != 0) {
-            emit Complain(
+            emit Complaint(
                 bookings[bookingId].user,
                 bookings[bookingId].miner,
                 reason

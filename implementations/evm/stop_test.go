@@ -74,7 +74,10 @@ func TestStop(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, secondsPassed*PPS*5/100, communityCoins) //5%
 
-	//TODO: check for absense of Complain event
+	//check for the absense of Complaint event
+	events, err := user.GetComplaintEvents(protocol.ComplaintFilterOpts{})
+	require.NoError(t, err)
+	require.Len(t, events, 0)
 
 	//claim payment causes error
 	err = miner.ClaimPayment(0)
@@ -86,7 +89,7 @@ func TestStop(t *testing.T) {
 }
 
 //TODO: check availability comes back
-func TestStopComplain(t *testing.T) {
+func TestStopComplaint(t *testing.T) {
 	var err error
 
 	const PPS = 1000
@@ -120,7 +123,7 @@ func TestStopComplain(t *testing.T) {
 	testEnv.AdjustTime(time.Minute * 10)
 
 	//stop
-	err = user.StopVM(0, protocol.StopReasonComplain)
+	err = user.StopVM(0, protocol.StopReasonComplaint)
 	require.NoError(t, err)
 
 	//check time
@@ -131,10 +134,10 @@ func TestStopComplain(t *testing.T) {
 	expectedPayment := secondsPassed * PPS * 95 / 100
 
 	//check Complain event
-	events, err := user.GetComplainEvents(protocol.ComplainFilterOpts{})
+	events, err := user.GetComplaintEvents(protocol.ComplaintFilterOpts{})
 	require.NoError(t, err)
 	require.Len(t, events, 1)
-	require.Equal(t, protocol.StopReasonComplain, events[0].Reason)
+	require.Equal(t, protocol.StopReasonComplaint, events[0].Reason)
 	require.Equal(t, miner.GetMyAddress().Hex(), events[0].Miner.Hex())
 	require.Equal(t, user.GetMyAddress().Hex(), events[0].User.Hex())
 

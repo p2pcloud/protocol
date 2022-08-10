@@ -10,10 +10,10 @@ type StopReason uint8
 
 const (
 	StopReasonNotNeeded StopReason = 0
-	StopReasonComplain  StopReason = 1
+	StopReasonComplaint StopReason = 1
 )
 
-type ComplainEvent struct {
+type ComplaintEvent struct {
 	User   *common.Address
 	Miner  *common.Address
 	Reason StopReason
@@ -31,7 +31,7 @@ type PaymentFilterOpts struct {
 	EndBlock   *uint64
 }
 
-type ComplainFilterOpts struct {
+type ComplaintFilterOpts struct {
 	User       *common.Address
 	Miner      *common.Address
 	StopReason *StopReason
@@ -95,6 +95,6 @@ type P2PCloudProtocolIface interface {
 	ContractAddress() common.Address
 
 	//Events
-	GetComplainEvents(filter ComplainFilterOpts) ([]ComplainEvent, error)
+	GetComplaintEvents(filter ComplaintFilterOpts) ([]ComplaintEvent, error)
 	GetPaymentEvents(filter PaymentFilterOpts) ([]PaymentEvent, error)
 }

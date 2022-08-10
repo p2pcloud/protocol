@@ -24,7 +24,7 @@ jobs:
     - name: Compile contract
       run: go run ./cmd/compile/
 
-    - name: Test
+    - name: Test # TODO: restore those tests and skip on adjustTime method
       env:
         GANACHE_RPC_ENDPOINT: "http://0.0.0.0:8545"
       run: go test -v ./...
