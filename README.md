@@ -38,13 +38,13 @@ There are 3 actors - miner, user and community. User books and pays for VM. Mine
 1. User gets list of offers
     - Functions: `GetAvailableOffers`
 1. User books VM. System checks that he has enough money to pay for all his VMs for 7 days (variable `totalPPS`).
-    - Functions: `bookVM`
+    - Functions: `BookVM`
 1. User aborts booking. With reason (0 - ok, 1 - miner misbehaviour)
-    - Functions: `stopBooking` 
-    - Events: `bookingReported`, `minerPayout`
+    - Functions: `StopVM` 
+    - Events: `Complaint`, `Payment`
 1. Miner claims Booking payment. New date of claim get's recorded. 
-    - Functions: `claimPayment`
-    - Events: `minerPayout`
+    - Functions: `ClaimPayment`
+    - Events: `Payment`
 
 Events are used to calculate miner's reputation.
 
