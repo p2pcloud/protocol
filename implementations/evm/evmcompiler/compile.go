@@ -58,7 +58,7 @@ func CompileContracts(compileTestToken bool) error {
 		"docker", "run", "--rm",
 		"-v", fmt.Sprintf("%s:/contracts", contractsDir),
 		container_basic,
-		"bash", "-c", "rm /contracts/*.{bin,abi} && chmod 777 /contracts/*.go",
+		"bash", "-c", "rm /contracts/*.bin && chmod 777 /contracts/*.go",
 	)
 	out, err = cmd.CombinedOutput()
 	if err != nil {

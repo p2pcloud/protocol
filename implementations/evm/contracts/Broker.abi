@@ -1,0 +1,814 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs":
+    [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "miner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint8",
+        "name": "reason",
+        "type": "uint8"
+      }
+    ],
+    "name": "Complaint",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs":
+    [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "miner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "Payment",
+    "type": "event"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "pricePerSecond",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "vmTypeId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "machinesAvailable",
+        "type": "uint64"
+      }
+    ],
+    "name": "AddOffer",
+    "outputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "offerIndex",
+        "type": "uint64"
+      }
+    ],
+    "name": "BookVM",
+    "outputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "bookingId",
+        "type": "uint64"
+      }
+    ],
+    "name": "ClaimPayment",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint256",
+        "name": "numTokens",
+        "type": "uint256"
+      }
+    ],
+    "name": "DepositStablecoin",
+    "outputs":
+    [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "_miner",
+        "type": "address"
+      }
+    ],
+    "name": "FindBookingsByMiner",
+    "outputs":
+    [
+      {
+        "components":
+        [
+          {
+            "internalType": "uint64",
+            "name": "index",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "vmTypeId",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address",
+            "name": "miner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "pricePerSecond",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint256",
+            "name": "bookedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastPayment",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64",
+            "name": "offerIndex",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct Broker.Booking[]",
+        "name": "filteredBookings",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      }
+    ],
+    "name": "FindBookingsByUser",
+    "outputs":
+    [
+      {
+        "components":
+        [
+          {
+            "internalType": "uint64",
+            "name": "index",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "vmTypeId",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address",
+            "name": "miner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "pricePerSecond",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint256",
+            "name": "bookedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastPayment",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64",
+            "name": "offerIndex",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct Broker.Booking[]",
+        "name": "filteredBookings",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "GetAvailableOffers",
+    "outputs":
+    [
+      {
+        "components":
+        [
+          {
+            "internalType": "uint64",
+            "name": "index",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address",
+            "name": "miner",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "pricePerSecond",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "machinesAvailable",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "vmTypeId",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct Broker.VMOffer[]",
+        "name": "filteredOffers",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "_vmTypeId",
+        "type": "uint64"
+      }
+    ],
+    "name": "GetAvailableOffersByType",
+    "outputs":
+    [
+      {
+        "components":
+        [
+          {
+            "internalType": "uint64",
+            "name": "index",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address",
+            "name": "miner",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "pricePerSecond",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "machinesAvailable",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "vmTypeId",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct Broker.VMOffer[]",
+        "name": "filteredOffers",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "index",
+        "type": "uint64"
+      }
+    ],
+    "name": "GetBooking",
+    "outputs":
+    [
+      {
+        "components":
+        [
+          {
+            "internalType": "uint64",
+            "name": "index",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "vmTypeId",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address",
+            "name": "miner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "pricePerSecond",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint256",
+            "name": "bookedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastPayment",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64",
+            "name": "offerIndex",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct Broker.Booking",
+        "name": "booking",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "miner",
+        "type": "address"
+      }
+    ],
+    "name": "GetMinersOffers",
+    "outputs":
+    [
+      {
+        "components":
+        [
+          {
+            "internalType": "uint64",
+            "name": "index",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address",
+            "name": "miner",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "pricePerSecond",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "machinesAvailable",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "vmTypeId",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct Broker.VMOffer[]",
+        "name": "filteredOffers",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "GetStablecoinBalance",
+    "outputs":
+    [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "GetTime",
+    "outputs":
+    [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "GetUsersBookings",
+    "outputs":
+    [
+      {
+        "components":
+        [
+          {
+            "internalType": "uint64",
+            "name": "index",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "vmTypeId",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address",
+            "name": "miner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "pricePerSecond",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint256",
+            "name": "bookedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastPayment",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64",
+            "name": "offerIndex",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct Broker.Booking[]",
+        "name": "filteredBookings",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "offerIndex",
+        "type": "uint64"
+      }
+    ],
+    "name": "RemoveOffer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "SECONDS_IN_WEEK",
+    "outputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "newCommunityAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SetCommunityContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "contract IERC20",
+        "name": "newStablecoinAddress",
+        "type": "address"
+      }
+    ],
+    "name": "SetStablecoinAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "bookingId",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint8",
+        "name": "reason",
+        "type": "uint8"
+      }
+    ],
+    "name": "StopVM",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "offerIndex",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "machinesAvailable",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "pps",
+        "type": "uint64"
+      }
+    ],
+    "name": "UpdateOffer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint256",
+        "name": "amt",
+        "type": "uint256"
+      }
+    ],
+    "name": "WithdrawStablecoin",
+    "outputs":
+    [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getCommunityContract",
+    "outputs":
+    [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getCommunityFee",
+    "outputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "getMinerUrl",
+    "outputs":
+    [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getStablecoinAddress",
+    "outputs":
+    [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "fee",
+        "type": "uint64"
+      }
+    ],
+    "name": "setCommunityFee",
+    "outputs":
+    [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "bytes32",
+        "name": "url",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setMunerUrl",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "version",
+    "outputs":
+    [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
