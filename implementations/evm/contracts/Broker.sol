@@ -171,16 +171,21 @@ contract Broker {
             bookings[bookingId].miner == msg.sender,
             "Only the miner can claim a payment"
         );
-        executeClaimPayment(bookingId);
+        bool enoughMoney = executeClaimPayment(bookingId);
+        if (!enoughMoney) {
+            executeBookingDelete(bookingId);
+        }
     }
 
-    function executeClaimPayment(uint64 bookingId) private {
+    function executeClaimPayment(uint64 bookingId) private returns (bool) {
+        bool enoughMoney = true;
         uint256 timeUsed = block.timestamp - bookings[bookingId].lastPayment;
 
         uint256 totalPayout = timeUsed * bookings[bookingId].pricePerSecond;
 
         if (stablecoinBalance[bookings[bookingId].user] < totalPayout) {
             totalPayout = stablecoinBalance[bookings[bookingId].user];
+            enoughMoney = false;
         }
 
         uint256 communityPayout = (totalPayout * communityFee) / (100 * 100);
@@ -197,6 +202,7 @@ contract Broker {
             bookings[bookingId].miner,
             minerPayout
         );
+        return enoughMoney;
     }
 
     function GetStablecoinBalance(address user)

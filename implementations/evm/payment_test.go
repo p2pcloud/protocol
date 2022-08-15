@@ -90,9 +90,60 @@ func TestPayment(t *testing.T) {
 	require.Equal(t, secondsPassed*PPS*5/100, communityCoins) //5%
 }
 
+//check booking gets deleted if it is not enough money to cover all costs
+
+func TestDeleteOnLowBalance(t *testing.T) {
+	var err error
+
+	testEnv := CreateTestEnv(t, 2)
+	user := testEnv.Users[0]
+	miner := testEnv.Users[1]
+
+	const PPS = uint64(2)
+	const BALANCE_REQUIRED_FOR_1_VM = uint64(60 * 60 * 24 * 7 * PPS)
+
+	//add offer
+	_ = miner.AddOffer(protocol.Offer{
+		VmTypeId:      0,
+		PPS:           PPS,
+		Availablility: 3,
+	}, "https://hello.world")
+
+	//add some money
+	testEnv.AddSomeStablecoin(*user.GetMyAddress(), BALANCE_REQUIRED_FOR_1_VM*10)
+	err = user.DepositStablecoin(BALANCE_REQUIRED_FOR_1_VM)
+	require.NoError(t, err)
+
+	free, _, _ := user.GetStablecoinBalance()
+	require.Equal(t, BALANCE_REQUIRED_FOR_1_VM, free)
+
+	//book 1st VM
+	err = user.BookVM(0)
+	require.NoError(t, err)
+
+	testEnv.AdjustTime(time.Hour*24*7 - 1*time.Minute)
+
+	//enough money, booking is still there
+	err = miner.ClaimPayment(0)
+	require.NoError(t, err)
+
+	_, err = user.GetBooking(0)
+	require.NoError(t, err)
+
+	//skip more time
+	testEnv.AdjustTime(1*time.Minute + 1*time.Second)
+
+	//not enough money, no booking after claim
+	err = miner.ClaimPayment(0)
+	require.NoError(t, err)
+
+	_, err = user.GetBooking(0)
+	require.Error(t, err)
+
+}
+
 //TODO: check for events
 //TODO: try to claim stopped booking
 //TODO: test other values community fee
 //TODO: try to break math in ClaimPayment method
 //TODO: check for rounding errors
-//TODO: check booking gets deleted if it is not enough money to cover all costs
