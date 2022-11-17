@@ -65,10 +65,10 @@ contract Broker {
     uint64 public constant version = 1;
 
     mapping(uint64 => VMOffer) vmOffers;
-    uint64 nextVmOfferId = 0;
+    uint64 nextVmOfferId;
 
     mapping(uint64 => Booking) bookings;
-    uint64 nextBookingId = 0;
+    uint64 nextBookingId;
 
     mapping(address => bytes32) minerUrls;
 
@@ -78,23 +78,14 @@ contract Broker {
     IERC20 stablecoin;
 
     address communityContract;
-    uint64 communityFee = 500; // 5%
+    uint64 communityFee;
 
-    constructor() {
-        communityContract = msg.sender;
-    }
-
-    function setMunerUrl(bytes32 url) public {
+    function SetMinerUrl(bytes32 url) public {
         minerUrls[msg.sender] = url;
     }
 
-    function getMinerUrl(address _user) public view returns (bytes32) {
+    function GetMinerUrl(address _user) public view returns (bytes32) {
         return minerUrls[_user];
-    }
-
-    //TODO: do we need this?!
-    function GetTime() public view returns (uint256) {
-        return block.timestamp;
     }
 
     function AddOffer(
@@ -134,6 +125,26 @@ contract Broker {
         delete vmOffers[offerIndex];
     }
 
+    function GetMinersOffers(address miner)
+        public
+        view
+        returns (VMOffer[] memory filteredOffers)
+    {
+        VMOffer[] memory offersTemp = new VMOffer[](nextVmOfferId);
+        uint64 count;
+        for (uint64 i = 0; i < nextVmOfferId; i++) {
+            if (vmOffers[i].miner == miner) {
+                offersTemp[count] = vmOffers[i];
+                count += 1;
+            }
+        }
+
+        filteredOffers = new VMOffer[](count);
+        for (uint64 i = 0; i < count; i++) {
+            filteredOffers[i] = offersTemp[i];
+        }
+    }
+
     function DepositStablecoin(uint256 numTokens) public returns (bool) {
         require(
             stablecoin.transferFrom(msg.sender, address(this), numTokens),
@@ -146,7 +157,7 @@ contract Broker {
         return true;
     }
 
-    function getLockedStablecoinBalance(address user)
+    function GetLockedStablecoinBalance(address user)
         private
         view
         returns (uint256)
@@ -156,7 +167,7 @@ contract Broker {
 
     function WithdrawStablecoin(uint256 amt) public returns (bool) {
         uint256 freeBalance = stablecoinBalance[msg.sender] -
-            getLockedStablecoinBalance(msg.sender);
+            GetLockedStablecoinBalance(msg.sender);
 
         require(freeBalance >= amt, "Not enough balance to withdraw");
 
@@ -171,13 +182,22 @@ contract Broker {
             bookings[bookingId].miner == msg.sender,
             "Only the miner can claim a payment"
         );
-        bool enoughMoney = executeClaimPayment(bookingId);
+        bool enoughMoney = _executeClaimPayment(bookingId);
         if (!enoughMoney) {
-            executeBookingDelete(bookingId);
+            _executeBookingDelete(bookingId);
         }
     }
 
-    function executeClaimPayment(uint64 bookingId) private returns (bool) {
+    function GetStablecoinBalance(address user)
+        public
+        view
+        returns (uint256, uint256)
+    {
+        uint256 locked = GetLockedStablecoinBalance(user);
+        return (stablecoinBalance[user] - locked, locked);
+    }
+
+    function _executeClaimPayment(uint64 bookingId) private returns (bool) {
         bool enoughMoney = true;
         uint256 timeUsed = block.timestamp - bookings[bookingId].lastPayment;
 
@@ -205,22 +225,13 @@ contract Broker {
         return enoughMoney;
     }
 
-    function GetStablecoinBalance(address user)
-        public
-        view
-        returns (uint256, uint256)
-    {
-        uint256 locked = getLockedStablecoinBalance(user);
-        return (stablecoinBalance[user] - locked, locked);
-    }
-
     function BookVM(uint64 offerIndex) public returns (uint64) {
         require(
             vmOffers[offerIndex].machinesAvailable > 0,
             "No machines available"
         );
 
-        uint256 willBeLocked = getLockedStablecoinBalance(msg.sender) +
+        uint256 willBeLocked = GetLockedStablecoinBalance(msg.sender) +
             vmOffers[offerIndex].pricePerSecond *
             SECONDS_IN_WEEK;
 
@@ -249,13 +260,14 @@ contract Broker {
         return nextBookingId - 1;
     }
 
-    function executeBookingDelete(uint64 bookingId) private {
+    function _executeBookingDelete(uint64 bookingId) private {
         vmOffers[bookings[bookingId].offerIndex].machinesAvailable += 1;
-        userTotalPps[bookings[bookingId].user] -= bookings[bookingId].pricePerSecond;
+        userTotalPps[bookings[bookingId].user] -= bookings[bookingId]
+            .pricePerSecond;
         delete bookings[bookingId];
     }
 
-    function StopVM(uint64 bookingId, uint8 reason) public {
+    function TerminateVM(uint64 bookingId, uint8 reason) public {
         require(
             bookings[bookingId].user == msg.sender,
             "Only the user can stop a VM"
@@ -269,8 +281,8 @@ contract Broker {
             );
         }
 
-        executeClaimPayment(bookingId);
-        executeBookingDelete(bookingId);
+        _executeClaimPayment(bookingId);
+        _executeBookingDelete(bookingId);
     }
 
     function FindBookingsByUser(address _owner)
@@ -321,29 +333,6 @@ contract Broker {
         booking = bookings[index];
     }
 
-    function GetAvailableOffersByType(uint64 _vmTypeId)
-        public
-        view
-        returns (VMOffer[] memory filteredOffers)
-    {
-        VMOffer[] memory offersTemp = new VMOffer[](nextVmOfferId);
-        uint64 count;
-        for (uint64 i = 0; i < nextVmOfferId; i++) {
-            if (
-                vmOffers[i].vmTypeId == _vmTypeId &&
-                vmOffers[i].machinesAvailable > 0
-            ) {
-                offersTemp[count] = vmOffers[i];
-                count += 1;
-            }
-        }
-
-        filteredOffers = new VMOffer[](count);
-        for (uint64 i = 0; i < count; i++) {
-            filteredOffers[i] = offersTemp[i];
-        }
-    }
-
     function GetAvailableOffers()
         public
         view
@@ -364,46 +353,6 @@ contract Broker {
         }
     }
 
-    function GetUsersBookings(address user)
-        public
-        view
-        returns (Booking[] memory filteredBookings)
-    {
-        Booking[] memory bookingsTemp = new Booking[](nextBookingId);
-        uint64 count;
-        for (uint64 i = 0; i < nextBookingId; i++) {
-            if (bookings[i].user == user) {
-                bookingsTemp[count] = bookings[i];
-                count += 1;
-            }
-        }
-
-        filteredBookings = new Booking[](count);
-        for (uint64 i = 0; i < count; i++) {
-            filteredBookings[i] = bookingsTemp[i];
-        }
-    }
-
-    function GetMinersOffers(address miner)
-        public
-        view
-        returns (VMOffer[] memory filteredOffers)
-    {
-        VMOffer[] memory offersTemp = new VMOffer[](nextVmOfferId);
-        uint64 count;
-        for (uint64 i = 0; i < nextVmOfferId; i++) {
-            if (vmOffers[i].miner == miner) {
-                offersTemp[count] = vmOffers[i];
-                count += 1;
-            }
-        }
-
-        filteredOffers = new VMOffer[](count);
-        for (uint64 i = 0; i < count; i++) {
-            filteredOffers[i] = offersTemp[i];
-        }
-    }
-
     function SetStablecoinAddress(IERC20 newStablecoinAddress) public {
         require(
             msg.sender == communityContract,
@@ -411,11 +360,6 @@ contract Broker {
         );
 
         stablecoin = newStablecoinAddress;
-    }
-
-    //TODO: do we need it?
-    function getStablecoinAddress() public view returns (IERC20) {
-        return stablecoin;
     }
 
     function SetCommunityContract(address newCommunityAddress) public {
@@ -426,12 +370,7 @@ contract Broker {
         communityContract = newCommunityAddress;
     }
 
-    //TODO: we may not need this with a public field
-    function getCommunityContract() public view returns (address) {
-        return communityContract;
-    }
-
-    function setCommunityFee(uint64 fee) public returns (bool) {
+    function SetCommunityFee(uint64 fee) public returns (bool) {
         require(
             fee < 10000,
             "community fee should be in range of 0 (0%) to 10000 (100%)"
@@ -443,10 +382,5 @@ contract Broker {
 
         communityFee = fee;
         return false;
-    }
-
-    //TODO: we may not need this with a public field
-    function getCommunityFee() public view returns (uint64) {
-        return communityFee;
     }
 }
