@@ -251,6 +251,7 @@ contract Broker {
 
     function executeBookingDelete(uint64 bookingId) private {
         vmOffers[bookings[bookingId].offerIndex].machinesAvailable += 1;
+        userTotalPps[bookings[bookingId].user] -= bookings[bookingId].pricePerSecond;
         delete bookings[bookingId];
     }
 

@@ -1,2 +1,0 @@
-solc, the solidity compiler commandline interface
-Version: 0.8.15+commit.e14f2714.Linux.g++

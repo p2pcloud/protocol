@@ -1,57 +1,13 @@
-# Blockchain logic for P2PCloud
+# Sample Hardhat Project
 
-![Badge](https://github.com/p2pcloud/protocol/actions/workflows/go.yml/badge.svg)
+This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
 
+Try running some of the following tasks:
 
-## What is p2pcloud
-[p2pcloud.io](https://p2pcloud.io) is a protocol and utility set for booking and securing trustless virtual machines over the blockchain.
-
-### How to 
-Compile contracts
+```shell
+npx hardhat help
+npx hardhat test
+REPORT_GAS=true npx hardhat test
+npx hardhat node
+npx hardhat run scripts/deploy.ts
 ```
-go run ./cmd/compile/
-```
-Test:
-```
-go test ./...
-```
-### Current state of things
-Undertested and a bit messy
-
-## Business logic
-
-### Actors
-There are 3 actors - miner, user and community. User books and pays for VM. Miner runs VMs. Community gets comission from every VM booking. 
-
-### Contracts
-1. Broker contract. Facilitates deals between miners and users.
-2. Community contract. Some contract used to vote on SDK and protocol updates. Also accepts and distributes fees. Not implemented yet.
-3. Satblecoin contract. Some external stablecoin, probably USDC. May be replaced.
-
-### Workflow
-1. Miner creates offer setting type and price of VM per second
-    - Functions: `GetMinersOffers`, `UpdateOffer`, `AddOffer`, `RemoveOffer`
-1. User sends a stablecoin to the Broker.
-    - Functions: `DepositStablecoin`, `GetBalance`, `WithdrawStablecoin`
-1. User/Miner withdraws a stablecoin from the Broker. Vatiable `totalPPS` get's checked to make sure there is enough money for a week of work.
-    - Functions: `WithdrawStablecoin`
-1. User gets list of offers
-    - Functions: `GetAvailableOffers`
-1. User books VM. System checks that he has enough money to pay for all his VMs for 7 days (variable `totalPPS`).
-    - Functions: `BookVM`
-1. User aborts booking. With reason (0 - ok, 1 - miner misbehaviour)
-    - Functions: `StopVM` 
-    - Events: `Complaint`, `Payment`
-1. Miner claims Booking payment. New date of claim get's recorded. 
-    - Functions: `ClaimPayment`
-    - Events: `Payment`
-
-Events are used to calculate miner's reputation.
-
-### Service functions
-1. Stablecoin address. Set is callable only by community contract/wallet.
-    - Functions: `setStablecoinAddress`, `getStablecoinAddress`
-1. Community wallet/contract address. Set is callable only by community contract/wallet. Just a regular wallet for now.
-    - Functions: `setCommunityContract`, `getCommunityContract`
-1. Community fee. 5% for now.
-    - Functions: `setCommunityFee`, `getCommunityFee`
