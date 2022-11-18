@@ -15,4 +15,8 @@ describe("BrokerV1_offers", function () {
         it("should return array of offers");
         it("should return only offers with available machines");
     })
+    describe("GetMinersOffers", function () {
+        it("should return array of offers");
+        it("should return offers including ones with availability zero");
+    })
 });

@@ -80,6 +80,25 @@ contract Broker {
     address communityContract;
     uint64 communityFee;
 
+    //compatibility layer
+    function setMunerUrl(bytes32 url) public {
+        SetMinerUrl(url);
+    }
+
+    function getMinerUrl(address _user) public view returns (bytes32) {
+        return GetMinerUrl(_user);
+    }
+
+    function getLockedStablecoinBalance(address user)
+        private
+        view
+        returns (uint256)
+    {
+        return GetLockedStablecoinBalance(user);
+    }
+
+    //01_miner_url
+
     function SetMinerUrl(bytes32 url) public {
         minerUrls[msg.sender] = url;
     }
@@ -87,6 +106,8 @@ contract Broker {
     function GetMinerUrl(address _user) public view returns (bytes32) {
         return minerUrls[_user];
     }
+
+    //02_offers
 
     function AddOffer(
         uint64 pricePerSecond,
@@ -145,6 +166,37 @@ contract Broker {
         }
     }
 
+    function GetAvailableOffers()
+        public
+        view
+        returns (VMOffer[] memory filteredOffers)
+    {
+        VMOffer[] memory offersTemp = new VMOffer[](nextVmOfferId);
+        uint64 count;
+        for (uint64 i = 0; i < nextVmOfferId; i++) {
+            if (vmOffers[i].machinesAvailable > 0) {
+                offersTemp[count] = vmOffers[i];
+                count += 1;
+            }
+        }
+
+        filteredOffers = new VMOffer[](count);
+        for (uint64 i = 0; i < count; i++) {
+            filteredOffers[i] = offersTemp[i];
+        }
+    }
+
+    //03_stablecoin
+
+    function SetStablecoinAddress(IERC20 newStablecoinAddress) public {
+        require(
+            msg.sender == communityContract,
+            "only community contract can set stablecoin"
+        );
+
+        stablecoin = newStablecoinAddress;
+    }
+
     function DepositStablecoin(uint256 numTokens) public returns (bool) {
         require(
             stablecoin.transferFrom(msg.sender, address(this), numTokens),
@@ -177,17 +229,6 @@ contract Broker {
         return true;
     }
 
-    function ClaimPayment(uint64 bookingId) public {
-        require(
-            bookings[bookingId].miner == msg.sender,
-            "Only the miner can claim a payment"
-        );
-        bool enoughMoney = _executeClaimPayment(bookingId);
-        if (!enoughMoney) {
-            _executeBookingDelete(bookingId);
-        }
-    }
-
     function GetStablecoinBalance(address user)
         public
         view
@@ -197,33 +238,7 @@ contract Broker {
         return (stablecoinBalance[user] - locked, locked);
     }
 
-    function _executeClaimPayment(uint64 bookingId) private returns (bool) {
-        bool enoughMoney = true;
-        uint256 timeUsed = block.timestamp - bookings[bookingId].lastPayment;
-
-        uint256 totalPayout = timeUsed * bookings[bookingId].pricePerSecond;
-
-        if (stablecoinBalance[bookings[bookingId].user] < totalPayout) {
-            totalPayout = stablecoinBalance[bookings[bookingId].user];
-            enoughMoney = false;
-        }
-
-        uint256 communityPayout = (totalPayout * communityFee) / (100 * 100);
-        uint256 minerPayout = totalPayout - communityPayout;
-
-        bookings[bookingId].lastPayment = block.timestamp;
-
-        stablecoinBalance[communityContract] += communityPayout;
-        stablecoinBalance[bookings[bookingId].miner] += minerPayout;
-        stablecoinBalance[bookings[bookingId].user] -= totalPayout;
-
-        emit Payment(
-            bookings[bookingId].user,
-            bookings[bookingId].miner,
-            minerPayout
-        );
-        return enoughMoney;
-    }
+    //04_bookings
 
     function BookVM(uint64 offerIndex) public returns (uint64) {
         require(
@@ -285,6 +300,45 @@ contract Broker {
         _executeBookingDelete(bookingId);
     }
 
+    function ClaimPayment(uint64 bookingId) public {
+        require(
+            bookings[bookingId].miner == msg.sender,
+            "Only the miner can claim a payment"
+        );
+        bool enoughMoney = _executeClaimPayment(bookingId);
+        if (!enoughMoney) {
+            _executeBookingDelete(bookingId);
+        }
+    }
+
+    function _executeClaimPayment(uint64 bookingId) private returns (bool) {
+        bool enoughMoney = true;
+        uint256 timeUsed = block.timestamp - bookings[bookingId].lastPayment;
+
+        uint256 totalPayout = timeUsed * bookings[bookingId].pricePerSecond;
+
+        if (stablecoinBalance[bookings[bookingId].user] < totalPayout) {
+            totalPayout = stablecoinBalance[bookings[bookingId].user];
+            enoughMoney = false;
+        }
+
+        uint256 communityPayout = (totalPayout * communityFee) / (100 * 100);
+        uint256 minerPayout = totalPayout - communityPayout;
+
+        bookings[bookingId].lastPayment = block.timestamp;
+
+        stablecoinBalance[communityContract] += communityPayout;
+        stablecoinBalance[bookings[bookingId].miner] += minerPayout;
+        stablecoinBalance[bookings[bookingId].user] -= totalPayout;
+
+        emit Payment(
+            bookings[bookingId].user,
+            bookings[bookingId].miner,
+            minerPayout
+        );
+        return enoughMoney;
+    }
+
     function FindBookingsByUser(address _owner)
         public
         view
@@ -333,34 +387,7 @@ contract Broker {
         booking = bookings[index];
     }
 
-    function GetAvailableOffers()
-        public
-        view
-        returns (VMOffer[] memory filteredOffers)
-    {
-        VMOffer[] memory offersTemp = new VMOffer[](nextVmOfferId);
-        uint64 count;
-        for (uint64 i = 0; i < nextVmOfferId; i++) {
-            if (vmOffers[i].machinesAvailable > 0) {
-                offersTemp[count] = vmOffers[i];
-                count += 1;
-            }
-        }
-
-        filteredOffers = new VMOffer[](count);
-        for (uint64 i = 0; i < count; i++) {
-            filteredOffers[i] = offersTemp[i];
-        }
-    }
-
-    function SetStablecoinAddress(IERC20 newStablecoinAddress) public {
-        require(
-            msg.sender == communityContract,
-            "only community contract can set stablecoin"
-        );
-
-        stablecoin = newStablecoinAddress;
-    }
+    //05_community
 
     function SetCommunityContract(address newCommunityAddress) public {
         require(

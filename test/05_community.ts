@@ -5,6 +5,7 @@ describe("BrokerV1_community", function () {
     })
     describe("SetCommunityFee", function () {
         it("should set community fee");
+        it("should change amount of fee paid in ClaimPament");
         it("should revert if not owner");
         it("should revert if fee is not between 0 and 100");
     })
