@@ -80,7 +80,8 @@ contract Broker {
     address communityContract;
     uint64 communityFee;
 
-    //compatibility layer
+    //compatibility layer starts
+    //TODO: remove compatibility layer on December 20th 2022
     function setMunerUrl(bytes32 url) public {
         SetMinerUrl(url);
     }
@@ -88,6 +89,8 @@ contract Broker {
     function getMinerUrl(address _user) public view returns (bytes32) {
         return GetMinerUrl(_user);
     }
+
+    //compatibility layer ends
 
     function getLockedStablecoinBalance(address user)
         private
