@@ -1,12 +1,12 @@
 describe("BrokerV1_bookings", function () {
-    describe("BookVM", function () {
+    describe("Book", function () {
         it("should create a new booking");
-        it("should revert if not enough free stablecoin balance");
-        it("should increase locked stablecoin balance");
+        it("should revert if not enough free coin balance");
+        it("should increase locked coin balance");
         it("should decrease machines available");
         it("should revert if no machines available");
     })
-    describe("TerminateVM", function () {
+    describe("Terminate", function () {
         it("should revert if booking does not exist");
         it("should revert if user is not the owner");
         it("should delete booking");
@@ -24,7 +24,7 @@ describe("BrokerV1_bookings", function () {
     })
     describe("ClaimPayment", function () {
         it("should revert if booking does not exist");
-        it("should revert if user is not the miner");
+        it("should revert if user is not the miner of this booking");
         it("should transfer payment to miner and commision to community");
     })
 })
