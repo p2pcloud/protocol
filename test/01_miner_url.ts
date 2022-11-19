@@ -6,7 +6,7 @@ describe("BrokerV1_getMinerUrl", function () {
     async function deployBrokerFixture() {
         const [owner, otherAccount] = await ethers.getSigners();
 
-        const Broker = await ethers.getContractFactory("Broker");
+        const Broker = await ethers.getContractFactory("BrokerV1");
         const broker = await upgrades.deployProxy(Broker);
 
         return { broker, owner, otherAccount };

@@ -33,7 +33,7 @@ interface IERC20 {
 
 //TODO: optimize uint types to use less gas
 
-contract Broker {
+contract BrokerV1 {
     struct Booking {
         uint64 index;
         uint64 vmTypeId;
@@ -53,17 +53,6 @@ contract Broker {
         uint64 vmTypeId;
     }
 
-    event Payment(address indexed user, address indexed miner, uint256 amount);
-
-    event Complaint(
-        address indexed user,
-        address indexed miner,
-        uint8 indexed reason
-    );
-
-    uint64 public constant SECONDS_IN_WEEK = 604800;
-    uint64 public constant version = 1;
-
     mapping(uint64 => Offer) offers;
     uint64 nextVmOfferId;
 
@@ -79,6 +68,16 @@ contract Broker {
 
     address communityContract;
     uint64 communityFee;
+
+    uint64 public constant SECONDS_IN_WEEK = 604800;
+
+    event Payment(address indexed user, address indexed miner, uint256 amount);
+
+    event Complaint(
+        address indexed user,
+        address indexed miner,
+        uint8 indexed reason
+    );
 
     //01_miner_url
 
