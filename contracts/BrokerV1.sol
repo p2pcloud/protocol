@@ -64,10 +64,10 @@ contract BrokerV1 {
 
     mapping(address => bytes32) minerUrls;
 
-    IERC20 coin;
+    IERC20 public coin;
 
-    address communityContract;
-    uint64 communityFee;
+    address public communityContract;
+    uint64 public communityFee;
 
     uint64 public constant SECONDS_IN_WEEK = 604800;
 
@@ -367,7 +367,8 @@ contract BrokerV1 {
 
     function SetCommunityContract(address newCommunityAddress) public {
         require(
-            msg.sender == communityContract,
+            (msg.sender == communityContract) ||
+                (communityContract == address(0)),
             "only community contract can set new community contract"
         );
         communityContract = newCommunityAddress;
@@ -386,4 +387,51 @@ contract BrokerV1 {
         communityFee = fee;
         return false;
     }
+
+    //TODO: compatibility layer. please remove after December 15th 2022
+    function getStablecoinAddress() public view returns (address) {
+        return address(coin);
+    }
+
+    function GetStablecoinBalance(address user)
+        public
+        view
+        returns (uint256, uint256)
+    {
+        return GetCoinBalance(user);
+    }
+
+    function DepositStablecoin(uint256 numTokens) public returns (bool) {
+        return DepositCoin(numTokens);
+    }
+
+    function WithdrawStablecoin(uint256 amt) public returns (bool) {
+        return WithdrawCoin(amt);
+    }
+
+    function GetUsersBookings(address user)
+        public
+        view
+        returns (Booking[] memory filteredBookings)
+    {
+        return FindBookingsByUser(user);
+    }
+
+    function setMunerUrl(bytes32 url) public {
+        SetMinerUrl(url);
+    }
+
+    function getMinerUrl(address _user) public view returns (bytes32) {
+        return GetMinerUrl(_user);
+    }
+
+    function BookVM(uint64 offerIndex) public returns (uint64) {
+        return Book(offerIndex);
+    }
+
+    function StopVM(uint64 bookingId, uint8 reason) public {
+        Terminate(bookingId, reason);
+    }
+
+    //end of compatibility layer
 }
