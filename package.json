@@ -5,9 +5,10 @@
     "main": "index.js",
     "scripts": {
         "test": "hardhat test",
-        "compile": "solcjs -o ./abi/ --abi  ./contracts/BrokerV1.sol",
-        "test:docker": "docker build -t protocol_test . && docker run protocol_test npm test",
-        "compile:docker": "docker build -t protocol_test . && docker run -v $(pwd)/abi:/app/abi protocol_test npm run compile "
+        "compile": "hardhat compile",
+        "run_in_docker": "docker build -t protocol_test . && docker run -v $(pwd)/artifacts:/app/artifacts protocol_test",
+        "test:docker": "npm run run_in_docker -- npm test",
+        "compile:docker": "npm run run_in_docker -- npm run compile"
     },
     "repository": {
         "type": "git",
@@ -28,7 +29,6 @@
         "hardhat": "^2.12.2"
     },
     "dependencies": {
-        "dotenv": "^16.0.3",
-        "solc": "^0.8.17"
+        "dotenv": "^16.0.3"
     }
 }

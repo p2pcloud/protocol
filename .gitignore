@@ -1,3 +1,6 @@
+
+
+
 node_modules
 node_modules
 .env
@@ -8,5 +11,11 @@ typechain-types
 
 #Hardhat files
 cache
-artifacts
+artifacts/build-info
+artifacts/contracts/*/*.dbg.json
+artifacts/**Test**
+
 .openzeppelin
+
+!artifacts/contracts/BrokerV1.sol/BrokerV1.json
+!artifacts/contracts/BrokerV1.sol/IERC20.json
