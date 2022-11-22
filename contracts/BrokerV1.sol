@@ -134,6 +134,7 @@ contract BrokerV1 {
         delete offers[offerIndex];
     }
 
+    // TODO: remove GetMiner's'Offers
     function GetMinersOffers(address miner)
         public
         view
