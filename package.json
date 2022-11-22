@@ -5,6 +5,7 @@
     "main": "index.js",
     "scripts": {
         "test": "hardhat test",
+        "test:docker": "docker build -t protocol_test . && docker run protocol_test",
         "compile": "solcjs -o ./abi/ --abi  ./contracts/BrokerV1.sol"
     },
     "repository": {

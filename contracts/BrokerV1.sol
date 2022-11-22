@@ -31,35 +31,41 @@ interface IERC20 {
     ) external returns (bool);
 }
 
-//TODO: optimize uint types to use less gas
+//TODO: try rearranging fields to optimize gas usage
 
 contract BrokerV1 {
     struct Booking {
-        uint64 index;
-        uint64 vmTypeId;
+        uint64 index; //TODO: change all indexes to uint24
+        uint64 vmTypeId; //TODO: change vm type id to uint24
         address miner;
         address user;
-        uint64 pricePerSecond;
-        uint256 bookedAt;
-        uint256 lastPayment;
-        uint64 offerIndex;
+        uint64 pricePerSecond; //TODO: change pps to uint24
+        uint256 bookedAt; //TODO: change timestamp to uint48
+        uint256 lastPayment; //TODO: change timestamp to uint48
+        uint64 offerIndex; //TODO: change all indexes to uint24
     }
 
+    //TODO: try rearranging fields to optimize gas usage
     struct Offer {
-        uint64 index;
+        uint64 index; //TODO: change all indexes to uint24
         address miner;
-        uint64 pricePerSecond;
-        uint64 machinesAvailable;
-        uint64 vmTypeId;
+        uint64 pricePerSecond; //TODO: change pps to uint24
+        uint64 machinesAvailable; //TODO: change to uint16
+        uint64 vmTypeId; //TODO: change all indexes to uint24
     }
 
-    mapping(uint64 => Offer) offers;
+    //TODO: try optimizing into an array. will it save any gas?
+    mapping(uint64 => Offer) offers; //TODO: change all indexes to uint24
     uint64 nextVmOfferId;
 
-    mapping(uint64 => Booking) bookings;
+    //TODO: try optimizing into an array. will it save any gas?
+    mapping(uint64 => Booking) bookings; //TODO: change all indexes to uint24
     uint64 nextBookingId;
 
+    //TODO: change all indexes to uint24
     mapping(address => uint256) coinBalance;
+
+    //TODO: change user total pps to uint32 (uint 24 maxes out on $43m/month)
     mapping(address => uint64) userTotalPps;
 
     mapping(address => bytes32) minerUrls;
@@ -67,7 +73,7 @@ contract BrokerV1 {
     IERC20 public coin;
 
     address public communityContract;
-    uint64 public communityFee;
+    uint64 public communityFee; //TODO: change to uint16
 
     uint64 public constant SECONDS_IN_WEEK = 604800;
 
@@ -157,6 +163,29 @@ contract BrokerV1 {
         uint64 count;
         for (uint64 i = 0; i < nextVmOfferId; i++) {
             if (offers[i].machinesAvailable > 0) {
+                offersTemp[count] = offers[i];
+                count += 1;
+            }
+        }
+
+        filteredOffers = new Offer[](count);
+        for (uint64 i = 0; i < count; i++) {
+            filteredOffers[i] = offersTemp[i];
+        }
+    }
+
+    function GetAvailableOffersByType(uint64 _vmTypeId)
+        public
+        view
+        returns (Offer[] memory filteredOffers)
+    {
+        Offer[] memory offersTemp = new Offer[](nextVmOfferId);
+        uint64 count;
+        for (uint64 i = 0; i < nextVmOfferId; i++) {
+            if (
+                offers[i].vmTypeId == _vmTypeId &&
+                offers[i].machinesAvailable > 0
+            ) {
                 offersTemp[count] = offers[i];
                 count += 1;
             }
@@ -388,49 +417,53 @@ contract BrokerV1 {
         return false;
     }
 
-    //TODO: compatibility layer. please remove after December 15th 2022
-    function getStablecoinAddress() public view returns (address) {
-        return address(coin);
-    }
+    // //TODO: compatibility layer. please remove after December 15th 2022
+    // function getStablecoinAddress() public view returns (address) {
+    //     return address(coin);
+    // }
 
-    function GetStablecoinBalance(address user)
-        public
-        view
-        returns (uint256, uint256)
-    {
-        return GetCoinBalance(user);
-    }
+    // function GetStablecoinBalance(address user)
+    //     public
+    //     view
+    //     returns (uint256, uint256)
+    // {
+    //     return GetCoinBalance(user);
+    // }
 
-    function DepositStablecoin(uint256 numTokens) public returns (bool) {
-        return DepositCoin(numTokens);
-    }
+    // function DepositStablecoin(uint256 numTokens) public returns (bool) {
+    //     return DepositCoin(numTokens);
+    // }
 
-    function WithdrawStablecoin(uint256 amt) public returns (bool) {
-        return WithdrawCoin(amt);
-    }
+    // function WithdrawStablecoin(uint256 amt) public returns (bool) {
+    //     return WithdrawCoin(amt);
+    // }
 
-    function GetUsersBookings(address user)
-        public
-        view
-        returns (Booking[] memory filteredBookings)
-    {
-        return FindBookingsByUser(user);
-    }
+    // function GetUsersBookings(address user)
+    //     public
+    //     view
+    //     returns (Booking[] memory filteredBookings)
+    // {
+    //     return FindBookingsByUser(user);
+    // }
 
-    function setMunerUrl(bytes32 url) public {
-        SetMinerUrl(url);
-    }
+    // function setMunerUrl(bytes32 url) public {
+    //     SetMinerUrl(url);
+    // }
 
-    function getMinerUrl(address _user) public view returns (bytes32) {
-        return GetMinerUrl(_user);
-    }
+    // function getMinerUrl(address _user) public view returns (bytes32) {
+    //     return GetMinerUrl(_user);
+    // }
 
-    function BookVM(uint64 offerIndex) public returns (uint64) {
-        return Book(offerIndex);
-    }
+    // function BookVM(uint64 offerIndex) public returns (uint64) {
+    //     return Book(offerIndex);
+    // }
 
-    function StopVM(uint64 bookingId, uint8 reason) public {
-        Terminate(bookingId, reason);
+    // function StopVM(uint64 bookingId, uint8 reason) public {
+    //     Terminate(bookingId, reason);
+    // }
+
+    function GetTime() public view returns (uint256) {
+        return block.timestamp;
     }
 
     //end of compatibility layer

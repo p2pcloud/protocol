@@ -4,17 +4,22 @@ import '@openzeppelin/hardhat-upgrades';
 import dotenv from "dotenv";
 dotenv.config();
 
-const fuji = {
-    url: process.env.HARDAT_FUJI_ENDPOINT,
-    accounts: [process.env.HARDAT_PRIVATE_KEY || ""]
-}
+
 
 const config: HardhatUserConfig = {
     solidity: "0.8.17",
-    networks: {
-        fuji_staging: fuji,
-        fuji_testnet: fuji,
-    }
+    networks: {}
 };
+
+if (process.env.HARDAT_PRIVATE_KEY) {
+    const fuji = {
+        url: process.env.HARDAT_FUJI_ENDPOINT,
+        accounts: [process.env.HARDAT_PRIVATE_KEY || ""]
+    }
+    if (config.networks) {
+        config.networks.fuji_testnet = fuji;
+        config.networks.fuji_staging = fuji;
+    }
+}
 
 export default config;
