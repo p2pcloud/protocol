@@ -1,16 +1,7 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
 
 describe("BrokerV1_getMinerUrl", function () {
-    async function deployBrokerFixture() {
-        const [owner, otherAccount] = await ethers.getSigners();
-
-        const Broker = await ethers.getContractFactory("Broker");
-        const broker = await upgrades.deployProxy(Broker);
-
-        return { broker, owner, otherAccount };
-    }
 
     it("should keep data while upgrading the contract", async function () {
         const [owner, otherAccount] = await ethers.getSigners();

@@ -1,46 +1,39 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
+import { deployBrokerFixture } from './fixtures'
 
 describe("BrokerV1_community", function () {
-    async function deployBrokerFixture() {
-        const [owner, otherAccount] = await ethers.getSigners();
-
-        const Broker = await ethers.getContractFactory("BrokerV1");
-        const broker = await upgrades.deployProxy(Broker);
-
-        return { broker, owner, otherAccount };
-    }
 
     describe("SetCommunityAddress", function () {
         it("should set community address if address is address(0)", async function () {
-            const { broker, owner, otherAccount } = await loadFixture(deployBrokerFixture);
+            const [broker, miner, user] = await loadFixture(deployBrokerFixture);
 
             expect(await broker.communityContract()).to.equal(ethers.constants.AddressZero);
 
-            expect(await broker.SetCommunityContract(otherAccount.address)).to.not.be.reverted
-            expect(await broker.communityContract()).to.equal(otherAccount.address);
+            expect(await broker.SetCommunityContract(user.address)).to.not.be.reverted
+            expect(await broker.communityContract()).to.equal(user.address);
         });
         it("should set community address if community is the sender", async function () {
-            const { broker, owner, otherAccount } = await loadFixture(deployBrokerFixture);
+            const [broker, miner, user] = await loadFixture(deployBrokerFixture);
 
             expect(await broker.communityContract()).to.equal(ethers.constants.AddressZero);
 
-            expect(await broker.SetCommunityContract(owner.address)).to.not.be.reverted
-            expect(await broker.communityContract()).to.equal(owner.address);
+            expect(await broker.SetCommunityContract(miner.address)).to.not.be.reverted
+            expect(await broker.communityContract()).to.equal(miner.address);
 
-            expect(await broker.SetCommunityContract(otherAccount.address)).to.not.be.reverted
-            expect(await broker.communityContract()).to.equal(otherAccount.address);
+            expect(await broker.SetCommunityContract(user.address)).to.not.be.reverted
+            expect(await broker.communityContract()).to.equal(user.address);
         });
         it("should revert if not owner", async function () {
-            const { broker, owner, otherAccount } = await loadFixture(deployBrokerFixture);
+            const [broker, miner, user] = await loadFixture(deployBrokerFixture);
 
             expect(await broker.communityContract()).to.equal(ethers.constants.AddressZero);
 
-            expect(await broker.SetCommunityContract(owner.address)).to.not.be.reverted
-            expect(await broker.communityContract()).to.equal(owner.address);
+            expect(await broker.SetCommunityContract(miner.address)).to.not.be.reverted
+            expect(await broker.communityContract()).to.equal(miner.address);
 
-            await expect(broker.connect(otherAccount).SetCommunityContract(owner.address)).to.be.reverted
+            await expect(broker.connect(user).SetCommunityContract(miner.address)).to.be.reverted
         });
     })
     describe("SetCommunityFee", function () {
