@@ -7,7 +7,7 @@ describe("BrokerV1_community", function () {
 
     describe("SetCommunityAddress", function () {
         it("should set community address if address is address(0)", async function () {
-            const [broker, miner, user] = await loadFixture(deployBrokerFixture);
+            const { broker, user } = await loadFixture(deployBrokerFixture);
 
             expect(await broker.communityContract()).to.equal(ethers.constants.AddressZero);
 
@@ -15,7 +15,7 @@ describe("BrokerV1_community", function () {
             expect(await broker.communityContract()).to.equal(user.address);
         });
         it("should set community address if community is the sender", async function () {
-            const [broker, miner, user] = await loadFixture(deployBrokerFixture);
+            const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
             expect(await broker.communityContract()).to.equal(ethers.constants.AddressZero);
 
@@ -26,7 +26,7 @@ describe("BrokerV1_community", function () {
             expect(await broker.communityContract()).to.equal(user.address);
         });
         it("should revert if not owner", async function () {
-            const [broker, miner, user] = await loadFixture(deployBrokerFixture);
+            const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
             expect(await broker.communityContract()).to.equal(ethers.constants.AddressZero);
 
