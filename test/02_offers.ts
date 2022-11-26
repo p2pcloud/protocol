@@ -12,8 +12,9 @@ describe("BrokerV1_offers", function () {
                 const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
                 return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
             }))
+            const offersRaw = await broker.GetAvailableOffers();
 
-            expect(txs.length).is.equal(5)
+            expect(txs.length).is.equal(offersRaw.length)
         });
     })
     describe("UpdateOffer", function () {

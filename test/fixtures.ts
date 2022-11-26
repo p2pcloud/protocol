@@ -38,6 +38,23 @@ export async function deployBrokerFixture(): Promise<Fixture> {
     return { broker, token, miner, user };
 }
 
+export async function deployOffersFixture(): Promise<Fixture> {
+    const [miner, user] = await ethers.getSigners();
+
+    const Broker = await ethers.getContractFactory("BrokerV1");
+    const broker = await upgrades.deployProxy(Broker) as BrokerV1;
+
+    const txs = await Promise.all(offers.map(async (offer) => {
+        const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
+        return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
+    }))
+
+    const Token = await ethers.getContractFactory("Token");
+    const token = await Token.deploy('10000000000000000000000');
+
+    return { broker, token, miner, user };
+}
+
 export function offerFromRaw(offerRaw: any[]) {
     const [Index, Miner, PPS, Availablility, VmTypeId] = offerRaw
 
