@@ -4,7 +4,7 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "test": "hardhat test",
+        "test": "REPORT_GAS=true hardhat test",
         "compile": "hardhat compile",
         "run_in_docker": "docker build -t protocol_test . && docker run -v $(pwd)/artifacts:/app/artifacts protocol_test",
         "test:docker": "npm run run_in_docker -- npm test",
@@ -22,8 +22,10 @@
     },
     "homepage": "https://github.com/p2pcloud/protocol#readme",
     "devDependencies": {
+        "@nomicfoundation/hardhat-network-helpers": "^1.0.6",
         "@nomicfoundation/hardhat-toolbox": "^2.0.0",
         "@nomiclabs/hardhat-ethers": "^2.2.1",
+        "@openzeppelin/contracts": "^4.8.0",
         "@openzeppelin/hardhat-upgrades": "^1.21.0",
         "ethers": "^5.7.2",
         "hardhat": "^2.12.2"

@@ -134,6 +134,7 @@ contract BrokerV1 {
         delete offers[offerIndex];
     }
 
+    // TODO: remove GetMiner's'Offers
     function GetMinersOffers(address miner)
         public
         view
@@ -234,11 +235,13 @@ contract BrokerV1 {
         return true;
     }
 
+    //TODO: needed named returns (uint256 free, uint256 locked) for true order in ABI compile
     function GetCoinBalance(address user)
         public
         view
         returns (uint256, uint256)
     {
+        // TODO: maybe need guard require( msg.sender == address )
         uint256 locked = GetLockedCoinBalance(user);
         return (coinBalance[user] - locked, locked);
     }
