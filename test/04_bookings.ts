@@ -385,11 +385,12 @@ describe("BrokerV1_bookings", function () {
             // Get balances & calc percents
             const [freeClaimedUserBalance, lockedClaimedUserBalance] = await broker.GetCoinBalance(user.address)
             const [free, locked] = await broker.GetCoinBalance(miner.address)
-            const communityBalance = ethers.utils.formatUnits(free, 'mwei')
-            const userFee = ethers.utils.formatUnits(freeUserBalance.sub(freeClaimedUserBalance), 'mwei')
+
+            const userClaimed = ethers.utils.formatUnits(freeUserBalance.sub(freeClaimedUserBalance), 'mwei')
+            const communityFee = ethers.utils.formatUnits(free, 'mwei')
             const percents = (+pricePerWeek * FEE) / 10000
 
-            expect(Number(userFee)).is.equal(Number(communityBalance)).is.equal(percents)
+            expect(Number(userClaimed)).is.equal(Number(communityFee)).is.equal(percents)
         });
     })
 })
