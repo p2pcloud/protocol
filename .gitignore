@@ -2,8 +2,8 @@ node_modules
 .env
 coverage
 coverage.json
-typechain
-typechain-types
+# typechain
+typechain-types/**/*
 
 #Hardhat files
 cache
@@ -11,6 +11,8 @@ artifacts
 
 *openzeppelin
 
+!typechain-types/common.ts
+!/typechain-types/contracts/BrokerV1.sol/**/*
 !artifacts/contracts/BrokerV1.sol/BrokerV1.json
 !artifacts/contracts/BrokerV1.sol/IERC20.json
 !artifacts/contracts/Community.sol/Community.json
