@@ -44,7 +44,7 @@ export async function deployOffersFixture(): Promise<Fixture> {
     const Broker = await ethers.getContractFactory("BrokerV1");
     const broker = await upgrades.deployProxy(Broker) as BrokerV1;
 
-    const txs = await Promise.all(offers.map(async (offer) => {
+    await Promise.all(offers.map(async (offer) => {
         const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
         return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
     }))

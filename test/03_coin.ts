@@ -102,8 +102,6 @@ describe("BrokerV1_coin", function () {
             const freeBalance = ethers.utils.formatUnits(free, 'mwei')
             const lockedBalance = ethers.utils.formatUnits(locked, 'mwei')
 
-            console.log(amt, allowance, free, freeBalance, locked, lockedBalance)
-
             await expect(broker.connect(user).WithdrawCoin(amt)).to.be.reverted
         });
         it("should revert if transfer fails", async function () {
