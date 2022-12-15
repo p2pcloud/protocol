@@ -98,6 +98,7 @@ export interface BrokerV1Interface extends utils.Interface {
     "GetCoinBalance(address)": FunctionFragment;
     "GetMinerUrl(address)": FunctionFragment;
     "GetMinersOffers(address)": FunctionFragment;
+    "GetOffer(uint64)": FunctionFragment;
     "GetTime()": FunctionFragment;
     "RemoveOffer(uint64)": FunctionFragment;
     "SECONDS_IN_WEEK()": FunctionFragment;
@@ -126,6 +127,7 @@ export interface BrokerV1Interface extends utils.Interface {
       | "GetCoinBalance"
       | "GetMinerUrl"
       | "GetMinersOffers"
+      | "GetOffer"
       | "GetTime"
       | "RemoveOffer"
       | "SECONDS_IN_WEEK"
@@ -188,6 +190,10 @@ export interface BrokerV1Interface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "GetMinersOffers",
     values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "GetOffer",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(functionFragment: "GetTime", values?: undefined): string;
   encodeFunctionData(
@@ -275,6 +281,7 @@ export interface BrokerV1Interface extends utils.Interface {
     functionFragment: "GetMinersOffers",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "GetOffer", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "GetTime", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "RemoveOffer",
@@ -453,6 +460,13 @@ export interface BrokerV1 extends BaseContract {
       }
     >;
 
+    GetOffer(
+      index: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<
+      [BrokerV1.OfferStructOutput] & { oneOffer: BrokerV1.OfferStructOutput }
+    >;
+
     GetTime(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     RemoveOffer(
@@ -563,6 +577,11 @@ export interface BrokerV1 extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BrokerV1.OfferStructOutput[]>;
 
+  GetOffer(
+    index: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<BrokerV1.OfferStructOutput>;
+
   GetTime(overrides?: CallOverrides): Promise<BigNumber>;
 
   RemoveOffer(
@@ -672,6 +691,11 @@ export interface BrokerV1 extends BaseContract {
       miner: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<BrokerV1.OfferStructOutput[]>;
+
+    GetOffer(
+      index: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BrokerV1.OfferStructOutput>;
 
     GetTime(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -806,6 +830,11 @@ export interface BrokerV1 extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    GetOffer(
+      index: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     GetTime(overrides?: CallOverrides): Promise<BigNumber>;
 
     RemoveOffer(
@@ -914,6 +943,11 @@ export interface BrokerV1 extends BaseContract {
 
     GetMinersOffers(
       miner: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    GetOffer(
+      index: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

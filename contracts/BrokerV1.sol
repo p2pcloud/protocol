@@ -174,6 +174,12 @@ contract BrokerV1 {
         }
     }
 
+    function GetOffer(
+        uint64 index
+    ) public view returns (Offer memory oneOffer) {
+        oneOffer = offers[index];
+    }
+
     //03_coin
 
     function SetCoinAddress(IERC20 newCoinAddress) public {

@@ -4,7 +4,8 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "test": "REPORT_GAS=true hardhat test",
+        "test": "hardhat test",
+        "gas": "REPORT_GAS=true hardhat test",
         "compile": "hardhat compile",
         "run_in_docker": "docker build -t protocol_test . && docker run -v $(pwd)/artifacts:/app/artifacts protocol_test",
         "test:docker": "npm run run_in_docker -- npm test",
