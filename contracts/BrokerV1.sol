@@ -15,10 +15,10 @@ interface IERC20 {
 
     function transfer(address to, uint256 amount) external returns (bool);
 
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256);
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256);
 
     function approve(address spender, uint256 amount) external returns (bool);
 
@@ -36,7 +36,7 @@ interface IERC20 {
 contract BrokerV1 {
     struct Booking {
         uint64 index; //TODO: change all indexes to uint24
-        uint64 vmTypeId; //TODO: change vm type id to uint24
+        uint64 deprecated__vmTypeId; //TODO: change vm type id to uint24
         address miner;
         address user;
         uint64 pricePerSecond; //TODO: change pps to uint24
@@ -51,7 +51,8 @@ contract BrokerV1 {
         address miner;
         uint64 pricePerSecond; //TODO: change pps to uint24
         uint64 machinesAvailable; //TODO: change to uint16
-        uint64 vmTypeId; //TODO: change all indexes to uint24
+        uint64 deprecated__vmTypeId; //TODO: change all indexes to uint24
+        bytes32 specsIpfsHash;
     }
 
     //TODO: try optimizing into an array. will it save any gas?
@@ -99,15 +100,16 @@ contract BrokerV1 {
 
     function AddOffer(
         uint64 pricePerSecond,
-        uint64 vmTypeId,
-        uint64 machinesAvailable
+        uint64 machinesAvailable,
+        bytes32 specsIpfsHash
     ) public returns (uint64) {
         offers[nextVmOfferId] = Offer(
             nextVmOfferId,
             msg.sender,
             pricePerSecond,
             machinesAvailable,
-            vmTypeId
+            0,
+            specsIpfsHash
         );
         nextVmOfferId++;
         return nextVmOfferId - 1;
@@ -134,12 +136,9 @@ contract BrokerV1 {
         delete offers[offerIndex];
     }
 
-    // TODO: remove GetMiner's'Offers
-    function GetMinersOffers(address miner)
-        public
-        view
-        returns (Offer[] memory filteredOffers)
-    {
+    function GetMinersOffers(
+        address miner
+    ) public view returns (Offer[] memory filteredOffers) {
         Offer[] memory offersTemp = new Offer[](nextVmOfferId);
         uint64 count;
         for (uint64 i = 0; i < nextVmOfferId; i++) {
@@ -164,29 +163,6 @@ contract BrokerV1 {
         uint64 count;
         for (uint64 i = 0; i < nextVmOfferId; i++) {
             if (offers[i].machinesAvailable > 0) {
-                offersTemp[count] = offers[i];
-                count += 1;
-            }
-        }
-
-        filteredOffers = new Offer[](count);
-        for (uint64 i = 0; i < count; i++) {
-            filteredOffers[i] = offersTemp[i];
-        }
-    }
-
-    function GetAvailableOffersByType(uint64 _vmTypeId)
-        public
-        view
-        returns (Offer[] memory filteredOffers)
-    {
-        Offer[] memory offersTemp = new Offer[](nextVmOfferId);
-        uint64 count;
-        for (uint64 i = 0; i < nextVmOfferId; i++) {
-            if (
-                offers[i].vmTypeId == _vmTypeId &&
-                offers[i].machinesAvailable > 0
-            ) {
                 offersTemp[count] = offers[i];
                 count += 1;
             }
@@ -236,11 +212,9 @@ contract BrokerV1 {
     }
 
     //TODO: needed named returns (uint256 free, uint256 locked) for true order in ABI compile
-    function GetCoinBalance(address user)
-        public
-        view
-        returns (uint256, uint256)
-    {
+    function GetCoinBalance(
+        address user
+    ) public view returns (uint256, uint256) {
         // TODO: maybe need guard require( msg.sender == address )
         uint256 locked = GetLockedCoinBalance(user);
         return (coinBalance[user] - locked, locked);
@@ -265,7 +239,7 @@ contract BrokerV1 {
 
         Booking memory booking = Booking(
             nextBookingId,
-            offers[offerIndex].vmTypeId,
+            0,
             offers[offerIndex].miner,
             msg.sender,
             offers[offerIndex].pricePerSecond,
@@ -347,11 +321,9 @@ contract BrokerV1 {
         return enoughMoney;
     }
 
-    function FindBookingsByUser(address _owner)
-        public
-        view
-        returns (Booking[] memory filteredBookings)
-    {
+    function FindBookingsByUser(
+        address _owner
+    ) public view returns (Booking[] memory filteredBookings) {
         Booking[] memory bookingsTemp = new Booking[](nextBookingId);
         uint64 count;
         for (uint64 i = 0; i < nextBookingId; i++) {
@@ -367,11 +339,9 @@ contract BrokerV1 {
         }
     }
 
-    function FindBookingsByMiner(address _miner)
-        public
-        view
-        returns (Booking[] memory filteredBookings)
-    {
+    function FindBookingsByMiner(
+        address _miner
+    ) public view returns (Booking[] memory filteredBookings) {
         Booking[] memory bookingsTemp = new Booking[](nextBookingId);
         uint64 count;
         for (uint64 i = 0; i < nextBookingId; i++) {
@@ -387,11 +357,9 @@ contract BrokerV1 {
         }
     }
 
-    function GetBooking(uint64 index)
-        public
-        view
-        returns (Booking memory booking)
-    {
+    function GetBooking(
+        uint64 index
+    ) public view returns (Booking memory booking) {
         booking = bookings[index];
     }
 

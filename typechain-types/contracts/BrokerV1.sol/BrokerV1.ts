@@ -30,7 +30,7 @@ import type {
 export declare namespace BrokerV1 {
   export type BookingStruct = {
     index: PromiseOrValue<BigNumberish>;
-    vmTypeId: PromiseOrValue<BigNumberish>;
+    deprecated__vmTypeId: PromiseOrValue<BigNumberish>;
     miner: PromiseOrValue<string>;
     user: PromiseOrValue<string>;
     pricePerSecond: PromiseOrValue<BigNumberish>;
@@ -50,7 +50,7 @@ export declare namespace BrokerV1 {
     BigNumber
   ] & {
     index: BigNumber;
-    vmTypeId: BigNumber;
+    deprecated__vmTypeId: BigNumber;
     miner: string;
     user: string;
     pricePerSecond: BigNumber;
@@ -64,7 +64,8 @@ export declare namespace BrokerV1 {
     miner: PromiseOrValue<string>;
     pricePerSecond: PromiseOrValue<BigNumberish>;
     machinesAvailable: PromiseOrValue<BigNumberish>;
-    vmTypeId: PromiseOrValue<BigNumberish>;
+    deprecated__vmTypeId: PromiseOrValue<BigNumberish>;
+    specsIpfsHash: PromiseOrValue<BytesLike>;
   };
 
   export type OfferStructOutput = [
@@ -72,26 +73,27 @@ export declare namespace BrokerV1 {
     string,
     BigNumber,
     BigNumber,
-    BigNumber
+    BigNumber,
+    string
   ] & {
     index: BigNumber;
     miner: string;
     pricePerSecond: BigNumber;
     machinesAvailable: BigNumber;
-    vmTypeId: BigNumber;
+    deprecated__vmTypeId: BigNumber;
+    specsIpfsHash: string;
   };
 }
 
 export interface BrokerV1Interface extends utils.Interface {
   functions: {
-    "AddOffer(uint64,uint64,uint64)": FunctionFragment;
+    "AddOffer(uint64,uint64,bytes32)": FunctionFragment;
     "Book(uint64)": FunctionFragment;
     "ClaimPayment(uint64)": FunctionFragment;
     "DepositCoin(uint256)": FunctionFragment;
     "FindBookingsByMiner(address)": FunctionFragment;
     "FindBookingsByUser(address)": FunctionFragment;
     "GetAvailableOffers()": FunctionFragment;
-    "GetAvailableOffersByType(uint64)": FunctionFragment;
     "GetBooking(uint64)": FunctionFragment;
     "GetCoinBalance(address)": FunctionFragment;
     "GetMinerUrl(address)": FunctionFragment;
@@ -120,7 +122,6 @@ export interface BrokerV1Interface extends utils.Interface {
       | "FindBookingsByMiner"
       | "FindBookingsByUser"
       | "GetAvailableOffers"
-      | "GetAvailableOffersByType"
       | "GetBooking"
       | "GetCoinBalance"
       | "GetMinerUrl"
@@ -145,7 +146,7 @@ export interface BrokerV1Interface extends utils.Interface {
     values: [
       PromiseOrValue<BigNumberish>,
       PromiseOrValue<BigNumberish>,
-      PromiseOrValue<BigNumberish>
+      PromiseOrValue<BytesLike>
     ]
   ): string;
   encodeFunctionData(
@@ -171,10 +172,6 @@ export interface BrokerV1Interface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "GetAvailableOffers",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "GetAvailableOffersByType",
-    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "GetBooking",
@@ -263,10 +260,6 @@ export interface BrokerV1Interface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "GetAvailableOffers",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "GetAvailableOffersByType",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "GetBooking", data: BytesLike): Result;
@@ -388,8 +381,8 @@ export interface BrokerV1 extends BaseContract {
   functions: {
     AddOffer(
       pricePerSecond: PromiseOrValue<BigNumberish>,
-      vmTypeId: PromiseOrValue<BigNumberish>,
       machinesAvailable: PromiseOrValue<BigNumberish>,
+      specsIpfsHash: PromiseOrValue<BytesLike>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -427,15 +420,6 @@ export interface BrokerV1 extends BaseContract {
     >;
 
     GetAvailableOffers(
-      overrides?: CallOverrides
-    ): Promise<
-      [BrokerV1.OfferStructOutput[]] & {
-        filteredOffers: BrokerV1.OfferStructOutput[];
-      }
-    >;
-
-    GetAvailableOffersByType(
-      _vmTypeId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<
       [BrokerV1.OfferStructOutput[]] & {
@@ -525,8 +509,8 @@ export interface BrokerV1 extends BaseContract {
 
   AddOffer(
     pricePerSecond: PromiseOrValue<BigNumberish>,
-    vmTypeId: PromiseOrValue<BigNumberish>,
     machinesAvailable: PromiseOrValue<BigNumberish>,
+    specsIpfsHash: PromiseOrValue<BytesLike>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -556,11 +540,6 @@ export interface BrokerV1 extends BaseContract {
   ): Promise<BrokerV1.BookingStructOutput[]>;
 
   GetAvailableOffers(
-    overrides?: CallOverrides
-  ): Promise<BrokerV1.OfferStructOutput[]>;
-
-  GetAvailableOffersByType(
-    _vmTypeId: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<BrokerV1.OfferStructOutput[]>;
 
@@ -640,8 +619,8 @@ export interface BrokerV1 extends BaseContract {
   callStatic: {
     AddOffer(
       pricePerSecond: PromiseOrValue<BigNumberish>,
-      vmTypeId: PromiseOrValue<BigNumberish>,
       machinesAvailable: PromiseOrValue<BigNumberish>,
+      specsIpfsHash: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -671,11 +650,6 @@ export interface BrokerV1 extends BaseContract {
     ): Promise<BrokerV1.BookingStructOutput[]>;
 
     GetAvailableOffers(
-      overrides?: CallOverrides
-    ): Promise<BrokerV1.OfferStructOutput[]>;
-
-    GetAvailableOffersByType(
-      _vmTypeId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BrokerV1.OfferStructOutput[]>;
 
@@ -780,8 +754,8 @@ export interface BrokerV1 extends BaseContract {
   estimateGas: {
     AddOffer(
       pricePerSecond: PromiseOrValue<BigNumberish>,
-      vmTypeId: PromiseOrValue<BigNumberish>,
       machinesAvailable: PromiseOrValue<BigNumberish>,
+      specsIpfsHash: PromiseOrValue<BytesLike>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -811,11 +785,6 @@ export interface BrokerV1 extends BaseContract {
     ): Promise<BigNumber>;
 
     GetAvailableOffers(overrides?: CallOverrides): Promise<BigNumber>;
-
-    GetAvailableOffersByType(
-      _vmTypeId: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
 
     GetBooking(
       index: PromiseOrValue<BigNumberish>,
@@ -894,8 +863,8 @@ export interface BrokerV1 extends BaseContract {
   populateTransaction: {
     AddOffer(
       pricePerSecond: PromiseOrValue<BigNumberish>,
-      vmTypeId: PromiseOrValue<BigNumberish>,
       machinesAvailable: PromiseOrValue<BigNumberish>,
+      specsIpfsHash: PromiseOrValue<BytesLike>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -925,11 +894,6 @@ export interface BrokerV1 extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     GetAvailableOffers(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    GetAvailableOffersByType(
-      _vmTypeId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

@@ -1,46 +1,42 @@
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { deployBrokerFixture, offerFromRaw, offers, type Offer, OffersItem } from './fixtures'
+import { deployBrokerFixture, offerFromRaw, exampleSpecBytes } from './fixtures'
 
 describe("BrokerV1_offers", function () {
-
     describe("AddOffers", function () {
         it("should add offers", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
-            const txs = await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
-            const offersRaw = await broker.GetAvailableOffers();
+            let offersRaw = await broker.GetAvailableOffers();
+            const lengthBefore = offersRaw.length
 
-            expect(txs.length).is.equal(offersRaw.length)
+            await broker.AddOffer(2, 10, exampleSpecBytes)
+
+            offersRaw = await broker.GetAvailableOffers();
+
+            expect(offersRaw.length).is.equal(lengthBefore + 1)
         });
     })
     describe("UpdateOffer", function () {
         it("should update offer", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
-            const txs = await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
+            await broker.AddOffer(2, 10, exampleSpecBytes)
 
-            await broker.UpdateOffer(0, 10, 1)
+            await broker.UpdateOffer(0, 11, 3)
 
             const offersRaw = await broker.GetAvailableOffers();
             const offersObj = offersRaw.map(offerFromRaw)
             const updatedOffer = offersObj.find(({ Index }) => Index === 0)
 
-            expect(updatedOffer?.Availablility).is.equal(10)
+            expect(updatedOffer?.Availablility).is.equal(11)
+            expect(updatedOffer?.PPS).is.equal(3)
         });
+
         it("should revert if offer belongs to another account", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
-            const txs = await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
+            await broker.AddOffer(2, 10, exampleSpecBytes)
 
             await expect(broker.connect(user).UpdateOffer(0, 0, 1)).to.be.reverted
         });
@@ -49,10 +45,8 @@ describe("BrokerV1_offers", function () {
         it("should remove offer", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
-            const txs = await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
+            await broker.AddOffer(2, 10, exampleSpecBytes)
+            await broker.AddOffer(3, 10, exampleSpecBytes)
 
             await broker.RemoveOffer(1)
 
@@ -65,87 +59,55 @@ describe("BrokerV1_offers", function () {
         it("should revert if offer belongs to another account", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
-            const txs = await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
+            await broker.AddOffer(2, 10, exampleSpecBytes)
 
-            await expect(broker.connect(user).RemoveOffer(1)).to.be.reverted
+            await expect(broker.connect(user).RemoveOffer(0)).to.be.reverted
         });
     })
     describe("GetAvailableOffers", function () {
         it("should return array of offers", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
-            const txs = await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
+            await broker.AddOffer(2, 10, exampleSpecBytes)
+            await broker.AddOffer(3, 10, exampleSpecBytes)
 
-            const offersRaw = await broker.GetAvailableOffers();
-            const offersObj = offersRaw.map(offerFromRaw)
+            const offers = (await broker.GetAvailableOffers()).map(offerFromRaw)
 
-            expect(offersObj.length).to.equal(txs.length)
+            expect(offers.length).to.equal(2)
         });
         it("should return only offers with available machines", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
-            const txs = await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
+            await broker.AddOffer(2, 10, exampleSpecBytes)
+            await broker.AddOffer(3, 0, exampleSpecBytes)
 
-            await broker.UpdateOffer(0, 0, 1)
+            const offers = (await broker.GetAvailableOffers()).map(offerFromRaw)
 
-            const offersRaw = await broker.GetAvailableOffers();
-            const offersObj = offersRaw.map(offerFromRaw)
-            const availability = offersObj.every(({ Availablility }: { Availablility: number }) => Availablility !== 0)
-
-            expect(availability).true
-        });
-        it("should return only offers with type 5", async function () {
-            const { broker, miner, user } = await loadFixture(deployBrokerFixture);
-
-            const txs = await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
-
-            const offersRaw = await broker.GetAvailableOffersByType(5);
-            const offersObj: Offer[] = offersRaw.map(offerFromRaw)
-            const typed = offersObj.every(({ VmTypeId }) => VmTypeId === 5)
-
-            expect(typed).true
+            expect(offers.length).to.equal(1)
         });
     })
     describe("GetMinerOffers", function () {
         it("should return array of offers", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
-            const txs = await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
+            await broker.AddOffer(2, 10, exampleSpecBytes)
+            await broker.connect(user).AddOffer(3, 10, exampleSpecBytes)
 
-            const offersRaw = await broker.GetMinersOffers(miner.address);
-            const offersObj = offersRaw.map(offerFromRaw)
+            const offers = (await broker.GetMinersOffers(miner.address))
+                .map(offerFromRaw)
 
-            expect(offersObj.length).to.equal(txs.length)
+            expect(offers.length).to.equal(1)
         });
         it("should return offers including ones with availability zero", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
-            const txs = await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
+            await broker.AddOffer(2, 10, exampleSpecBytes)
+            await broker.AddOffer(2, 0, exampleSpecBytes)
 
-            await broker.UpdateOffer(0, 0, 1)
+            const offers = (await broker.GetMinersOffers(miner.address))
+                .map(offerFromRaw)
 
-            const offersRaw = await broker.GetMinersOffers(miner.address);
-            const offersObj = offersRaw.map(offerFromRaw)
-
-            expect(offersObj.length).to.equal(txs.length)
+            expect(offers.length).to.equal(2)
         });
     })
 })

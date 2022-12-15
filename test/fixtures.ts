@@ -4,6 +4,7 @@ import type { Contract, BigNumberish } from "ethers";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import type { BrokerV1, Token } from "../typechain-types";
 import { PromiseOrValue } from "../typechain-types/common";
+import bs58 from 'bs58'
 
 export type Fixture = {
     broker: BrokerV1,
@@ -22,8 +23,8 @@ export type Offer = {
 
 export type OffersItem = [
     pricePerSecond: PromiseOrValue<BigNumberish>,
-    vmTypeId: PromiseOrValue<BigNumberish>,
-    machinesAvailable: PromiseOrValue<BigNumberish>
+    machinesAvailable: PromiseOrValue<BigNumberish>,
+    specsIpfsHash: PromiseOrValue<BytesLike>,
 ]
 
 export async function deployBrokerFixture(): Promise<Fixture> {
@@ -67,10 +68,22 @@ export function offerFromRaw(offerRaw: any[]) {
     }
 }
 
-export const offers: OffersItem[] = [
-    [1, 1, 1],
-    [2, 2, 2],
-    [3, 3, 3],
-    [4, 4, 4],
-    [5, 5, 5],
-]
+const specCid = "QmYnq93f9NJ1aCBLCoboncFE6GSZJDqn5RCDVV3ywziXd9"
+export const exampleSpecBytes = "0x" + Buffer.from(bs58.decode(specCid).slice(2)).toString('hex')
+
+// export async function brokerWithFiveOffers(): Promise<Fixture> {
+//     const { broker, token, miner, user } = await deployOffersFixture()
+
+
+//     const offers: OffersItem[] = [
+//         [1, 1, exampleSpecBytes],
+//         [2, 2, exampleSpecBytes],
+//         [3, 3, exampleSpecBytes],
+//         [4, 4, exampleSpecBytes],
+//         [5, 5, exampleSpecBytes],
+//     ]
+
+//     await Promise.all(offers.map(offer => broker.AddOffer(...offer)))
+
+//     return { broker, token, miner, user };
+// }
