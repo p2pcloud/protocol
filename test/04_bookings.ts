@@ -1,11 +1,12 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
-import { brokerWithFiveOffers, brokerWithOfferAndUserBalance, deployBrokerFixture, offerFromRaw, OffersItem } from './fixtures'
+import { bookingFromRaw, brokerWithFiveOffers, brokerWithOfferAndUserBalance, deployBrokerFixture, offerFromRaw, OffersItem } from './fixtures'
+import { BN } from "bn.js";
 
-describe.only("BrokerV1_bookings", function () {
-    describe.only("Book", function () {
-        it.only("should create a new booking", async function () {
+describe("BrokerV1_bookings", function () {
+    describe("Book", function () {
+        it("should create a new booking", async function () {
             const { broker, token, miner, user, admin } = await loadFixture(brokerWithOfferAndUserBalance);
 
 
@@ -19,7 +20,7 @@ describe.only("BrokerV1_bookings", function () {
             expect(booked.length).is.equal(1)
         });
 
-        it.only("should revert if not enough free coin balance", async function () {
+        it("should revert if not enough free coin balance", async function () {
             const { broker, token, miner, user, admin } = await loadFixture(brokerWithFiveOffers);
 
             //add some money to user
@@ -42,7 +43,7 @@ describe.only("BrokerV1_bookings", function () {
             await expect(broker.connect(user).Book(lastOffer.Index)).to.not.be.reverted
 
         });
-        it.only("should increase locked coin balance", async function () {
+        it("should increase locked coin balance", async function () {
             const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
             const pps = 10
@@ -58,7 +59,7 @@ describe.only("BrokerV1_bookings", function () {
             const [free2, locked2] = await broker.GetCoinBalance(user.address)
             expect(locked2.toString()).to.equal((pps * 3600 * 24 * 7).toString())
         });
-        it.only("should decrease machines available", async function () {
+        it("should decrease machines available", async function () {
             const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
             await broker.connect(miner).AddOffer(1, 10, Array(32).fill(0))
@@ -88,8 +89,8 @@ describe.only("BrokerV1_bookings", function () {
             await expect(broker.connect(user).Book(lastOfferId)).to.be.reverted
         });
     })
-    describe.only("Terminate", function () {
-        it.only("should revert if booking does not exist", async function () {
+    describe("Terminate", function () {
+        it("should revert if booking does not exist", async function () {
             const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
             await broker.connect(user).Book(0)
@@ -99,7 +100,7 @@ describe.only("BrokerV1_bookings", function () {
             await expect(broker.connect(user).Terminate(999, REASON)).to.be.reverted
             await expect(broker.connect(user).Terminate(0, REASON)).to.not.be.reverted
         });
-        it.only("should revert if user is not the owner", async function () {
+        it("should revert if user is not the owner", async function () {
             const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 
             await broker.connect(user).Book(0)
@@ -109,7 +110,7 @@ describe.only("BrokerV1_bookings", function () {
             await expect(broker.connect(anotherUser).Terminate(0, REASON)).to.be.reverted
             await expect(broker.connect(user).Terminate(0, REASON)).to.not.be.reverted
         });
-        it.only("should delete booking", async function () {
+        it("should delete booking", async function () {
             const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 
             await broker.connect(user).Book(0)
@@ -126,7 +127,7 @@ describe.only("BrokerV1_bookings", function () {
             booked = await broker.connect(user).FindBookingsByUser(user.address)
             expect(booked.length).is.equal(0)
         });
-        it.only("should increase machines available", async function () {
+        it("should increase machines available", async function () {
             const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 
             const REASON = 0
@@ -141,10 +142,10 @@ describe.only("BrokerV1_bookings", function () {
 
             expect(offer.Availablility).is.equal(initialMachinesAvailable + 1)
         });
-        it.only("should execute payment", async function () {
+        it("should execute payment", async function () {
             const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 
-            const seconds = 3600 * 24
+            const SECONDS = 3600 * 24
             const OFFER_ID = 3
             const PPS = offerFromRaw(await broker.GetOffer(OFFER_ID)).PPS
 
@@ -157,170 +158,103 @@ describe.only("BrokerV1_bookings", function () {
             const CORRECTION = 1//TODO: right now correction is 1 second
 
             const [minerBalanceFree2,] = await broker.GetCoinBalance(miner.address)
-            expect(minerBalanceFree2.toString()).to.equal((PPS * (seconds + CORRECTION)).toString())
+            expect(minerBalanceFree2.toString()).to.equal((PPS * (SECONDS + CORRECTION)).toString())
         });
     })
     describe("FindBookingsByUser", function () {
         it("should return array of bookings", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployBrokerFixture);
+            const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
-
-            const amt = ethers.utils.parseUnits('1', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
-
-            await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
-
-            await broker.connect(user).DepositCoin(allowance)
             await broker.connect(user).Book(0)
+            await broker.connect(anotherUser).Book(1)
 
-            const booked = await broker.FindBookingsByUser(user.address)
+            const booked = (await broker.FindBookingsByUser(user.address)).map(bookingFromRaw)
             expect(booked.length).is.equal(1)
+            expect(booked[0].offerIndex).is.equal(0)
+            expect(booked[0].user).is.equal(user.address)
+
         });
     })
     describe("FindBookingsByMiner", function () {
         it("should return array of bookings", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployBrokerFixture);
+            const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
-
-            const amt = ethers.utils.parseUnits('1', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
-
-            await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
-
-            await broker.connect(user).DepositCoin(allowance)
             await broker.connect(user).Book(0)
+            await broker.connect(anotherUser).Book(1)
 
-            const booked = await broker.FindBookingsByMiner(miner.address)
-            expect(booked.length).is.equal(1)
+            let booked = (await broker.FindBookingsByMiner(anotherUser.address)).map(bookingFromRaw)
+            expect(booked.length).is.equal(0)
+
+            booked = (await broker.FindBookingsByMiner(miner.address)).map(bookingFromRaw)
+            expect(booked.length).is.equal(2)
+            expect(booked[0].offerIndex).is.equal(0)
+            expect(booked[0].user).is.equal(user.address)
         });
     })
     describe("GetBooking", function () {
         it("should return booking", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployBrokerFixture);
+            const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
-
-            const amt = ethers.utils.parseUnits('1', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
-
-            await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
-
-            await broker.connect(user).DepositCoin(allowance)
             await broker.connect(user).Book(0)
+            await broker.connect(anotherUser).Book(1)
 
-            const booking = await broker.GetBooking(0)
-            expect(booking.index).is.equal(0)
+            const booking = bookingFromRaw(await broker.GetBooking(0))
+            expect(booking.offerIndex).is.equal(0)
+            expect(booking.user).is.equal(user.address)
         });
     })
     describe("ClaimPayment", function () {
         it("should revert if booking does not exist", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployBrokerFixture);
-
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
-
-            const amt = ethers.utils.parseUnits('1', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
-
-            await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
-
-            await broker.connect(user).DepositCoin(allowance)
-            await broker.connect(user).Book(0)
-
-            await expect(broker.connect(miner).ClaimPayment(1)).to.be.reverted
+            const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
+            await time.increase(3600 * 24);
+            expect(broker.connect(miner).ClaimPayment(0)).to.be.reverted
         });
         it("should revert if user is not the miner of this booking", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployBrokerFixture);
+            const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
-
-            const amt = ethers.utils.parseUnits('1', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
-
-            await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
-
-            await broker.connect(user).DepositCoin(allowance)
             await broker.connect(user).Book(0)
+            await time.increase(3600 * 24);
 
-            await expect(broker.connect(user).ClaimPayment(0)).to.be.reverted
+            expect(broker.connect(anotherUser).ClaimPayment(0)).to.be.reverted
+            expect(broker.connect(miner).ClaimPayment(0)).to.not.be.reverted
         });
         it("should transfer payment to miner and commision to community", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployBrokerFixture);
-            const FEE = 2000
-            const week = 86400
+            const { broker, token, miner, admin, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
+
+            const FEE = 500//5%
+            const SECONDS = 3600 * 24
+            const OFFER_ID = 2
+            const PPS = offerFromRaw(await broker.GetOffer(OFFER_ID)).PPS
 
             // Contract settings
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
             await broker.SetCommunityFee(FEE)
 
-            // Add User offers
-            await Promise.all(offers.map(async (offer) => {
-                const [pricePerSecond, vmTypeId, machinesAvailable]: OffersItem = offer
-                return await broker.connect(user).AddOffer(pricePerSecond, vmTypeId, machinesAvailable);
-            }))
+            //initial balances
+            await broker.connect(user).Book(OFFER_ID)
 
-            // Allow broker deposit User tokens
-            const amt = ethers.utils.parseUnits('1', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
+            const [initialUserBalance] = await broker.GetCoinBalance(user.address)
+            const [initialMinerBalance] = await broker.GetCoinBalance(miner.address)
+            const [initialCommunityBalance] = await broker.GetCoinBalance(admin.address)
 
-            // Deposit & book
-            await broker.connect(user).DepositCoin(allowance)
-            await broker.connect(user).Book(0)
-            const [freeUserBalance, lockedUserBalance] = await broker.GetCoinBalance(user.address)
+            expect(initialMinerBalance.toString()).to.equal('0')
+            expect(initialCommunityBalance.toString()).to.equal('0')
 
-            // Waiting week
-            await time.increase(week);
+            await time.increase(SECONDS);
+            await broker.connect(miner).ClaimPayment(0)
 
-            // Get booking info
-            const [[index, pricePerSecond]] = await broker.FindBookingsByUser(user.address)
-            const pricePerWeek = ethers.utils.formatUnits(pricePerSecond.mul(week), 'mwei')
+            const [userBalance] = await broker.GetCoinBalance(user.address)
+            const [minerBalance] = await broker.GetCoinBalance(miner.address)
+            const [communityBalance] = await broker.GetCoinBalance(admin.address)
 
-            // Claim payment
-            expect(await broker.connect(user).ClaimPayment(index)).not.to.be.reverted
+            const totalCost = PPS * (SECONDS + 1)//TODO: fix this correction
 
-            // Get balances & calc percents
-            const [freeClaimedUserBalance, lockedClaimedUserBalance] = await broker.GetCoinBalance(user.address)
-            const [free, locked] = await broker.GetCoinBalance(miner.address)
+            expect(userBalance.toString()).to.equal(initialUserBalance.sub(totalCost).toString())
 
-            const userClaimed = ethers.utils.formatUnits(freeUserBalance.sub(freeClaimedUserBalance), 'mwei')
-            const communityFee = ethers.utils.formatUnits(free, 'mwei')
-            const percents = (+pricePerWeek * FEE) / 10000
+            const communityPayment = new BN(totalCost).mul(new BN(FEE)).div(new BN(10000))
+            expect(communityBalance.toString()).to.equal(communityPayment.toString())
 
-            expect(Number(userClaimed)).is.equal(Number(communityFee)).is.equal(percents)
+            const minerPayment = new BN(totalCost).sub(communityPayment)
+            expect(minerBalance.toString()).to.equal(minerPayment.toString())
         });
     })
 })

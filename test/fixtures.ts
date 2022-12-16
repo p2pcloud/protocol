@@ -30,6 +30,10 @@ export type OffersItem = [
 ]
 
 export async function deployBrokerFixture(): Promise<Fixture> {
+    return await _deployBrokerFixture()
+}
+
+async function _deployBrokerFixture(): Promise<Fixture> {
     const [admin, miner, user, anotherUser] = await ethers.getSigners();
 
     const Broker = await ethers.getContractFactory("BrokerV1");
@@ -45,13 +49,17 @@ export async function deployBrokerFixture(): Promise<Fixture> {
 }
 
 export async function brokerWithOfferAndUserBalance(): Promise<Fixture> {
-    const fixture = await brokerWithFiveOffers()
-    const { user, admin, token, broker } = fixture
+    const fixture = await _brokerWithFiveOffers()
+    const { user, admin, token, broker, anotherUser } = fixture
 
     const amt = '10000000'
     await token.connect(admin).transfer(user.address, amt)
     await token.connect(user).approve(broker.address, amt)
     await broker.connect(user).DepositCoin(amt)
+
+    await token.connect(admin).transfer(anotherUser.address, amt)
+    await token.connect(anotherUser).approve(broker.address, amt)
+    await broker.connect(anotherUser).DepositCoin(amt)
 
     return fixture
 }
@@ -68,11 +76,21 @@ export function offerFromRaw(offerRaw: any[]) {
     }
 }
 
+
+export function bookingFromRaw(bookingRaw: any[]) {
+    const [index, deprecated__vmTypeId, miner, user, pricePerSecond, bookedAt, lastPayment, offerIndex] = bookingRaw
+    return { index, deprecated__vmTypeId, miner, user, pricePerSecond, bookedAt, lastPayment, offerIndex }
+}
+
 const specCid = "QmYnq93f9NJ1aCBLCoboncFE6GSZJDqn5RCDVV3ywziXd9"
 export const exampleSpecBytes = "0x" + Buffer.from(bs58.decode(specCid).slice(2)).toString('hex')
 
 export async function brokerWithFiveOffers(): Promise<Fixture> {
-    const fixture = await deployBrokerFixture()
+    return await _brokerWithFiveOffers()
+}
+
+async function _brokerWithFiveOffers(): Promise<Fixture> {
+    const fixture = await _deployBrokerFixture()
 
     const { broker, miner } = fixture
 

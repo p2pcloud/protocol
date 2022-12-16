@@ -90,7 +90,7 @@ describe("BrokerV1_offers", function () {
         it("should return array of offers", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
-            await broker.AddOffer(2, 10, exampleSpecBytes)
+            await broker.connect(miner).AddOffer(2, 10, exampleSpecBytes)
             await broker.connect(user).AddOffer(3, 10, exampleSpecBytes)
 
             const offers = (await broker.GetMinersOffers(miner.address))
@@ -101,8 +101,8 @@ describe("BrokerV1_offers", function () {
         it("should return offers including ones with availability zero", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
 
-            await broker.AddOffer(2, 10, exampleSpecBytes)
-            await broker.AddOffer(2, 0, exampleSpecBytes)
+            await broker.connect(miner).AddOffer(2, 10, exampleSpecBytes)
+            await broker.connect(miner).AddOffer(2, 0, exampleSpecBytes)
 
             const offers = (await broker.GetMinersOffers(miner.address))
                 .map(offerFromRaw)

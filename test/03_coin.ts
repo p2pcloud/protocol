@@ -1,166 +1,102 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { deployBrokerFixture, deployOffersFixture } from './fixtures'
+import { deployBrokerFixture, brokerWithFiveOffers, brokerWithOfferAndUserBalance } from './fixtures'
 
 describe("BrokerV1_coin", function () {
     describe("DepositCoin", function () {
         it("should incrase balance", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployBrokerFixture);
+            const { broker, token, miner, user, admin } = await loadFixture(deployBrokerFixture);
 
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
+            await token.connect(admin).transfer(user.address, '123456')
 
-            const amt = ethers.utils.parseUnits('5', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
+            const [userBalance1] = await broker.connect(user).GetCoinBalance(user.address)
+            expect(userBalance1.toString()).is.equal('0')
 
-            await broker.connect(user).DepositCoin(allowance)
+            await token.connect(user).approve(broker.address, '123456')
+            await broker.connect(user).DepositCoin('123')
 
-            const [free, locked] = await broker.GetCoinBalance(user.address)
-            const total = free.add(locked)
-            const balance = ethers.utils.formatUnits(total, 'mwei')
-            const equal = ethers.utils.formatUnits(amt, 'mwei')
-
-            expect(balance).is.equal(equal)
+            const [userBalance2] = await broker.connect(user).GetCoinBalance(user.address)
+            expect(userBalance2.toString()).is.equal('123')
         });
+
         it("should revert if transfer fails", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployBrokerFixture);
-
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
-
-            const amt = ethers.utils.parseUnits('5', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
-
-            await expect(broker.connect(miner).DepositCoin(allowance)).to.be.reverted
+            const { broker, token, miner, user, admin } = await loadFixture(deployBrokerFixture);
+            await expect(broker.connect(user).DepositCoin('123')).to.be.reverted
         });
     })
     describe("GetLockedCoinBalance", function () {
         it("should increase with vm booking", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployOffersFixture);
+            const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
+            const [free1, locked1] = await broker.connect(user).GetCoinBalance(user.address)
 
-            const amt = ethers.utils.parseUnits('5', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
+            const PPS = (await broker.GetOffer(0)).pricePerSecond
+            await broker.connect(user).Book(0)
 
-            await broker.connect(user).DepositCoin(allowance)
+            const expectedIncrease = PPS.mul(60 * 60 * 24 * 7)
 
-            const booked = await broker.connect(user).Book(0)
-            const [free, locked] = await broker.connect(user).GetCoinBalance(user.address)
-
-            // const freeBalance = ethers.utils.formatUnits(free, 'mwei')
-            const lockedBalance = ethers.utils.formatUnits(locked, 'mwei')
-
-            expect(Number(lockedBalance)).is.not.equal(0)
+            const [free2, locked2] = await broker.connect(user).GetCoinBalance(user.address)
+            expect(locked2.sub(locked1)).is.equal(expectedIncrease)
+            expect(free1.sub(free2)).is.equal(expectedIncrease)
         });
         it("should decrease with vm termination", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployOffersFixture);
+            const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
+            const [free1, locked1] = await broker.connect(user).GetCoinBalance(user.address)
+            expect(locked1.toString()).is.equal('0')
 
-            const amt = ethers.utils.parseUnits('5', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
-
-            await broker.connect(user).DepositCoin(allowance)
             await broker.connect(user).Book(0)
+
+            const [free2, locked2] = await broker.connect(user).GetCoinBalance(user.address)
+            expect(locked2.toString()).is.not.equal('0')
+
             await broker.connect(user).Terminate(0, 0)
 
-            const [free, locked] = await broker.connect(user).GetCoinBalance(user.address)
-            const lockedBalance = ethers.utils.formatUnits(locked, 'mwei')
-
-            expect(Number(lockedBalance)).is.equal(0)
+            const [free3, locked3] = await broker.connect(user).GetCoinBalance(user.address)
+            expect(locked3.toString()).is.equal('0')
         });
     })
     describe("WithdrawCoin", function () {
         it("should withdraw only free balance", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployOffersFixture);
+            const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
-
-            const amt = ethers.utils.parseUnits('1', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
-
-            await broker.connect(user).DepositCoin(allowance)
             await broker.connect(user).Book(0)
-
             const [free, locked] = await broker.connect(user).GetCoinBalance(user.address)
-            const freeBalance = ethers.utils.formatUnits(free, 'mwei')
-            const lockedBalance = ethers.utils.formatUnits(locked, 'mwei')
 
-            await expect(broker.connect(user).WithdrawCoin(amt)).to.be.reverted
+            await expect(broker.connect(user).WithdrawCoin(free.add(1))).to.be.reverted
+            await broker.connect(user).WithdrawCoin(free)
         });
         it("should revert if transfer fails", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployOffersFixture);
+            //TODO: modify coin contract to make this test pass
+            const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
-
-            const amt = ethers.utils.parseUnits('1', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
-
-            await broker.connect(user).DepositCoin(amt)
-            await broker.connect(user).Book(0)
-
-            await expect(broker.connect(user).WithdrawCoin(amt)).to.be.reverted
-
-        });
-        it("should revert if not enough balance", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployOffersFixture);
-            const amt = ethers.utils.parseUnits('1', 'mwei')
-            await expect(broker.connect(user).WithdrawCoin(amt)).to.be.reverted
+            await token.transferShouldFail(true)
+            await expect(broker.connect(user).WithdrawCoin(1)).to.be.reverted
         });
     })
     describe("GetCoinBalance", function () {
         it("should return locked and free balance", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployOffersFixture);
+            const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
-            await broker.SetCommunityContract(miner.address)
-            await broker.SetCoinAddress(token.address)
-
-            const amt = ethers.utils.parseUnits('1', 'mwei')
-            await token.transfer(user.address, amt)
-            await token.connect(user).approve(broker.address, amt)
-            const allowance = await token.allowance(user.address, broker.address)
-
-            await broker.connect(user).DepositCoin(allowance)
             await broker.connect(user).Book(0)
 
-            const [free, locked] = await broker.GetCoinBalance(user.address)
-            const total = free.add(locked)
-            const balance = ethers.utils.formatUnits(total, 'mwei')
-            const equal = ethers.utils.formatUnits(amt, 'mwei')
-
-            expect(balance).is.equal(equal)
+            const [free, locked] = await broker.connect(user).GetCoinBalance(user.address)
+            expect(free.toString()).is.not.equal('0')
+            expect(locked.toString()).is.not.equal('0')
         });
     })
     describe("SetCoinAddress", function () {
         it("should set coin address", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployBrokerFixture);
+            const { broker, token, admin } = await loadFixture(deployBrokerFixture);
 
-            await broker.SetCommunityContract(miner.address)
-            await expect(broker.SetCoinAddress(token.address)).not.to.be.reverted
+            await broker.connect(admin).SetCoinAddress(token.address)
+            expect(await broker.coin()).is.equal(token.address)
         });
         it("should revert if not owner", async function () {
             const { broker, token, miner, user } = await loadFixture(deployBrokerFixture);
 
-            await broker.SetCommunityContract(user.address)
-            await expect(broker.SetCoinAddress(token.address)).to.be.reverted
+            await expect(broker.connect(user).SetCoinAddress(token.address)).to.be.reverted
         });
     })
 });
