@@ -36,7 +36,7 @@ interface IERC20 {
 contract BrokerV1 {
     struct Booking {
         uint64 index; //TODO: change all indexes to uint24
-        uint64 deprecated__vmTypeId; //TODO: change vm type id to uint24
+        uint64 vmTypeId; //TODO: change vm type id to uint24
         address miner;
         address user;
         uint64 pricePerSecond; //TODO: change pps to uint24
@@ -51,7 +51,7 @@ contract BrokerV1 {
         address miner;
         uint64 pricePerSecond; //TODO: change pps to uint24
         uint64 machinesAvailable; //TODO: change to uint16
-        uint64 deprecated__vmTypeId; //TODO: change all indexes to uint24
+        uint64 vmTypeId; //TODO: change all indexes to uint24
         bytes32 specsIpfsHash;
     }
 

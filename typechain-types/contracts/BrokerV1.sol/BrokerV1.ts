@@ -30,7 +30,7 @@ import type {
 export declare namespace BrokerV1 {
   export type BookingStruct = {
     index: PromiseOrValue<BigNumberish>;
-    deprecated__vmTypeId: PromiseOrValue<BigNumberish>;
+    vmTypeId: PromiseOrValue<BigNumberish>;
     miner: PromiseOrValue<string>;
     user: PromiseOrValue<string>;
     pricePerSecond: PromiseOrValue<BigNumberish>;
@@ -50,7 +50,7 @@ export declare namespace BrokerV1 {
     BigNumber
   ] & {
     index: BigNumber;
-    deprecated__vmTypeId: BigNumber;
+    vmTypeId: BigNumber;
     miner: string;
     user: string;
     pricePerSecond: BigNumber;
@@ -64,7 +64,7 @@ export declare namespace BrokerV1 {
     miner: PromiseOrValue<string>;
     pricePerSecond: PromiseOrValue<BigNumberish>;
     machinesAvailable: PromiseOrValue<BigNumberish>;
-    deprecated__vmTypeId: PromiseOrValue<BigNumberish>;
+    vmTypeId: PromiseOrValue<BigNumberish>;
     specsIpfsHash: PromiseOrValue<BytesLike>;
   };
 
@@ -80,7 +80,7 @@ export declare namespace BrokerV1 {
     miner: string;
     pricePerSecond: BigNumber;
     machinesAvailable: BigNumber;
-    deprecated__vmTypeId: BigNumber;
+    vmTypeId: BigNumber;
     specsIpfsHash: string;
   };
 }
