@@ -30,11 +30,10 @@ import type {
 export declare namespace BrokerV1 {
   export type BookingStruct = {
     index: PromiseOrValue<BigNumberish>;
-    vmTypeId: PromiseOrValue<BigNumberish>;
+    offerIndex: PromiseOrValue<BigNumberish>;
     pricePerSecond: PromiseOrValue<BigNumberish>;
     bookedAt: PromiseOrValue<BigNumberish>;
     lastPayment: PromiseOrValue<BigNumberish>;
-    offerIndex: PromiseOrValue<BigNumberish>;
     miner: PromiseOrValue<string>;
     user: PromiseOrValue<string>;
   };
@@ -45,16 +44,14 @@ export declare namespace BrokerV1 {
     number,
     BigNumber,
     BigNumber,
-    number,
     string,
     string
   ] & {
     index: number;
-    vmTypeId: number;
+    offerIndex: number;
     pricePerSecond: number;
     bookedAt: BigNumber;
     lastPayment: BigNumber;
-    offerIndex: number;
     miner: string;
     user: string;
   };

@@ -36,11 +36,10 @@ interface IERC20 {
 contract BrokerV1 {
     struct Booking {
         uint24 index; //TODO: change all indexes to uint24
-        uint24 vmTypeId; //TODO: change vm type id to uint24
+        uint24 offerIndex; //TODO: change all indexes to uint24
         uint24 pricePerSecond; //TODO: change pps to uint24
         uint256 bookedAt; //TODO: change timestamp to uint48
         uint256 lastPayment; //TODO: change timestamp to uint48
-        uint24 offerIndex; //TODO: change all indexes to uint24
         address miner;
         address user;
     }
@@ -245,11 +244,10 @@ contract BrokerV1 {
 
         Booking memory booking = Booking(
             nextBookingId,
-            0,
+            offerIndex,
             offers[offerIndex].pricePerSecond,
             block.timestamp,
             block.timestamp,
-            offerIndex,
             offers[offerIndex].miner,
             msg.sender
         );
