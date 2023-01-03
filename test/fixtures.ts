@@ -94,12 +94,6 @@ function toNumber(val: BigNumber | number) {
 // }
 
 
-
-export function bookingFromRaw(bookingRaw: any[]) {
-    const [index, deprecated__vmTypeId, miner, user, pricePerSecond, bookedAt, lastPayment, offerIndex] = bookingRaw
-    return { index, deprecated__vmTypeId, miner, user, pricePerSecond, bookedAt, lastPayment, offerIndex }
-}
-
 const specCid = "QmYnq93f9NJ1aCBLCoboncFE6GSZJDqn5RCDVV3ywziXd9"
 export const exampleSpecBytes = "0x" + Buffer.from(bs58.decode(specCid).slice(2)).toString('hex')
 

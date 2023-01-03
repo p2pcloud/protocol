@@ -31,32 +31,32 @@ export declare namespace BrokerV1 {
   export type BookingStruct = {
     index: PromiseOrValue<BigNumberish>;
     vmTypeId: PromiseOrValue<BigNumberish>;
-    miner: PromiseOrValue<string>;
-    user: PromiseOrValue<string>;
     pricePerSecond: PromiseOrValue<BigNumberish>;
     bookedAt: PromiseOrValue<BigNumberish>;
     lastPayment: PromiseOrValue<BigNumberish>;
     offerIndex: PromiseOrValue<BigNumberish>;
+    miner: PromiseOrValue<string>;
+    user: PromiseOrValue<string>;
   };
 
   export type BookingStructOutput = [
     number,
     number,
-    string,
-    string,
     number,
     BigNumber,
     BigNumber,
-    number
+    number,
+    string,
+    string
   ] & {
     index: number;
     vmTypeId: number;
-    miner: string;
-    user: string;
     pricePerSecond: number;
     bookedAt: BigNumber;
     lastPayment: BigNumber;
     offerIndex: number;
+    miner: string;
+    user: string;
   };
 
   export type OfferStruct = {

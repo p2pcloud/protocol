@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
-import { bookingFromRaw, brokerWithFiveOffers, brokerWithOfferAndUserBalance, deployBrokerFixture, offerFromRaw, OffersItem } from './fixtures'
+import { brokerWithFiveOffers, brokerWithOfferAndUserBalance, deployBrokerFixture, offerFromRaw, OffersItem } from './fixtures'
 import { BN } from "bn.js";
 
 describe("BrokerV1_bookings", function () {
@@ -168,7 +168,7 @@ describe("BrokerV1_bookings", function () {
             await broker.connect(user).Book(0)
             await broker.connect(anotherUser).Book(1)
 
-            const booked = (await broker.FindBookingsByUser(user.address)).map(bookingFromRaw)
+            const booked = (await broker.FindBookingsByUser(user.address))
             expect(booked.length).is.equal(1)
             expect(booked[0].offerIndex).is.equal(0)
             expect(booked[0].user).is.equal(user.address)
@@ -182,10 +182,10 @@ describe("BrokerV1_bookings", function () {
             await broker.connect(user).Book(0)
             await broker.connect(anotherUser).Book(1)
 
-            let booked = (await broker.FindBookingsByMiner(anotherUser.address)).map(bookingFromRaw)
+            let booked = (await broker.FindBookingsByMiner(anotherUser.address))
             expect(booked.length).is.equal(0)
 
-            booked = (await broker.FindBookingsByMiner(miner.address)).map(bookingFromRaw)
+            booked = (await broker.FindBookingsByMiner(miner.address))
             expect(booked.length).is.equal(2)
             expect(booked[0].offerIndex).is.equal(0)
             expect(booked[0].user).is.equal(user.address)
@@ -198,7 +198,7 @@ describe("BrokerV1_bookings", function () {
             await broker.connect(user).Book(0)
             await broker.connect(anotherUser).Book(1)
 
-            const booking = bookingFromRaw(await broker.GetBooking(0))
+            const booking = await broker.GetBooking(0)
             expect(booking.offerIndex).is.equal(0)
             expect(booking.user).is.equal(user.address)
         });
