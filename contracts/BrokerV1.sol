@@ -269,8 +269,9 @@ contract BrokerV1 {
 
     function Terminate(uint24 bookingId, uint8 reason) public {
         require(
-            bookings[bookingId].user == msg.sender,
-            "Only the user can stop a VM"
+            (bookings[bookingId].user == msg.sender && reason != 2) ||
+                (bookings[bookingId].miner == msg.sender && reason == 2),
+            "Only the user can stop a VM with reason 0 or 1, only the miner can stop a VM with reason 2"
         );
 
         if (reason != 0) {
