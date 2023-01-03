@@ -40,23 +40,23 @@ export declare namespace BrokerV1 {
   };
 
   export type BookingStructOutput = [
-    BigNumber,
-    BigNumber,
+    number,
+    number,
     string,
     string,
+    number,
     BigNumber,
     BigNumber,
-    BigNumber,
-    BigNumber
+    number
   ] & {
-    index: BigNumber;
-    vmTypeId: BigNumber;
+    index: number;
+    vmTypeId: number;
     miner: string;
     user: string;
-    pricePerSecond: BigNumber;
+    pricePerSecond: number;
     bookedAt: BigNumber;
     lastPayment: BigNumber;
-    offerIndex: BigNumber;
+    offerIndex: number;
   };
 
   export type OfferStruct = {
@@ -69,45 +69,45 @@ export declare namespace BrokerV1 {
   };
 
   export type OfferStructOutput = [
-    BigNumber,
+    number,
     string,
-    BigNumber,
-    BigNumber,
-    BigNumber,
+    number,
+    number,
+    number,
     string
   ] & {
-    index: BigNumber;
+    index: number;
     miner: string;
-    pricePerSecond: BigNumber;
-    machinesAvailable: BigNumber;
-    vmTypeId: BigNumber;
+    pricePerSecond: number;
+    machinesAvailable: number;
+    vmTypeId: number;
     specsIpfsHash: string;
   };
 }
 
 export interface BrokerV1Interface extends utils.Interface {
   functions: {
-    "AddOffer(uint64,uint64,bytes32)": FunctionFragment;
-    "Book(uint64)": FunctionFragment;
-    "ClaimPayment(uint64)": FunctionFragment;
+    "AddOffer(uint24,uint16,bytes32)": FunctionFragment;
+    "Book(uint24)": FunctionFragment;
+    "ClaimPayment(uint24)": FunctionFragment;
     "DepositCoin(uint256)": FunctionFragment;
     "FindBookingsByMiner(address)": FunctionFragment;
     "FindBookingsByUser(address)": FunctionFragment;
     "GetAvailableOffers()": FunctionFragment;
-    "GetBooking(uint64)": FunctionFragment;
+    "GetBooking(uint24)": FunctionFragment;
     "GetCoinBalance(address)": FunctionFragment;
     "GetMinerUrl(address)": FunctionFragment;
     "GetMinersOffers(address)": FunctionFragment;
-    "GetOffer(uint64)": FunctionFragment;
+    "GetOffer(uint24)": FunctionFragment;
     "GetTime()": FunctionFragment;
-    "RemoveOffer(uint64)": FunctionFragment;
+    "RemoveOffer(uint24)": FunctionFragment;
     "SECONDS_IN_WEEK()": FunctionFragment;
     "SetCoinAddress(address)": FunctionFragment;
     "SetCommunityContract(address)": FunctionFragment;
     "SetCommunityFee(uint64)": FunctionFragment;
     "SetMinerUrl(bytes32)": FunctionFragment;
-    "Terminate(uint64,uint8)": FunctionFragment;
-    "UpdateOffer(uint64,uint64,uint64)": FunctionFragment;
+    "Terminate(uint24,uint8)": FunctionFragment;
+    "UpdateOffer(uint24,uint16,uint24)": FunctionFragment;
     "WithdrawCoin(uint256)": FunctionFragment;
     "coin()": FunctionFragment;
     "communityContract()": FunctionFragment;

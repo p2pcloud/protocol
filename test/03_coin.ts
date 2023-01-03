@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { deployBrokerFixture, brokerWithFiveOffers, brokerWithOfferAndUserBalance } from './fixtures'
+import { BigNumber } from "ethers";
 
 describe("BrokerV1_coin", function () {
     describe("DepositCoin", function () {
@@ -34,7 +35,7 @@ describe("BrokerV1_coin", function () {
             const PPS = (await broker.GetOffer(0)).pricePerSecond
             await broker.connect(user).Book(0)
 
-            const expectedIncrease = PPS.mul(60 * 60 * 24 * 7)
+            const expectedIncrease = BigNumber.from(PPS).mul(60 * 60 * 24 * 7)
 
             const [free2, locked2] = await broker.connect(user).GetCoinBalance(user.address)
             expect(locked2.sub(locked1)).is.equal(expectedIncrease)

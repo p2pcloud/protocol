@@ -1,6 +1,7 @@
 import { ethers, upgrades } from "hardhat";
 
 import type { Contract, BigNumberish, BytesLike } from "ethers";
+import { BigNumber } from "ethers";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import type { BrokerV1, Token } from "../typechain-types";
 import { PromiseOrValue } from "../typechain-types/common";
@@ -68,13 +69,30 @@ export function offerFromRaw(offerRaw: any[]) {
     const [Index, Miner, PPS, Availablility, VmTypeId] = offerRaw
 
     return {
-        VmTypeId: VmTypeId.toNumber(),
-        PPS: PPS.toNumber(),
-        Availablility: Availablility.toNumber(),
+        VmTypeId: toNumber(VmTypeId),
+        PPS: toNumber(PPS),
+        Availablility: toNumber( Availablility),
         Miner: Miner,
-        Index: Index.toNumber(),
+        Index: toNumber(Index),
     }
 }
+
+function toNumber(val: BigNumber | number) {
+    if (typeof val === 'number') {
+        return val
+    }
+    return val.toNumber()
+}
+
+// //TODO: remove this 
+// Number.prototype.toNumber = function () {
+//     return this.valueOf()
+// }
+// //TODO: remove this
+// Number.prototype.mul = function (val: any) {
+//     return BigNumber.from(this.valueOf()).mul(val)
+// }
+
 
 
 export function bookingFromRaw(bookingRaw: any[]) {

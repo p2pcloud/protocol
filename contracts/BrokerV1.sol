@@ -35,39 +35,39 @@ interface IERC20 {
 
 contract BrokerV1 {
     struct Booking {
-        uint64 index; //TODO: change all indexes to uint24
-        uint64 vmTypeId; //TODO: change vm type id to uint24
+        uint24 index; //TODO: change all indexes to uint24
+        uint24 vmTypeId; //TODO: change vm type id to uint24
         address miner;
         address user;
-        uint64 pricePerSecond; //TODO: change pps to uint24
+        uint24 pricePerSecond; //TODO: change pps to uint24
         uint256 bookedAt; //TODO: change timestamp to uint48
         uint256 lastPayment; //TODO: change timestamp to uint48
-        uint64 offerIndex; //TODO: change all indexes to uint24
+        uint24 offerIndex; //TODO: change all indexes to uint24
     }
 
     //TODO: try rearranging fields to optimize gas usage
     struct Offer {
-        uint64 index; //TODO: change all indexes to uint24
+        uint24 index; //TODO: change all indexes to uint24
         address miner;
-        uint64 pricePerSecond; //TODO: change pps to uint24
-        uint64 machinesAvailable; //TODO: change to uint16
-        uint64 vmTypeId; //TODO: change all indexes to uint24
+        uint24 pricePerSecond; //TODO: change pps to uint24
+        uint16 machinesAvailable; //TODO: change to uint16
+        uint24 vmTypeId; //TODO: change all indexes to uint24
         bytes32 specsIpfsHash;
     }
 
     //TODO: try optimizing into an array. will it save any gas?
-    mapping(uint64 => Offer) offers; //TODO: change all indexes to uint24
-    uint64 nextVmOfferId;
+    mapping(uint24 => Offer) offers; //TODO: change all indexes to uint24
+    uint24 nextVmOfferId;
 
     //TODO: try optimizing into an array. will it save any gas?
-    mapping(uint64 => Booking) bookings; //TODO: change all indexes to uint24
-    uint64 nextBookingId;
+    mapping(uint24 => Booking) bookings; //TODO: change all indexes to uint24
+    uint24 nextBookingId;
 
     //TODO: change all indexes to uint24
     mapping(address => uint256) coinBalance;
 
     //TODO: change user total pps to uint32 (uint 24 maxes out on $43m/month)
-    mapping(address => uint64) userTotalPps;
+    mapping(address => uint32) userTotalPps;
 
     mapping(address => bytes32) minerUrls;
 
@@ -99,8 +99,8 @@ contract BrokerV1 {
     //02_offers
 
     function AddOffer(
-        uint64 pricePerSecond,
-        uint64 machinesAvailable,
+        uint24 pricePerSecond,
+        uint16 machinesAvailable,
         bytes32 specsIpfsHash
     ) public returns (uint64) {
         offers[nextVmOfferId] = Offer(
@@ -116,9 +116,9 @@ contract BrokerV1 {
     }
 
     function UpdateOffer(
-        uint64 offerIndex,
-        uint64 machinesAvailable,
-        uint64 pps
+        uint24 offerIndex,
+        uint16 machinesAvailable,
+        uint24 pps
     ) public {
         require(
             offers[offerIndex].miner == msg.sender,
@@ -128,7 +128,7 @@ contract BrokerV1 {
         offers[offerIndex].pricePerSecond = pps;
     }
 
-    function RemoveOffer(uint64 offerIndex) public {
+    function RemoveOffer(uint24 offerIndex) public {
         require(
             offers[offerIndex].miner == msg.sender,
             "Only the owner can remove an offer"
@@ -140,8 +140,8 @@ contract BrokerV1 {
         address miner
     ) public view returns (Offer[] memory filteredOffers) {
         Offer[] memory offersTemp = new Offer[](nextVmOfferId);
-        uint64 count;
-        for (uint64 i = 0; i < nextVmOfferId; i++) {
+        uint24 count;
+        for (uint24 i = 0; i < nextVmOfferId; i++) {
             if (offers[i].miner == miner) {
                 offersTemp[count] = offers[i];
                 count += 1;
@@ -149,7 +149,7 @@ contract BrokerV1 {
         }
 
         filteredOffers = new Offer[](count);
-        for (uint64 i = 0; i < count; i++) {
+        for (uint24 i = 0; i < count; i++) {
             filteredOffers[i] = offersTemp[i];
         }
     }
@@ -160,8 +160,8 @@ contract BrokerV1 {
         returns (Offer[] memory filteredOffers)
     {
         Offer[] memory offersTemp = new Offer[](nextVmOfferId);
-        uint64 count;
-        for (uint64 i = 0; i < nextVmOfferId; i++) {
+        uint24 count;
+        for (uint24 i = 0; i < nextVmOfferId; i++) {
             if (offers[i].machinesAvailable > 0) {
                 offersTemp[count] = offers[i];
                 count += 1;
@@ -169,13 +169,13 @@ contract BrokerV1 {
         }
 
         filteredOffers = new Offer[](count);
-        for (uint64 i = 0; i < count; i++) {
+        for (uint24 i = 0; i < count; i++) {
             filteredOffers[i] = offersTemp[i];
         }
     }
 
     function GetOffer(
-        uint64 index
+        uint24 index
     ) public view returns (Offer memory oneOffer) {
         oneOffer = offers[index];
     }
@@ -228,7 +228,7 @@ contract BrokerV1 {
 
     //04_bookings
 
-    function Book(uint64 offerIndex) public returns (uint64) {
+    function Book(uint24 offerIndex) public returns (uint64) {
         require(
             offers[offerIndex].machinesAvailable > 0,
             "No machines available"
@@ -263,14 +263,14 @@ contract BrokerV1 {
         return nextBookingId - 1;
     }
 
-    function _executeBookingDelete(uint64 bookingId) private {
+    function _executeBookingDelete(uint24 bookingId) private {
         offers[bookings[bookingId].offerIndex].machinesAvailable += 1;
         userTotalPps[bookings[bookingId].user] -= bookings[bookingId]
             .pricePerSecond;
         delete bookings[bookingId];
     }
 
-    function Terminate(uint64 bookingId, uint8 reason) public {
+    function Terminate(uint24 bookingId, uint8 reason) public {
         require(
             bookings[bookingId].user == msg.sender,
             "Only the user can stop a VM"
@@ -288,7 +288,7 @@ contract BrokerV1 {
         _executeBookingDelete(bookingId);
     }
 
-    function ClaimPayment(uint64 bookingId) public {
+    function ClaimPayment(uint24 bookingId) public {
         require(
             bookings[bookingId].miner == msg.sender,
             "Only the miner can claim a payment"
@@ -299,7 +299,7 @@ contract BrokerV1 {
         }
     }
 
-    function _executeClaimPayment(uint64 bookingId) private returns (bool) {
+    function _executeClaimPayment(uint24 bookingId) private returns (bool) {
         bool enoughMoney = true;
         uint256 timeUsed = block.timestamp - bookings[bookingId].lastPayment;
 
@@ -331,8 +331,8 @@ contract BrokerV1 {
         address _owner
     ) public view returns (Booking[] memory filteredBookings) {
         Booking[] memory bookingsTemp = new Booking[](nextBookingId);
-        uint64 count;
-        for (uint64 i = 0; i < nextBookingId; i++) {
+        uint24 count;
+        for (uint24 i = 0; i < nextBookingId; i++) {
             if (bookings[i].user == _owner) {
                 bookingsTemp[count] = bookings[i];
                 count += 1;
@@ -340,7 +340,7 @@ contract BrokerV1 {
         }
 
         filteredBookings = new Booking[](count);
-        for (uint64 i = 0; i < count; i++) {
+        for (uint24 i = 0; i < count; i++) {
             filteredBookings[i] = bookingsTemp[i];
         }
     }
@@ -349,8 +349,8 @@ contract BrokerV1 {
         address _miner
     ) public view returns (Booking[] memory filteredBookings) {
         Booking[] memory bookingsTemp = new Booking[](nextBookingId);
-        uint64 count;
-        for (uint64 i = 0; i < nextBookingId; i++) {
+        uint24 count;
+        for (uint24 i = 0; i < nextBookingId; i++) {
             if (bookings[i].miner == _miner) {
                 bookingsTemp[count] = bookings[i];
                 count += 1;
@@ -358,13 +358,13 @@ contract BrokerV1 {
         }
 
         filteredBookings = new Booking[](count);
-        for (uint64 i = 0; i < count; i++) {
+        for (uint24 i = 0; i < count; i++) {
             filteredBookings[i] = bookingsTemp[i];
         }
     }
 
     function GetBooking(
-        uint64 index
+        uint24 index
     ) public view returns (Booking memory booking) {
         booking = bookings[index];
     }
