@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { deployBrokerFixture, offerFromRaw, exampleSpecBytes } from './fixtures'
+import { deployBrokerFixture, exampleSpecBytes } from './fixtures'
 
 describe("BrokerV1_offers", function () {
     describe("AddOffers", function () {
@@ -26,11 +26,11 @@ describe("BrokerV1_offers", function () {
             await broker.UpdateOffer(0, 11, 3)
 
             const offersRaw = await broker.GetAvailableOffers();
-            const offersObj = offersRaw.map(offerFromRaw)
-            const updatedOffer = offersObj.find(({ Index }) => Index === 0)
+            const offersObj = offersRaw
+            const updatedOffer = offersObj.find(({ index }) => index === 0)
 
-            expect(updatedOffer?.Availablility).is.equal(11)
-            expect(updatedOffer?.PPS).is.equal(3)
+            expect(updatedOffer?.machinesAvailable).is.equal(11)
+            expect(updatedOffer?.pricePerSecond).is.equal(3)
         });
 
         it("should revert if offer belongs to another account", async function () {
@@ -51,8 +51,8 @@ describe("BrokerV1_offers", function () {
             await broker.RemoveOffer(1)
 
             const offersRaw = await broker.GetAvailableOffers();
-            const offersObj = offersRaw.map(offerFromRaw)
-            const deletedOffer = offersObj.find(({ Index }) => Index === 1)
+            const offersObj = offersRaw
+            const deletedOffer = offersObj.find(({ index }) => index === 1)
 
             expect(deletedOffer).undefined
         });
@@ -71,7 +71,7 @@ describe("BrokerV1_offers", function () {
             await broker.AddOffer(2, 10, exampleSpecBytes)
             await broker.AddOffer(3, 10, exampleSpecBytes)
 
-            const offers = (await broker.GetAvailableOffers()).map(offerFromRaw)
+            const offers = (await broker.GetAvailableOffers())
 
             expect(offers.length).to.equal(2)
         });
@@ -81,7 +81,7 @@ describe("BrokerV1_offers", function () {
             await broker.AddOffer(2, 10, exampleSpecBytes)
             await broker.AddOffer(3, 0, exampleSpecBytes)
 
-            const offers = (await broker.GetAvailableOffers()).map(offerFromRaw)
+            const offers = (await broker.GetAvailableOffers())
 
             expect(offers.length).to.equal(1)
         });
@@ -94,7 +94,7 @@ describe("BrokerV1_offers", function () {
             await broker.connect(user).AddOffer(3, 10, exampleSpecBytes)
 
             const offers = (await broker.GetMinersOffers(miner.address))
-                .map(offerFromRaw)
+
 
             expect(offers.length).to.equal(1)
         });
@@ -105,7 +105,7 @@ describe("BrokerV1_offers", function () {
             await broker.connect(miner).AddOffer(2, 0, exampleSpecBytes)
 
             const offers = (await broker.GetMinersOffers(miner.address))
-                .map(offerFromRaw)
+
 
             expect(offers.length).to.equal(2)
         });

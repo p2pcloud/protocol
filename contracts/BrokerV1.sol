@@ -35,9 +35,9 @@ interface IERC20 {
 
 contract BrokerV1 {
     struct Booking {
-        uint24 index; //TODO: change all indexes to uint24
-        uint24 offerIndex; //TODO: change all indexes to uint24
-        uint24 pricePerSecond; //TODO: change pps to uint24
+        uint24 index;
+        uint24 offerIndex;
+        uint24 pricePerSecond;
         uint256 bookedAt; //TODO: change timestamp to uint48
         uint256 lastPayment; //TODO: change timestamp to uint48
         address miner;
@@ -46,23 +46,22 @@ contract BrokerV1 {
 
     //TODO: try rearranging fields to optimize gas usage
     struct Offer {
-        uint24 index; //TODO: change all indexes to uint24
-        address miner;
-        uint24 pricePerSecond; //TODO: change pps to uint24
+        uint24 index;
+        uint24 pricePerSecond;
         uint16 machinesAvailable; //TODO: change to uint16
-        uint24 vmTypeId; //TODO: change all indexes to uint24
+        uint24 vmTypeId;
         bytes32 specsIpfsHash;
+        address miner;
     }
 
     //TODO: try optimizing into an array. will it save any gas?
-    mapping(uint24 => Offer) offers; //TODO: change all indexes to uint24
+    mapping(uint24 => Offer) offers;
     uint24 nextVmOfferId;
 
     //TODO: try optimizing into an array. will it save any gas?
-    mapping(uint24 => Booking) bookings; //TODO: change all indexes to uint24
+    mapping(uint24 => Booking) bookings;
     uint24 nextBookingId;
 
-    //TODO: change all indexes to uint24
     mapping(address => uint256) coinBalance;
 
     //TODO: change user total pps to uint32 (uint 24 maxes out on $43m/month)
@@ -104,11 +103,11 @@ contract BrokerV1 {
     ) public returns (uint64) {
         offers[nextVmOfferId] = Offer(
             nextVmOfferId,
-            msg.sender,
             pricePerSecond,
             machinesAvailable,
             0,
-            specsIpfsHash
+            specsIpfsHash,
+            msg.sender
         );
         nextVmOfferId++;
         return nextVmOfferId - 1;
@@ -392,54 +391,8 @@ contract BrokerV1 {
         return false;
     }
 
-    // //TODO: compatibility layer. please remove after December 15th 2022
-    // function getStablecoinAddress() public view returns (address) {
-    //     return address(coin);
-    // }
-
-    // function GetStablecoinBalance(address user)
-    //     public
-    //     view
-    //     returns (uint256, uint256)
-    // {
-    //     return GetCoinBalance(user);
-    // }
-
-    // function DepositStablecoin(uint256 numTokens) public returns (bool) {
-    //     return DepositCoin(numTokens);
-    // }
-
-    // function WithdrawStablecoin(uint256 amt) public returns (bool) {
-    //     return WithdrawCoin(amt);
-    // }
-
-    // function GetUsersBookings(address user)
-    //     public
-    //     view
-    //     returns (Booking[] memory filteredBookings)
-    // {
-    //     return FindBookingsByUser(user);
-    // }
-
-    // function setMunerUrl(bytes32 url) public {
-    //     SetMinerUrl(url);
-    // }
-
-    // function getMinerUrl(address _user) public view returns (bytes32) {
-    //     return GetMinerUrl(_user);
-    // }
-
-    // function BookVM(uint64 offerIndex) public returns (uint64) {
-    //     return Book(offerIndex);
-    // }
-
-    // function StopVM(uint64 bookingId, uint8 reason) public {
-    //     Terminate(bookingId, reason);
-    // }
-
     function GetTime() public view returns (uint256) {
+        //TODO: remove. Test function only
         return block.timestamp;
     }
-
-    //end of compatibility layer
 }

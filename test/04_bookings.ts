@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
-import { brokerWithFiveOffers, brokerWithOfferAndUserBalance, deployBrokerFixture, offerFromRaw, OffersItem } from './fixtures'
+import { brokerWithFiveOffers, brokerWithOfferAndUserBalance, deployBrokerFixture, OffersItem } from './fixtures'
 import { BN } from "bn.js";
 
 describe("BrokerV1_bookings", function () {
@@ -29,18 +29,18 @@ describe("BrokerV1_bookings", function () {
 
             const pps = 10
             await broker.connect(miner).AddOffer(pps, 1, Array(32).fill(0))
-            const offers = (await broker.GetAvailableOffers()).map(offerFromRaw)
+            const offers = (await broker.GetAvailableOffers())
             const lastOffer = offers[offers.length - 1]
 
             const moneyNeeded = pps * 3600 * 24 * 7
 
             //less than needed
             await broker.connect(user).DepositCoin(moneyNeeded - 1)
-            await expect(broker.connect(user).Book(lastOffer.Index)).to.be.reverted
+            await expect(broker.connect(user).Book(lastOffer.index)).to.be.reverted
 
             //more than needed
             await broker.connect(user).DepositCoin(2)
-            await expect(broker.connect(user).Book(lastOffer.Index)).to.not.be.reverted
+            await expect(broker.connect(user).Book(lastOffer.index)).to.not.be.reverted
 
         });
         it("should increase locked coin balance", async function () {
@@ -48,13 +48,13 @@ describe("BrokerV1_bookings", function () {
 
             const pps = 10
             await broker.connect(miner).AddOffer(pps, 1, Array(32).fill(0))
-            const offers = (await broker.GetAvailableOffers()).map(offerFromRaw)
+            const offers = (await broker.GetAvailableOffers())
             const lastOffer = offers[offers.length - 1]
 
             const [free, locked] = await broker.GetCoinBalance(user.address)
             expect(locked.toString()).to.equal('0')
 
-            await broker.connect(user).Book(lastOffer.Index)
+            await broker.connect(user).Book(lastOffer.index)
 
             const [free2, locked2] = await broker.GetCoinBalance(user.address)
             expect(locked2.toString()).to.equal((pps * 3600 * 24 * 7).toString())
@@ -64,24 +64,24 @@ describe("BrokerV1_bookings", function () {
 
             await broker.connect(miner).AddOffer(1, 10, Array(32).fill(0))
 
-            let offers = (await broker.GetAvailableOffers()).map(offerFromRaw)
-            let lastOfferId = offers[offers.length - 1].Index
+            let offers = (await broker.GetAvailableOffers())
+            let lastOfferId = offers[offers.length - 1].index
 
-            let offer = offerFromRaw(await broker.GetOffer(lastOfferId))
-            expect(offer.Availablility).to.equal(10)
+            let offer = await broker.GetOffer(lastOfferId)
+            expect(offer.machinesAvailable).to.equal(10)
 
-            await broker.connect(user).Book(offer.Index)
+            await broker.connect(user).Book(offer.index)
 
-            offer = offerFromRaw(await broker.GetOffer(lastOfferId))
-            expect(offer.Availablility).to.equal(9)
+            offer = await broker.GetOffer(lastOfferId)
+            expect(offer.machinesAvailable).to.equal(9)
         });
         it("should revert if no machines available", async function () {
             const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
             await broker.connect(miner).AddOffer(1, 1, Array(32).fill(0))
 
-            let offers = (await broker.GetAvailableOffers()).map(offerFromRaw)
-            let lastOfferId = offers[offers.length - 1].Index
+            let offers = (await broker.GetAvailableOffers())
+            let lastOfferId = offers[offers.length - 1].index
 
             //first ok
             await expect(broker.connect(user).Book(lastOfferId)).to.not.be.reverted
@@ -134,20 +134,20 @@ describe("BrokerV1_bookings", function () {
 
             await broker.connect(user).Book(0)
 
-            let offer = offerFromRaw(await broker.GetOffer(0))
-            const initialMachinesAvailable = offer.Availablility
+            let offer = await broker.GetOffer(0)
+            const initialMachinesAvailable = offer.machinesAvailable
 
             await broker.connect(user).Terminate(0, REASON)
-            offer = offerFromRaw(await broker.GetOffer(0))
+            offer = await broker.GetOffer(0)
 
-            expect(offer.Availablility).is.equal(initialMachinesAvailable + 1)
+            expect(offer.machinesAvailable).is.equal(initialMachinesAvailable + 1)
         });
         it("should execute payment", async function () {
             const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 
             const SECONDS = 3600 * 24
             const OFFER_ID = 3
-            const PPS = offerFromRaw(await broker.GetOffer(OFFER_ID)).PPS
+            const PPS = (await broker.GetOffer(OFFER_ID)).pricePerSecond
 
             const [minerBalanceFree,] = await broker.GetCoinBalance(miner.address)
             expect(minerBalanceFree.toString()).to.equal('0')
@@ -224,7 +224,7 @@ describe("BrokerV1_bookings", function () {
             const FEE = 500//5%
             const SECONDS = 3600 * 24
             const OFFER_ID = 2
-            const PPS = offerFromRaw(await broker.GetOffer(OFFER_ID)).PPS
+            const PPS = (await broker.GetOffer(OFFER_ID)).pricePerSecond
 
             // Contract settings
             await broker.SetCommunityFee(FEE)

@@ -2,7 +2,7 @@ import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { BN } from "bn.js";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { deployBrokerFixture, OffersItem, offerFromRaw, brokerWithOfferAndUserBalance, brokerWithFiveOffers } from './fixtures'
+import { deployBrokerFixture, OffersItem, brokerWithOfferAndUserBalance, brokerWithFiveOffers } from './fixtures'
 
 describe("BrokerV1_community", function () {
     describe("SetCommunityAddress", function () {
@@ -62,7 +62,7 @@ describe("BrokerV1_community", function () {
 
                 const SECONDS = 3600 * 24
                 const OFFER_ID = 4
-                const PPS = offerFromRaw(await broker.GetOffer(OFFER_ID)).PPS
+                const PPS = (await broker.GetOffer(OFFER_ID)).pricePerSecond
 
                 // Contract settings
                 await broker.SetCommunityFee(FEE)

@@ -65,17 +65,6 @@ export async function brokerWithOfferAndUserBalance(): Promise<Fixture> {
     return fixture
 }
 
-export function offerFromRaw(offerRaw: any[]) {
-    const [Index, Miner, PPS, Availablility, VmTypeId] = offerRaw
-
-    return {
-        VmTypeId: toNumber(VmTypeId),
-        PPS: toNumber(PPS),
-        Availablility: toNumber( Availablility),
-        Miner: Miner,
-        Index: toNumber(Index),
-    }
-}
 
 function toNumber(val: BigNumber | number) {
     if (typeof val === 'number') {

@@ -58,27 +58,27 @@ export declare namespace BrokerV1 {
 
   export type OfferStruct = {
     index: PromiseOrValue<BigNumberish>;
-    miner: PromiseOrValue<string>;
     pricePerSecond: PromiseOrValue<BigNumberish>;
     machinesAvailable: PromiseOrValue<BigNumberish>;
     vmTypeId: PromiseOrValue<BigNumberish>;
     specsIpfsHash: PromiseOrValue<BytesLike>;
+    miner: PromiseOrValue<string>;
   };
 
   export type OfferStructOutput = [
     number,
+    number,
+    number,
+    number,
     string,
-    number,
-    number,
-    number,
     string
   ] & {
     index: number;
-    miner: string;
     pricePerSecond: number;
     machinesAvailable: number;
     vmTypeId: number;
     specsIpfsHash: string;
+    miner: string;
   };
 }
 
