@@ -1,6 +1,6 @@
 import { ethers, upgrades } from "hardhat";
 
-const PROXY_ADDRESS = "0x751572bE5Ce0730829e4Ae99D70C0dAAD6D2E291";
+let PROXY_ADDRESS = "0x0a1B15B5ce08532114c09Ff9df2a9e7b15C9Ab1e";
 
 async function main() {
     if (PROXY_ADDRESS === "") {
