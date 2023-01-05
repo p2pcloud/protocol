@@ -60,23 +60,14 @@ export declare namespace BrokerV1 {
     index: PromiseOrValue<BigNumberish>;
     pricePerSecond: PromiseOrValue<BigNumberish>;
     machinesAvailable: PromiseOrValue<BigNumberish>;
-    vmTypeId: PromiseOrValue<BigNumberish>;
     specsIpfsHash: PromiseOrValue<BytesLike>;
     miner: PromiseOrValue<string>;
   };
 
-  export type OfferStructOutput = [
-    number,
-    number,
-    number,
-    number,
-    string,
-    string
-  ] & {
+  export type OfferStructOutput = [number, number, number, string, string] & {
     index: number;
     pricePerSecond: number;
     machinesAvailable: number;
-    vmTypeId: number;
     specsIpfsHash: string;
     miner: string;
   };
@@ -84,27 +75,27 @@ export declare namespace BrokerV1 {
 
 export interface BrokerV1Interface extends utils.Interface {
   functions: {
-    "AddOffer(uint24,uint16,bytes32)": FunctionFragment;
-    "Book(uint24)": FunctionFragment;
-    "ClaimPayment(uint24)": FunctionFragment;
+    "AddOffer(uint32,uint16,bytes32)": FunctionFragment;
+    "Book(uint32)": FunctionFragment;
+    "ClaimPayment(uint32)": FunctionFragment;
     "DepositCoin(uint256)": FunctionFragment;
     "FindBookingsByMiner(address)": FunctionFragment;
     "FindBookingsByUser(address)": FunctionFragment;
     "GetAvailableOffers()": FunctionFragment;
-    "GetBooking(uint24)": FunctionFragment;
+    "GetBooking(uint32)": FunctionFragment;
     "GetCoinBalance(address)": FunctionFragment;
     "GetMinerUrl(address)": FunctionFragment;
     "GetMinersOffers(address)": FunctionFragment;
-    "GetOffer(uint24)": FunctionFragment;
+    "GetOffer(uint32)": FunctionFragment;
     "GetTime()": FunctionFragment;
-    "RemoveOffer(uint24)": FunctionFragment;
+    "RemoveOffer(uint32)": FunctionFragment;
     "SECONDS_IN_WEEK()": FunctionFragment;
     "SetCoinAddress(address)": FunctionFragment;
     "SetCommunityContract(address)": FunctionFragment;
-    "SetCommunityFee(uint64)": FunctionFragment;
+    "SetCommunityFee(uint16)": FunctionFragment;
     "SetMinerUrl(bytes32)": FunctionFragment;
-    "Terminate(uint24,uint8)": FunctionFragment;
-    "UpdateOffer(uint24,uint16,uint24)": FunctionFragment;
+    "Terminate(uint32,uint8)": FunctionFragment;
+    "UpdateOffer(uint32,uint16,uint32)": FunctionFragment;
     "WithdrawCoin(uint256)": FunctionFragment;
     "coin()": FunctionFragment;
     "communityContract()": FunctionFragment;
@@ -515,7 +506,7 @@ export interface BrokerV1 extends BaseContract {
 
     communityContract(overrides?: CallOverrides): Promise<[string]>;
 
-    communityFee(overrides?: CallOverrides): Promise<[BigNumber]>;
+    communityFee(overrides?: CallOverrides): Promise<[number]>;
   };
 
   AddOffer(
@@ -630,7 +621,7 @@ export interface BrokerV1 extends BaseContract {
 
   communityContract(overrides?: CallOverrides): Promise<string>;
 
-  communityFee(overrides?: CallOverrides): Promise<BigNumber>;
+  communityFee(overrides?: CallOverrides): Promise<number>;
 
   callStatic: {
     AddOffer(
@@ -638,12 +629,12 @@ export interface BrokerV1 extends BaseContract {
       machinesAvailable: PromiseOrValue<BigNumberish>,
       specsIpfsHash: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    ): Promise<number>;
 
     Book(
       offerIndex: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<BigNumber>;
+    ): Promise<number>;
 
     ClaimPayment(
       bookingId: PromiseOrValue<BigNumberish>,
@@ -745,7 +736,7 @@ export interface BrokerV1 extends BaseContract {
 
     communityContract(overrides?: CallOverrides): Promise<string>;
 
-    communityFee(overrides?: CallOverrides): Promise<BigNumber>;
+    communityFee(overrides?: CallOverrides): Promise<number>;
   };
 
   filters: {
