@@ -21,13 +21,19 @@ const config: HardhatUserConfig = {
 
 if (process.env.HARDAT_PRIVATE_KEY) {
     const fuji = {
-        url: process.env.HARDAT_FUJI_ENDPOINT,
+        url: "https://api.avax-test.network/ext/bc/C/rpc",
         accounts: [process.env.HARDAT_PRIVATE_KEY || ""]
     }
     if (config.networks) {
         config.networks.fuji_testnet = fuji;
         config.networks.fuji_staging = fuji;
+
+        config.networks.ava_mainnet = {
+            url: "https://api.avax.network/ext/bc/C/rpc",
+            accounts: [process.env.HARDAT_PRIVATE_KEY || ""]
+        }
     }
+
 }
 
 export default config;
