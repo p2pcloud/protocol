@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { deployBrokerFixture, OffersItem, brokerWithOfferAndUserBalance, brokerWithFiveOffers } from './fixtures'
 
-describe("BrokerV1_community", function () {
+describe("Broker_community", function () {
     describe("SetCommunityAddress", function () {
         it("should set community address if address is address(0)", async function () {
             const { broker, user, admin } = await loadFixture(deployBrokerFixture);
@@ -54,7 +54,7 @@ describe("BrokerV1_community", function () {
             await expect(broker.connect(admin).SetCommunityFee(2499)).to.not.be.reverted
             await expect(broker.connect(admin).SetCommunityFee(2500)).to.be.reverted
         });
-        //FIXME: by some reason this test fails without .only
+        //FIXME: by some reason this test fails without 
         //it says: This might be caused by using nested loadFixture calls in a test, for example by using multiple beforeEach calls. This is not supported yet.
         it.skip("should change amount of fee paid in ClaimPament ", async function () {
             for (let FEE of [0, 10, 100]) {

@@ -3,12 +3,12 @@ import { ethers, upgrades } from "hardhat";
 import type { Contract, BigNumberish, BytesLike } from "ethers";
 import { BigNumber } from "ethers";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import type { BrokerV1, Token } from "../typechain-types";
+import type { BrokerV2, Token, BrokerV1 } from "../typechain-types";
 import { PromiseOrValue } from "../typechain-types/common";
 import bs58 from 'bs58'
 
 export type Fixture = {
-    broker: BrokerV1,
+    broker: BrokerV2,
     token: Token
     miner: SignerWithAddress,
     user: SignerWithAddress,
@@ -34,17 +34,27 @@ export async function deployBrokerFixture(): Promise<Fixture> {
     return await _deployBrokerFixture()
 }
 
+
 async function _deployBrokerFixture(): Promise<Fixture> {
     const [admin, miner, user, anotherUser] = await ethers.getSigners();
 
-    const Broker = await ethers.getContractFactory("BrokerV1");
-    const broker = await upgrades.deployProxy(Broker) as BrokerV1;
+    const BrokerV1Contract = await ethers.getContractFactory("BrokerV1");
+    const brokerOld = await upgrades.deployProxy(BrokerV1Contract) as BrokerV1;
 
     const Token = await ethers.getContractFactory("Token");
     const token = await Token.connect(admin).deploy('10000000000000000000000');
 
-    await broker.SetCommunityContract(admin.address)
-    await broker.SetCoinAddress(token.address)
+    await brokerOld.SetCommunityContract(admin.address)
+    await brokerOld.SetCoinAddress(token.address)
+
+    const BrokerV2Contract = await ethers.getContractFactory("BrokerV2");
+    const broker = await upgrades.upgradeProxy(brokerOld.address, BrokerV2Contract) as BrokerV2;
+
+    const fee = await broker.MINER_REGISTRATION_FEE()
+    await token.connect(admin).transfer(miner.address, fee)
+    await token.connect(miner).increaseAllowance(broker.address, fee)
+    await broker.connect(miner).DepositCoin(fee)
+    await broker.connect(miner).RegisterMiner()
 
     return { broker, token, miner, user, admin, anotherUser };
 }

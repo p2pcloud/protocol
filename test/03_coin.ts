@@ -4,7 +4,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { deployBrokerFixture, brokerWithFiveOffers, brokerWithOfferAndUserBalance } from './fixtures'
 import { BigNumber } from "ethers";
 
-describe("BrokerV1_coin", function () {
+describe("Broker_coin", function () {
     describe("DepositCoin", function () {
         it("should incrase balance", async function () {
             const { broker, token, miner, user, admin } = await loadFixture(deployBrokerFixture);

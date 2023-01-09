@@ -4,7 +4,7 @@ import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { brokerWithFiveOffers, brokerWithOfferAndUserBalance, deployBrokerFixture, OffersItem } from './fixtures'
 import { BN } from "bn.js";
 
-describe("BrokerV1_bookings", function () {
+describe("Broker_bookings", function () {
     describe("Book", function () {
         it("should create a new booking", async function () {
             const { broker, token, miner, user, admin } = await loadFixture(brokerWithOfferAndUserBalance);
@@ -281,8 +281,10 @@ describe("BrokerV1_bookings", function () {
             const [initialMinerBalance] = await broker.GetCoinBalance(miner.address)
             const [initialCommunityBalance] = await broker.GetCoinBalance(admin.address)
 
+            const registrationFee = await broker.MINER_REGISTRATION_FEE()
+
             expect(initialMinerBalance.toString()).to.equal('0')
-            expect(initialCommunityBalance.toString()).to.equal('0')
+            expect(initialCommunityBalance.toString()).to.equal(registrationFee)
 
             await time.increase(SECONDS);
             await broker.connect(miner).ClaimPayment(0)
@@ -296,7 +298,7 @@ describe("BrokerV1_bookings", function () {
             expect(userBalance.toString()).to.equal(initialUserBalance.sub(totalCost).toString())
 
             const communityPayment = new BN(totalCost).mul(new BN(FEE)).div(new BN(10000))
-            expect(communityBalance.toString()).to.equal(communityPayment.toString())
+            expect(communityBalance).to.equal(registrationFee.add(communityPayment.toString()))
 
             const minerPayment = new BN(totalCost).sub(communityPayment)
             expect(minerBalance.toString()).to.equal(minerPayment.toString())
