@@ -45,6 +45,37 @@ describe("Broker_offers", function () {
 
             await expect(broker.connect(user).UpdateOffer(0, 0, 1)).to.be.reverted
         });
+
+        it("should revert if total is less than booked", async function () {
+            const { broker, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
+
+            await broker.connect(miner).AddOffer(2, 10, exampleSpecBytes)
+
+            let offerId = 0
+            let machines = 10
+            let pps = 1
+            await broker.connect(miner).UpdateOffer(offerId, machines, pps)
+
+            //book 3 machines
+            await broker.connect(user).Book(0)
+            await broker.connect(user).Book(0)
+            await broker.connect(user).Book(0)
+
+            //update to 2 machines: fail
+            machines = 2
+            await expect(broker.connect(miner).UpdateOffer(offerId, machines, pps)).to.be.reverted
+
+            //update to 3 machines: ok
+            machines = 3
+            await broker.connect(miner).UpdateOffer(offerId, machines, pps)
+
+            //terminate 1 machine and update to 2 machines: ok
+            await broker.connect(user).Terminate(0, 0)
+            machines = 2
+            await broker.connect(miner).UpdateOffer(offerId, machines, pps)
+
+        });
+
     })
     describe("RemoveOffer", function () {
         it("should remove offer", async function () {
