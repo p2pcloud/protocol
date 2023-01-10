@@ -10,9 +10,9 @@
         "run_in_docker": "docker build -t protocol_test . && docker run -v $(pwd)/artifacts:/app/artifacts protocol_test",
         "test:docker": "npm run run_in_docker -- npm test",
         "compile:docker": "npm run run_in_docker -- npm run compile",
-        "deploy:staging": "PROXY_ADDRESS='0x7A69374b3663559E9d70dFF9B916ee6A07F2c568' hardhat run scripts/deploy-broker.ts --network fuji_staging",
-        "deploy:testnet": "PROXY_ADDRESS='0xC28BbA15D87754aF82AbE82aD876Ea0df735506D' hardhat run scripts/deploy-broker.ts --network fuji_testnet",
-        "deploy:mainnet": "PROXY_ADDRESS='0x5A58EAB1d67c3C4e0F032Cd32F943AB602a73Da6' hardhat run scripts/deploy-broker.ts --network ava_mainnet"
+        "deploy:staging": "PROXY_ADDRESS='0x5dd4F8922D326a36619b03Fb1c8ee1F91ad7eA54' hardhat run scripts/deploy-broker.ts --network fuji_staging",
+        "deploy:testnet": "PROXY_ADDRESS='' hardhat run scripts/deploy-broker.ts --network fuji_testnet",
+        "deploy:mainnet": "PROXY_ADDRESS='' hardhat run scripts/deploy-broker.ts --network ava_mainnet"
     },
     "repository": {
         "type": "git",

@@ -12,10 +12,6 @@ artifacts
 *openzeppelin
 
 !typechain-types/common.ts
-!/typechain-types/contracts/BrokerV1.sol/**/*
-!/typechain-types/contracts/Broker.sol/**/*
-!artifacts/contracts/BrokerV1.sol/BrokerV1.json
-!artifacts/contracts/BrokerV1.sol/IERC20.json
 !artifacts/contracts/Broker.sol/Broker.json
 !artifacts/contracts/Broker.sol/IERC20.json
-!artifacts/contracts/Community.sol/Community.json
+!typechain-types/contracts/Broker.sol/*.ts
