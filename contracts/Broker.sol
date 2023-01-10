@@ -33,13 +33,13 @@ interface IERC20 {
 
 contract Broker {
     struct Booking {
+        address miner;
+        address user;
         uint32 index;
         uint32 offerIndex;
         uint32 pricePerSecond;
-        uint256 bookedAt; //TODO: change timestamp to uint48
-        uint256 lastPayment; //TODO: change timestamp to uint48
-        address miner;
-        address user;
+        uint32 bookedAt; //TODO: change timestamp to uint48
+        uint32 lastPayment; //TODO: change timestamp to uint48
     }
 
     //TODO: try rearranging fields to optimize gas usage
@@ -288,13 +288,13 @@ contract Broker {
         );
 
         Booking memory booking = Booking(
+            offers[offerIndex].miner,
+            msg.sender,
             nextBookingId,
             offerIndex,
             offers[offerIndex].pricePerSecond,
-            block.timestamp,
-            block.timestamp,
-            offers[offerIndex].miner,
-            msg.sender
+            uint32(block.timestamp),
+            uint32(block.timestamp)
         );
         bookings[nextBookingId] = booking;
         nextBookingId++;
@@ -366,7 +366,7 @@ contract Broker {
         uint256 communityPayout = (totalPayout * communityFee) / (100 * 100);
         uint256 minerPayout = totalPayout - communityPayout;
 
-        bookings[bookingId].lastPayment = block.timestamp;
+        bookings[bookingId].lastPayment = uint32(block.timestamp);
 
         coinBalance[communityContract] += communityPayout;
         coinBalance[bookings[bookingId].miner] += minerPayout;

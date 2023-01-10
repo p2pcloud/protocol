@@ -3,7 +3,7 @@ import { deployBrokerFixture } from './fixtures'
 import { randomBytes } from 'crypto'
 
 if (process.env.REPORT_GAS === "true") {
-    describe.only("Gas", function () {
+    describe("Gas", function () {
         it("books many VMs", async function () {
             const TOTAL_ROUNDS = 200
             const TOTAL_OFFERS = 10
