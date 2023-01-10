@@ -16,7 +16,7 @@ const config: HardhatUserConfig = {
             },
         },
     },
-    networks: {}
+    networks: {},
 };
 
 if (process.env.HARDAT_PRIVATE_KEY) {

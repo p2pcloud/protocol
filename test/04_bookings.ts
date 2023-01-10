@@ -1,8 +1,8 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
-import { brokerWithFiveOffers, brokerWithOfferAndUserBalance, deployBrokerFixture, OffersItem } from './fixtures'
+import { brokerWithFiveOffers, brokerWithOfferAndUserBalance, } from './fixtures'
 import { BN } from "bn.js";
+import { ethers } from "ethers";
 
 describe("Broker_bookings", function () {
     describe("Book", function () {
@@ -18,6 +18,17 @@ describe("Broker_bookings", function () {
 
             booked = await broker.connect(user).FindBookingsByUser(user.address)
             expect(booked.length).is.equal(1)
+        });
+
+        it("should emit NewBooking event", async function () {
+            const { broker, token, miner, user, admin } = await loadFixture(brokerWithOfferAndUserBalance);
+            const bookingId = 3
+
+            const pps = (await broker.GetOffer(bookingId)).pricePerSecond
+
+            await expect(broker.connect(user).Book(bookingId))
+                .to.emit(broker, 'NewBooking')
+                .withArgs(user.address, miner.address, 0, pps)
         });
 
         it("should revert if not enough free coin balance", async function () {
@@ -59,7 +70,7 @@ describe("Broker_bookings", function () {
             const [free2, locked2] = await broker.GetCoinBalance(user.address)
             expect(locked2.toString()).to.equal((pps * 3600 * 24 * 7).toString())
         });
-        it("should decrease machines available", async function () {
+        it("should increase machines booked", async function () {
             const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
             await broker.connect(miner).AddOffer(1, 10, Array(32).fill(0))
@@ -68,12 +79,12 @@ describe("Broker_bookings", function () {
             let lastOfferId = offers[offers.length - 1].index
 
             let offer = await broker.GetOffer(lastOfferId)
-            expect(offer.machinesAvailable).to.equal(10)
+            expect(offer.machinesBooked).to.equal(0)
 
             await broker.connect(user).Book(offer.index)
 
             offer = await broker.GetOffer(lastOfferId)
-            expect(offer.machinesAvailable).to.equal(9)
+            expect(offer.machinesBooked).to.equal(1)
         });
         it("should revert if no machines available", async function () {
             const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
@@ -127,7 +138,17 @@ describe("Broker_bookings", function () {
             booked = await broker.connect(user).FindBookingsByUser(user.address)
             expect(booked.length).is.equal(0)
         });
-        it("should increase machines available", async function () {
+        it("should emit Terminate event", async function () {
+            const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
+
+            await broker.connect(user).Book(0)
+
+            const REASON = 123
+            await expect(broker.connect(user).Terminate(0, REASON))
+                .to.emit(broker, 'Termination')
+                .withArgs(0, REASON);
+        });
+        it("should decrease machines booked", async function () {
             const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 
             const REASON = 0
@@ -135,12 +156,12 @@ describe("Broker_bookings", function () {
             await broker.connect(user).Book(0)
 
             let offer = await broker.GetOffer(0)
-            const initialMachinesAvailable = offer.machinesAvailable
+            const initialMachinesBooked = offer.machinesBooked
 
             await broker.connect(user).Terminate(0, REASON)
             offer = await broker.GetOffer(0)
 
-            expect(offer.machinesAvailable).is.equal(initialMachinesAvailable + 1)
+            expect(offer.machinesBooked).is.equal(initialMachinesBooked - 1)
         });
         it("should execute payment", async function () {
             const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
@@ -193,7 +214,7 @@ describe("Broker_bookings", function () {
             await broker.connect(user).Book(OFFER_ID)
             await time.increase(3600 * 24);
 
-            await broker.connect(admin).Terminate(0, 0)
+            await broker.connect(admin).Terminate(0, await broker.REASON_COMMUNITY_TERMINATED())
 
             const CORRECTION = 1//TODO: right now correction is 1 second
 
@@ -214,17 +235,6 @@ describe("Broker_bookings", function () {
             await expect(broker.connect(miner).Terminate(0, 3)).to.be.reverted
 
             await broker.connect(miner).Terminate(0, 2)
-        });
-
-        it("should throw exception for user if code equals 2", async function () {
-            const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
-            const OFFER_ID = 3
-
-            await broker.connect(user).Book(OFFER_ID)
-            await time.increase(3600 * 24);
-
-            await expect(broker.connect(user).Terminate(0, 2)).to.be.reverted
-            await broker.connect(user).Terminate(0, 1)
         });
     })
     describe("FindBookingsByUser", function () {
@@ -275,6 +285,38 @@ describe("Broker_bookings", function () {
             await time.increase(3600 * 24);
             expect(broker.connect(miner).ClaimPayment(0)).to.be.reverted
         });
+        it('should terminate booking if not enough deposit to pay for it', async function () {
+            const { broker, token, miner, admin, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
+
+            const FEE = 500//5%
+            const OFFER_ID = 2
+
+            // Contract settings
+            await broker.SetCommunityFee(FEE)
+            const pps = (await broker.GetOffer(OFFER_ID)).pricePerSecond
+            const [free, locked] = await broker.GetCoinBalance(user.address)
+            const seconds = free.div(pps).toNumber()
+
+            await broker.connect(user).Book(OFFER_ID)
+
+            //enough money, not terminated
+            await time.increase(seconds - 115);
+
+            await expect(broker.connect(miner).ClaimPayment(0))
+                .to.not.emit(broker, 'Termination')
+
+            const booking1 = await broker.GetBooking(0)
+            expect(booking1.miner).to.not.equal(ethers.constants.AddressZero)
+
+            //120 seconds later - enough
+            await time.increase(120);
+            await expect(broker.connect(miner).ClaimPayment(0))
+                .to.emit(broker, 'Termination')
+                .withArgs(0, await broker.REASON_NON_PAYMENT);
+
+            const booking2 = await broker.GetBooking(0)
+            expect(booking2.miner).to.equal(ethers.constants.AddressZero)
+        })
         it("should revert if user is not the miner of this booking", async function () {
             const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 

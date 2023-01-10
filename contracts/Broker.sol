@@ -31,9 +31,7 @@ interface IERC20 {
     ) external returns (bool);
 }
 
-//TODO: try rearranging fields to optimize gas usage
-
-contract BrokerV1 {
+contract Broker {
     struct Booking {
         uint32 index;
         uint32 offerIndex;
@@ -46,18 +44,17 @@ contract BrokerV1 {
 
     //TODO: try rearranging fields to optimize gas usage
     struct Offer {
+        address miner;
         uint32 index;
         uint32 pricePerSecond;
-        uint16 machinesAvailable; //TODO: change to uint16
         bytes32 specsIpfsHash;
-        address miner;
+        uint16 machinesTotal;
+        uint16 machinesBooked;
     }
 
-    //TODO: try optimizing into an array. will it save any gas?
     mapping(uint32 => Offer) offers;
     uint32 nextVmOfferId;
 
-    //TODO: try optimizing into an array. will it save any gas?
     mapping(uint32 => Booking) bookings;
     uint32 nextBookingId;
 
@@ -65,46 +62,90 @@ contract BrokerV1 {
 
     mapping(address => uint32) userTotalPps;
 
-    mapping(address => bytes32) minerUrls;
-
     IERC20 public coin;
 
     address public communityContract;
-    uint16 public communityFee; //TODO: change to uint16
+    uint16 public communityFee;
 
     uint64 public constant SECONDS_IN_WEEK = 604800;
 
     event Payment(address indexed user, address indexed miner, uint256 amount);
 
-    event Complaint(
+    event Termination(uint32 bookingIndex, uint16 indexed reason);
+
+    event NewBooking(
         address indexed user,
         address indexed miner,
-        uint8 indexed reason
+        uint32 bookingIndex,
+        uint32 pps
     );
+
+    struct MinerInfo {
+        bytes32 url;
+        bool isRegistered;
+        uint256 feePaid;
+    }
+
+    mapping(address => MinerInfo) minerInfo;
 
     //01_miner_url
 
     function SetMinerUrl(bytes32 url) public {
-        minerUrls[msg.sender] = url;
+        require(
+            minerInfo[msg.sender].isRegistered,
+            "Miner must be registered to set url"
+        );
+        minerInfo[msg.sender].url = url;
     }
 
     function GetMinerUrl(address _user) public view returns (bytes32) {
-        return minerUrls[_user];
+        return minerInfo[_user].url;
+    }
+
+    function IsMinerRegistered(address _user) public view returns (bool) {
+        return minerInfo[_user].isRegistered;
     }
 
     //02_offers
 
+    uint64 public constant MINER_REGISTRATION_FEE = 100 * 1000000;
+
+    function RegisterMiner() public {
+        uint256 freeBalance = coinBalance[msg.sender] -
+            GetLockedCoinBalance(msg.sender);
+        require(
+            freeBalance >= MINER_REGISTRATION_FEE,
+            "Not enough coin to register "
+        );
+        require(
+            !minerInfo[msg.sender].isRegistered,
+            "Miner is already registered"
+        );
+
+        coinBalance[msg.sender] -= MINER_REGISTRATION_FEE;
+        coinBalance[communityContract] += MINER_REGISTRATION_FEE;
+
+        minerInfo[msg.sender].isRegistered = true;
+        minerInfo[msg.sender].feePaid += MINER_REGISTRATION_FEE;
+    }
+
     function AddOffer(
         uint32 pricePerSecond,
-        uint16 machinesAvailable,
+        uint16 machinesTotal,
         bytes32 specsIpfsHash
     ) public returns (uint32) {
+        require(
+            minerInfo[msg.sender].isRegistered,
+            "Miner must be registered to add offers"
+        );
+
         offers[nextVmOfferId] = Offer(
+            msg.sender,
             nextVmOfferId,
             pricePerSecond,
-            machinesAvailable,
             specsIpfsHash,
-            msg.sender
+            machinesTotal,
+            0
         );
         nextVmOfferId++;
         return nextVmOfferId - 1;
@@ -112,14 +153,18 @@ contract BrokerV1 {
 
     function UpdateOffer(
         uint32 offerIndex,
-        uint16 machinesAvailable,
+        uint16 machinesTotal,
         uint32 pps
     ) public {
         require(
             offers[offerIndex].miner == msg.sender,
             "Only the owner can update an offer"
         );
-        offers[offerIndex].machinesAvailable = machinesAvailable;
+        require(
+            offers[offerIndex].machinesBooked <= machinesTotal,
+            "Cannot reduce machinesTotal below machinesBooked"
+        );
+        offers[offerIndex].machinesTotal = machinesTotal;
         offers[offerIndex].pricePerSecond = pps;
     }
 
@@ -127,6 +172,10 @@ contract BrokerV1 {
         require(
             offers[offerIndex].miner == msg.sender,
             "Only the owner can remove an offer"
+        );
+        require(
+            offers[offerIndex].machinesBooked == 0,
+            "Cannot remove an offer with booked machines"
         );
         delete offers[offerIndex];
     }
@@ -157,7 +206,7 @@ contract BrokerV1 {
         Offer[] memory offersTemp = new Offer[](nextVmOfferId);
         uint32 count;
         for (uint32 i = 0; i < nextVmOfferId; i++) {
-            if (offers[i].machinesAvailable > 0) {
+            if (offers[i].machinesTotal > offers[i].machinesBooked) {
                 offersTemp[count] = offers[i];
                 count += 1;
             }
@@ -212,20 +261,20 @@ contract BrokerV1 {
         return true;
     }
 
-    //TODO: needed named returns (uint256 free, uint256 locked) for true order in ABI compile
     function GetCoinBalance(
         address user
-    ) public view returns (uint256, uint256) {
-        // TODO: maybe need guard require( msg.sender == address )
-        uint256 locked = GetLockedCoinBalance(user);
-        return (coinBalance[user] - locked, locked);
+    ) public view returns (uint256 free, uint256 locked) {
+        locked = GetLockedCoinBalance(user);
+        free = coinBalance[user] - locked;
+        return (free, locked);
     }
 
     //04_bookings
 
     function Book(uint32 offerIndex) public returns (uint32) {
         require(
-            offers[offerIndex].machinesAvailable > 0,
+            offers[offerIndex].machinesTotal >
+                offers[offerIndex].machinesBooked,
             "No machines available"
         );
 
@@ -252,35 +301,44 @@ contract BrokerV1 {
 
         userTotalPps[msg.sender] += offers[offerIndex].pricePerSecond;
 
-        offers[offerIndex].machinesAvailable -= 1;
+        offers[offerIndex].machinesBooked += 1;
+
+        emit NewBooking(
+            msg.sender, // address indexed user,
+            offers[offerIndex].miner, // address indexed miner,
+            nextBookingId - 1, // uint32 bookingIndex,
+            offers[offerIndex].pricePerSecond // uint32 pps
+        );
 
         return nextBookingId - 1;
     }
 
-    function _executeBookingDelete(uint32 bookingId) private {
-        offers[bookings[bookingId].offerIndex].machinesAvailable += 1;
+    function _executeBookingDelete(uint32 bookingId, uint16 reason) private {
+        offers[bookings[bookingId].offerIndex].machinesBooked -= 1;
         userTotalPps[bookings[bookingId].user] -= bookings[bookingId]
             .pricePerSecond;
+
+        emit Termination(bookingId, reason);
+
         delete bookings[bookingId];
     }
 
-    function Terminate(uint32 bookingId, uint8 reason) public {
+    uint16 public constant REASON_MINER_TERMINATED = 2;
+    uint16 public constant REASON_NON_PAYMENT = 3;
+    uint16 public constant REASON_COMMUNITY_TERMINATED = 4;
+
+    function Terminate(uint32 bookingId, uint16 reason) public {
         require(
-            (bookings[bookingId].user == msg.sender && reason != 2) ||
-                (bookings[bookingId].miner == msg.sender && reason == 2),
+            bookings[bookingId].user == msg.sender ||
+                (bookings[bookingId].miner == msg.sender &&
+                    reason == REASON_MINER_TERMINATED) ||
+                (msg.sender == communityContract &&
+                    reason == REASON_COMMUNITY_TERMINATED),
             "Only the user can stop a VM with reason 0 or 1, only the miner can stop a VM with reason 2"
         );
 
-        if (reason != 0) {
-            emit Complaint(
-                bookings[bookingId].user,
-                bookings[bookingId].miner,
-                reason
-            );
-        }
-
         _executeClaimPayment(bookingId);
-        _executeBookingDelete(bookingId);
+        _executeBookingDelete(bookingId, reason);
     }
 
     function ClaimPayment(uint32 bookingId) public {
@@ -290,7 +348,7 @@ contract BrokerV1 {
         );
         bool enoughMoney = _executeClaimPayment(bookingId);
         if (!enoughMoney) {
-            _executeBookingDelete(bookingId);
+            _executeBookingDelete(bookingId, REASON_NON_PAYMENT);
         }
     }
 

@@ -3,32 +3,18 @@ import { ethers, upgrades } from "hardhat";
 import type { Contract, BigNumberish, BytesLike } from "ethers";
 import { BigNumber } from "ethers";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import type { BrokerV2, Token, BrokerV1 } from "../typechain-types";
+import type { Broker, Token } from "../typechain-types";
 import { PromiseOrValue } from "../typechain-types/common";
 import bs58 from 'bs58'
 
 export type Fixture = {
-    broker: BrokerV2,
+    broker: Broker,
     token: Token
     miner: SignerWithAddress,
     user: SignerWithAddress,
     admin: SignerWithAddress,
     anotherUser: SignerWithAddress,
 }
-
-export type Offer = {
-    Index: number,
-    Miner: string,
-    PPS: number,
-    Availablility: number,
-    VmTypeId: number
-}
-
-export type OffersItem = [
-    pricePerSecond: PromiseOrValue<BigNumberish>,
-    machinesAvailable: PromiseOrValue<BigNumberish>,
-    specsIpfsHash: PromiseOrValue<BytesLike>,
-]
 
 export async function deployBrokerFixture(): Promise<Fixture> {
     return await _deployBrokerFixture()
@@ -38,17 +24,16 @@ export async function deployBrokerFixture(): Promise<Fixture> {
 async function _deployBrokerFixture(): Promise<Fixture> {
     const [admin, miner, user, anotherUser] = await ethers.getSigners();
 
-    const BrokerV1Contract = await ethers.getContractFactory("BrokerV1");
-    const brokerOld = await upgrades.deployProxy(BrokerV1Contract) as BrokerV1;
+    const BrokerContract = await ethers.getContractFactory("Broker");
+    const broker = await upgrades.deployProxy(BrokerContract) as Broker;
+
+    //TODO: test upgradability
 
     const Token = await ethers.getContractFactory("Token");
     const token = await Token.connect(admin).deploy('10000000000000000000000');
 
-    await brokerOld.SetCommunityContract(admin.address)
-    await brokerOld.SetCoinAddress(token.address)
-
-    const BrokerV2Contract = await ethers.getContractFactory("BrokerV2");
-    const broker = await upgrades.upgradeProxy(brokerOld.address, BrokerV2Contract) as BrokerV2;
+    await broker.SetCommunityContract(admin.address)
+    await broker.SetCoinAddress(token.address)
 
     const fee = await broker.MINER_REGISTRATION_FEE()
     await token.connect(admin).transfer(miner.address, fee)
@@ -75,24 +60,6 @@ export async function brokerWithOfferAndUserBalance(): Promise<Fixture> {
     return fixture
 }
 
-
-function toNumber(val: BigNumber | number) {
-    if (typeof val === 'number') {
-        return val
-    }
-    return val.toNumber()
-}
-
-// //TODO: remove this 
-// Number.prototype.toNumber = function () {
-//     return this.valueOf()
-// }
-// //TODO: remove this
-// Number.prototype.mul = function (val: any) {
-//     return BigNumber.from(this.valueOf()).mul(val)
-// }
-
-
 const specCid = "QmYnq93f9NJ1aCBLCoboncFE6GSZJDqn5RCDVV3ywziXd9"
 export const exampleSpecBytes = "0x" + Buffer.from(bs58.decode(specCid).slice(2)).toString('hex')
 
@@ -105,7 +72,9 @@ async function _brokerWithFiveOffers(): Promise<Fixture> {
 
     const { broker, miner } = fixture
 
-    const offers: OffersItem[] = [
+    type OfferType = [number, number, BytesLike]
+
+    const offers: OfferType[] = [
         [1, 1, exampleSpecBytes],
         [2, 2, exampleSpecBytes],
         [3, 3, exampleSpecBytes],

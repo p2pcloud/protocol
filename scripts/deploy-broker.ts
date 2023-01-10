@@ -8,7 +8,7 @@ if (String(process.env.HARDAT_PRIVATE_KEY).length < 20) {
     process.exit(1);
 }
 
-const CONTRACT_TO_DEPLOY = "BrokerV2";
+const CONTRACT_TO_DEPLOY = "Broker";
 
 async function main() {
     if (PROXY_ADDRESS === "") {

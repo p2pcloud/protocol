@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { deployBrokerFixture } from './fixtures'
 
-describe("BrokerV2_getMinerUrl", function () {
+describe("Broker_getMinerUrl", function () {
     it("should set miner url", async function () {
         const { broker, token, anotherUser, admin } = await loadFixture(deployBrokerFixture);
 
@@ -37,7 +37,7 @@ describe("BrokerV2_getMinerUrl", function () {
 });
 
 
-describe("BrokerV2_IsMinerRegistered", function () {
+describe("Broker_IsMinerRegistered", function () {
     it("should return true for registered and false by default", async function () {
         const { broker, token, anotherUser, admin } = await loadFixture(deployBrokerFixture);
 
@@ -56,7 +56,7 @@ describe("BrokerV2_IsMinerRegistered", function () {
 })
 
 
-describe("BrokerV2_RegisterMiner", function () {
+describe("Broker_RegisterMiner", function () {
     it("should use exactly MINER_REGISTRATION_FEE coins", async function () {
         const { broker, token, anotherUser, admin } = await loadFixture(deployBrokerFixture);
 

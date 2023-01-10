@@ -2,7 +2,7 @@ import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { BN } from "bn.js";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { deployBrokerFixture, OffersItem, brokerWithOfferAndUserBalance, brokerWithFiveOffers } from './fixtures'
+import { deployBrokerFixture, brokerWithOfferAndUserBalance, brokerWithFiveOffers } from './fixtures'
 
 describe("Broker_community", function () {
     describe("SetCommunityAddress", function () {

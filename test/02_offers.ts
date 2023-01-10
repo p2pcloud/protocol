@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { deployBrokerFixture, exampleSpecBytes } from './fixtures'
+import { deployBrokerFixture, exampleSpecBytes, brokerWithOfferAndUserBalance } from './fixtures'
 
 describe("Broker_offers", function () {
     describe("AddOffers", function () {
@@ -34,8 +34,8 @@ describe("Broker_offers", function () {
             const offersObj = offersRaw
             const updatedOffer = offersObj.find(({ index }) => index === 0)
 
-            expect(updatedOffer?.machinesAvailable).is.equal(11)
-            expect(updatedOffer?.pricePerSecond).is.equal(3)
+            expect(updatedOffer!.machinesTotal).is.equal(11)
+            expect(updatedOffer!.pricePerSecond).is.equal(3)
         });
 
         it("should revert if offer belongs to another account", async function () {
@@ -60,6 +60,20 @@ describe("Broker_offers", function () {
             const deletedOffer = offersObj.find(({ index }) => index === 1)
 
             expect(deletedOffer).undefined
+        });
+        it("should revert if offer still has machines booked", async function () {
+            const { broker, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
+
+            await broker.connect(miner).AddOffer(2, 10, exampleSpecBytes)
+
+            await broker.connect(user).Book(0)
+
+            //revert
+            await expect(broker.connect(miner).RemoveOffer(0)).to.be.reverted
+
+            //remove booking and try again
+            await broker.connect(user).Terminate(0, 0)
+            await broker.connect(miner).RemoveOffer(0)
         });
         it("should revert if offer belongs to another account", async function () {
             const { broker, miner, user } = await loadFixture(deployBrokerFixture);
