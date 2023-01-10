@@ -75,8 +75,6 @@ contract Broker {
 
     uint64 public constant SECONDS_IN_WEEK = 604800;
 
-    event Payment(address indexed user, address indexed miner, uint256 amount);
-
     event Termination(uint32 bookingIndex, uint16 indexed reason);
 
     event NewBooking(
@@ -380,11 +378,6 @@ contract Broker {
         coinBalance[bookings[bookingId].miner] += minerPayout;
         coinBalance[bookings[bookingId].user] -= totalPayout;
 
-        emit Payment(
-            bookings[bookingId].user,
-            bookings[bookingId].miner,
-            minerPayout
-        );
         return enoughMoney;
     }
 
