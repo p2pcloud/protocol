@@ -37,9 +37,9 @@ contract Broker {
         uint32 index;
         uint32 offerIndex;
         uint32 pricePerSecond;
-        uint32 bookedAt; //TODO: change timestamp to uint48
+        uint32 bookedAt;
         //slot 2
-        uint32 lastPayment; //TODO: change timestamp to uint48
+        uint32 lastPayment;
         address miner;
         //slot 3
         address user;
@@ -87,9 +87,11 @@ contract Broker {
     );
 
     struct MinerInfo {
+        //slot 1
         bytes32 url;
+        //slot 2
         bool isRegistered;
-        uint256 feePaid;
+        uint128 feePaid;
     }
 
     mapping(address => MinerInfo) minerInfo;
