@@ -33,13 +33,13 @@ interface IERC20 {
 
 contract Broker {
     struct Booking {
-        address miner;
-        address user;
         uint32 index;
         uint32 offerIndex;
         uint32 pricePerSecond;
         uint32 bookedAt; //TODO: change timestamp to uint48
         uint32 lastPayment; //TODO: change timestamp to uint48
+        address miner;
+        address user;
     }
 
     //TODO: try rearranging fields to optimize gas usage
@@ -288,13 +288,13 @@ contract Broker {
         );
 
         Booking memory booking = Booking(
-            offers[offerIndex].miner,
-            msg.sender,
             nextBookingId,
             offerIndex,
             offers[offerIndex].pricePerSecond,
             uint32(block.timestamp),
-            uint32(block.timestamp)
+            uint32(block.timestamp),
+            offers[offerIndex].miner,
+            msg.sender
         );
         bookings[nextBookingId] = booking;
         nextBookingId++;
