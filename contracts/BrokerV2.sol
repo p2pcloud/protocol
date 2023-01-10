@@ -309,7 +309,8 @@ contract BrokerV2 {
     function Terminate(uint32 bookingId, uint8 reason) public {
         require(
             (bookings[bookingId].user == msg.sender && reason != 2) ||
-                (bookings[bookingId].miner == msg.sender && reason == 2),
+                (bookings[bookingId].miner == msg.sender && reason == 2) ||
+                msg.sender == communityContract,
             "Only the user can stop a VM with reason 0 or 1, only the miner can stop a VM with reason 2"
         );
 

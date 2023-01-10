@@ -180,6 +180,27 @@ describe("Broker_bookings", function () {
             expect(minerBalanceFree2.toString()).to.equal((PPS * (SECONDS + CORRECTION)).toString())
         });
 
+        it("should allow communityContract to terminate anything", async function () {
+            const { broker, admin, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
+
+            const SECONDS = 3600 * 24
+            const OFFER_ID = 3
+            const PPS = (await broker.GetOffer(OFFER_ID)).pricePerSecond
+
+            const [minerBalanceFree,] = await broker.GetCoinBalance(miner.address)
+            expect(minerBalanceFree.toString()).to.equal('0')
+
+            await broker.connect(user).Book(OFFER_ID)
+            await time.increase(3600 * 24);
+
+            await broker.connect(admin).Terminate(0, 0)
+
+            const CORRECTION = 1//TODO: right now correction is 1 second
+
+            const [minerBalanceFree2,] = await broker.GetCoinBalance(miner.address)
+            expect(minerBalanceFree2.toString()).to.equal((PPS * (SECONDS + CORRECTION)).toString())
+        });
+
         it("should throw exception for miner if code not equal 2", async function () {
             const { broker, token, miner, user, anotherUser } = await loadFixture(brokerWithOfferAndUserBalance);
 
