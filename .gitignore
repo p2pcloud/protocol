@@ -13,6 +13,9 @@ artifacts
 
 !typechain-types/common.ts
 !/typechain-types/contracts/BrokerV1.sol/**/*
+!/typechain-types/contracts/BrokerV2.sol/**/*
 !artifacts/contracts/BrokerV1.sol/BrokerV1.json
 !artifacts/contracts/BrokerV1.sol/IERC20.json
+!artifacts/contracts/BrokerV2.sol/BrokerV2.json
+!artifacts/contracts/BrokerV2.sol/IERC20.json
 !artifacts/contracts/Community.sol/Community.json
