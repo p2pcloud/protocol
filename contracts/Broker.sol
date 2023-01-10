@@ -33,21 +33,27 @@ interface IERC20 {
 
 contract Broker {
     struct Booking {
+        //slot 1
         uint32 index;
         uint32 offerIndex;
         uint32 pricePerSecond;
         uint32 bookedAt; //TODO: change timestamp to uint48
+        //slot 2
         uint32 lastPayment; //TODO: change timestamp to uint48
         address miner;
+        //slot 3
         address user;
     }
 
     //TODO: try rearranging fields to optimize gas usage
     struct Offer {
+        //slot 1
+        bytes32 specsIpfsHash;
+        //slot 2
         address miner;
         uint32 index;
+        //slot 3
         uint32 pricePerSecond;
-        bytes32 specsIpfsHash;
         uint16 machinesTotal;
         uint16 machinesBooked;
     }
@@ -140,10 +146,10 @@ contract Broker {
         );
 
         offers[nextVmOfferId] = Offer(
+            specsIpfsHash,
             msg.sender,
             nextVmOfferId,
             pricePerSecond,
-            specsIpfsHash,
             machinesTotal,
             0
         );
