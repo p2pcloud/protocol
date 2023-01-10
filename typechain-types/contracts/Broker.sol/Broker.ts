@@ -34,7 +34,7 @@ export declare namespace Broker {
     pricePerSecond: PromiseOrValue<BigNumberish>;
     bookedAt: PromiseOrValue<BigNumberish>;
     lastPayment: PromiseOrValue<BigNumberish>;
-    miner: PromiseOrValue<string>;
+    provider: PromiseOrValue<string>;
     user: PromiseOrValue<string>;
   };
 
@@ -52,13 +52,13 @@ export declare namespace Broker {
     pricePerSecond: number;
     bookedAt: number;
     lastPayment: number;
-    miner: string;
+    provider: string;
     user: string;
   };
 
   export type OfferStruct = {
     specsIpfsHash: PromiseOrValue<BytesLike>;
-    miner: PromiseOrValue<string>;
+    provider: PromiseOrValue<string>;
     index: PromiseOrValue<BigNumberish>;
     pricePerSecond: PromiseOrValue<BigNumberish>;
     machinesTotal: PromiseOrValue<BigNumberish>;
@@ -74,7 +74,7 @@ export declare namespace Broker {
     number
   ] & {
     specsIpfsHash: string;
-    miner: string;
+    provider: string;
     index: number;
     pricePerSecond: number;
     machinesTotal: number;
@@ -88,27 +88,27 @@ export interface BrokerInterface extends utils.Interface {
     "Book(uint32)": FunctionFragment;
     "ClaimPayment(uint32)": FunctionFragment;
     "DepositCoin(uint256)": FunctionFragment;
-    "FindBookingsByMiner(address)": FunctionFragment;
+    "FindBookingsByProvider(address)": FunctionFragment;
     "FindBookingsByUser(address)": FunctionFragment;
     "GetAvailableOffers()": FunctionFragment;
     "GetBooking(uint32)": FunctionFragment;
     "GetCoinBalance(address)": FunctionFragment;
-    "GetMinerUrl(address)": FunctionFragment;
-    "GetMinersOffers(address)": FunctionFragment;
     "GetOffer(uint32)": FunctionFragment;
+    "GetProviderUrl(address)": FunctionFragment;
+    "GetProvidersOffers(address)": FunctionFragment;
     "GetTime()": FunctionFragment;
-    "IsMinerRegistered(address)": FunctionFragment;
-    "MINER_REGISTRATION_FEE()": FunctionFragment;
+    "IsProviderRegistered(address)": FunctionFragment;
+    "PROVIDER_REGISTRATION_FEE()": FunctionFragment;
     "REASON_COMMUNITY_TERMINATED()": FunctionFragment;
-    "REASON_MINER_TERMINATED()": FunctionFragment;
     "REASON_NON_PAYMENT()": FunctionFragment;
-    "RegisterMiner()": FunctionFragment;
+    "REASON_PROVIDER_TERMINATED()": FunctionFragment;
+    "RegisterProvider()": FunctionFragment;
     "RemoveOffer(uint32)": FunctionFragment;
     "SECONDS_IN_WEEK()": FunctionFragment;
     "SetCoinAddress(address)": FunctionFragment;
     "SetCommunityContract(address)": FunctionFragment;
     "SetCommunityFee(uint16)": FunctionFragment;
-    "SetMinerUrl(bytes32)": FunctionFragment;
+    "SetProviderUrl(bytes32)": FunctionFragment;
     "Terminate(uint32,uint16)": FunctionFragment;
     "UpdateOffer(uint32,uint16,uint32)": FunctionFragment;
     "WithdrawCoin(uint256)": FunctionFragment;
@@ -123,27 +123,27 @@ export interface BrokerInterface extends utils.Interface {
       | "Book"
       | "ClaimPayment"
       | "DepositCoin"
-      | "FindBookingsByMiner"
+      | "FindBookingsByProvider"
       | "FindBookingsByUser"
       | "GetAvailableOffers"
       | "GetBooking"
       | "GetCoinBalance"
-      | "GetMinerUrl"
-      | "GetMinersOffers"
       | "GetOffer"
+      | "GetProviderUrl"
+      | "GetProvidersOffers"
       | "GetTime"
-      | "IsMinerRegistered"
-      | "MINER_REGISTRATION_FEE"
+      | "IsProviderRegistered"
+      | "PROVIDER_REGISTRATION_FEE"
       | "REASON_COMMUNITY_TERMINATED"
-      | "REASON_MINER_TERMINATED"
       | "REASON_NON_PAYMENT"
-      | "RegisterMiner"
+      | "REASON_PROVIDER_TERMINATED"
+      | "RegisterProvider"
       | "RemoveOffer"
       | "SECONDS_IN_WEEK"
       | "SetCoinAddress"
       | "SetCommunityContract"
       | "SetCommunityFee"
-      | "SetMinerUrl"
+      | "SetProviderUrl"
       | "Terminate"
       | "UpdateOffer"
       | "WithdrawCoin"
@@ -173,7 +173,7 @@ export interface BrokerInterface extends utils.Interface {
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "FindBookingsByMiner",
+    functionFragment: "FindBookingsByProvider",
     values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
@@ -193,24 +193,24 @@ export interface BrokerInterface extends utils.Interface {
     values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
-    functionFragment: "GetMinerUrl",
-    values: [PromiseOrValue<string>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "GetMinersOffers",
-    values: [PromiseOrValue<string>]
-  ): string;
-  encodeFunctionData(
     functionFragment: "GetOffer",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
-  encodeFunctionData(functionFragment: "GetTime", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "IsMinerRegistered",
+    functionFragment: "GetProviderUrl",
     values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
-    functionFragment: "MINER_REGISTRATION_FEE",
+    functionFragment: "GetProvidersOffers",
+    values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(functionFragment: "GetTime", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "IsProviderRegistered",
+    values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "PROVIDER_REGISTRATION_FEE",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -218,15 +218,15 @@ export interface BrokerInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "REASON_MINER_TERMINATED",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
     functionFragment: "REASON_NON_PAYMENT",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "RegisterMiner",
+    functionFragment: "REASON_PROVIDER_TERMINATED",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "RegisterProvider",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -250,7 +250,7 @@ export interface BrokerInterface extends utils.Interface {
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "SetMinerUrl",
+    functionFragment: "SetProviderUrl",
     values: [PromiseOrValue<BytesLike>]
   ): string;
   encodeFunctionData(
@@ -290,7 +290,7 @@ export interface BrokerInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "FindBookingsByMiner",
+    functionFragment: "FindBookingsByProvider",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -306,22 +306,22 @@ export interface BrokerInterface extends utils.Interface {
     functionFragment: "GetCoinBalance",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "GetMinerUrl",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "GetMinersOffers",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "GetOffer", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "GetProviderUrl",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "GetProvidersOffers",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "GetTime", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "IsMinerRegistered",
+    functionFragment: "IsProviderRegistered",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "MINER_REGISTRATION_FEE",
+    functionFragment: "PROVIDER_REGISTRATION_FEE",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -329,15 +329,15 @@ export interface BrokerInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "REASON_MINER_TERMINATED",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "REASON_NON_PAYMENT",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "RegisterMiner",
+    functionFragment: "REASON_PROVIDER_TERMINATED",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "RegisterProvider",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -361,7 +361,7 @@ export interface BrokerInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "SetMinerUrl",
+    functionFragment: "SetProviderUrl",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "Terminate", data: BytesLike): Result;
@@ -394,7 +394,7 @@ export interface BrokerInterface extends utils.Interface {
 
 export interface NewBookingEventObject {
   user: string;
-  miner: string;
+  provider: string;
   bookingIndex: number;
   pps: number;
 }
@@ -465,8 +465,8 @@ export interface Broker extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    FindBookingsByMiner(
-      _miner: PromiseOrValue<string>,
+    FindBookingsByProvider(
+      _provider: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<
       [Broker.BookingStructOutput[]] & {
@@ -503,20 +503,6 @@ export interface Broker extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber, BigNumber] & { free: BigNumber; locked: BigNumber }>;
 
-    GetMinerUrl(
-      _user: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<[string]>;
-
-    GetMinersOffers(
-      miner: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<
-      [Broker.OfferStructOutput[]] & {
-        filteredOffers: Broker.OfferStructOutput[];
-      }
-    >;
-
     GetOffer(
       index: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
@@ -524,22 +510,36 @@ export interface Broker extends BaseContract {
       [Broker.OfferStructOutput] & { oneOffer: Broker.OfferStructOutput }
     >;
 
+    GetProviderUrl(
+      _user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<[string]>;
+
+    GetProvidersOffers(
+      provider: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<
+      [Broker.OfferStructOutput[]] & {
+        filteredOffers: Broker.OfferStructOutput[];
+      }
+    >;
+
     GetTime(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    IsMinerRegistered(
+    IsProviderRegistered(
       _user: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<[boolean]>;
 
-    MINER_REGISTRATION_FEE(overrides?: CallOverrides): Promise<[BigNumber]>;
+    PROVIDER_REGISTRATION_FEE(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     REASON_COMMUNITY_TERMINATED(overrides?: CallOverrides): Promise<[number]>;
 
-    REASON_MINER_TERMINATED(overrides?: CallOverrides): Promise<[number]>;
-
     REASON_NON_PAYMENT(overrides?: CallOverrides): Promise<[number]>;
 
-    RegisterMiner(
+    REASON_PROVIDER_TERMINATED(overrides?: CallOverrides): Promise<[number]>;
+
+    RegisterProvider(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -565,7 +565,7 @@ export interface Broker extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    SetMinerUrl(
+    SetProviderUrl(
       url: PromiseOrValue<BytesLike>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
@@ -617,8 +617,8 @@ export interface Broker extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  FindBookingsByMiner(
-    _miner: PromiseOrValue<string>,
+  FindBookingsByProvider(
+    _provider: PromiseOrValue<string>,
     overrides?: CallOverrides
   ): Promise<Broker.BookingStructOutput[]>;
 
@@ -641,37 +641,37 @@ export interface Broker extends BaseContract {
     overrides?: CallOverrides
   ): Promise<[BigNumber, BigNumber] & { free: BigNumber; locked: BigNumber }>;
 
-  GetMinerUrl(
-    _user: PromiseOrValue<string>,
-    overrides?: CallOverrides
-  ): Promise<string>;
-
-  GetMinersOffers(
-    miner: PromiseOrValue<string>,
-    overrides?: CallOverrides
-  ): Promise<Broker.OfferStructOutput[]>;
-
   GetOffer(
     index: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<Broker.OfferStructOutput>;
 
+  GetProviderUrl(
+    _user: PromiseOrValue<string>,
+    overrides?: CallOverrides
+  ): Promise<string>;
+
+  GetProvidersOffers(
+    provider: PromiseOrValue<string>,
+    overrides?: CallOverrides
+  ): Promise<Broker.OfferStructOutput[]>;
+
   GetTime(overrides?: CallOverrides): Promise<BigNumber>;
 
-  IsMinerRegistered(
+  IsProviderRegistered(
     _user: PromiseOrValue<string>,
     overrides?: CallOverrides
   ): Promise<boolean>;
 
-  MINER_REGISTRATION_FEE(overrides?: CallOverrides): Promise<BigNumber>;
+  PROVIDER_REGISTRATION_FEE(overrides?: CallOverrides): Promise<BigNumber>;
 
   REASON_COMMUNITY_TERMINATED(overrides?: CallOverrides): Promise<number>;
 
-  REASON_MINER_TERMINATED(overrides?: CallOverrides): Promise<number>;
-
   REASON_NON_PAYMENT(overrides?: CallOverrides): Promise<number>;
 
-  RegisterMiner(
+  REASON_PROVIDER_TERMINATED(overrides?: CallOverrides): Promise<number>;
+
+  RegisterProvider(
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -697,7 +697,7 @@ export interface Broker extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  SetMinerUrl(
+  SetProviderUrl(
     url: PromiseOrValue<BytesLike>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
@@ -749,8 +749,8 @@ export interface Broker extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean>;
 
-    FindBookingsByMiner(
-      _miner: PromiseOrValue<string>,
+    FindBookingsByProvider(
+      _provider: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<Broker.BookingStructOutput[]>;
 
@@ -773,37 +773,37 @@ export interface Broker extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber, BigNumber] & { free: BigNumber; locked: BigNumber }>;
 
-    GetMinerUrl(
-      _user: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<string>;
-
-    GetMinersOffers(
-      miner: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<Broker.OfferStructOutput[]>;
-
     GetOffer(
       index: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<Broker.OfferStructOutput>;
 
+    GetProviderUrl(
+      _user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<string>;
+
+    GetProvidersOffers(
+      provider: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<Broker.OfferStructOutput[]>;
+
     GetTime(overrides?: CallOverrides): Promise<BigNumber>;
 
-    IsMinerRegistered(
+    IsProviderRegistered(
       _user: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<boolean>;
 
-    MINER_REGISTRATION_FEE(overrides?: CallOverrides): Promise<BigNumber>;
+    PROVIDER_REGISTRATION_FEE(overrides?: CallOverrides): Promise<BigNumber>;
 
     REASON_COMMUNITY_TERMINATED(overrides?: CallOverrides): Promise<number>;
 
-    REASON_MINER_TERMINATED(overrides?: CallOverrides): Promise<number>;
-
     REASON_NON_PAYMENT(overrides?: CallOverrides): Promise<number>;
 
-    RegisterMiner(overrides?: CallOverrides): Promise<void>;
+    REASON_PROVIDER_TERMINATED(overrides?: CallOverrides): Promise<number>;
+
+    RegisterProvider(overrides?: CallOverrides): Promise<void>;
 
     RemoveOffer(
       offerIndex: PromiseOrValue<BigNumberish>,
@@ -827,7 +827,7 @@ export interface Broker extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean>;
 
-    SetMinerUrl(
+    SetProviderUrl(
       url: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
     ): Promise<void>;
@@ -860,13 +860,13 @@ export interface Broker extends BaseContract {
   filters: {
     "NewBooking(address,address,uint32,uint32)"(
       user?: PromiseOrValue<string> | null,
-      miner?: PromiseOrValue<string> | null,
+      provider?: PromiseOrValue<string> | null,
       bookingIndex?: null,
       pps?: null
     ): NewBookingEventFilter;
     NewBooking(
       user?: PromiseOrValue<string> | null,
-      miner?: PromiseOrValue<string> | null,
+      provider?: PromiseOrValue<string> | null,
       bookingIndex?: null,
       pps?: null
     ): NewBookingEventFilter;
@@ -904,8 +904,8 @@ export interface Broker extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    FindBookingsByMiner(
-      _miner: PromiseOrValue<string>,
+    FindBookingsByProvider(
+      _provider: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -926,37 +926,37 @@ export interface Broker extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    GetMinerUrl(
-      _user: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    GetMinersOffers(
-      miner: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     GetOffer(
       index: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    GetTime(overrides?: CallOverrides): Promise<BigNumber>;
-
-    IsMinerRegistered(
+    GetProviderUrl(
       _user: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    MINER_REGISTRATION_FEE(overrides?: CallOverrides): Promise<BigNumber>;
+    GetProvidersOffers(
+      provider: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    GetTime(overrides?: CallOverrides): Promise<BigNumber>;
+
+    IsProviderRegistered(
+      _user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    PROVIDER_REGISTRATION_FEE(overrides?: CallOverrides): Promise<BigNumber>;
 
     REASON_COMMUNITY_TERMINATED(overrides?: CallOverrides): Promise<BigNumber>;
 
-    REASON_MINER_TERMINATED(overrides?: CallOverrides): Promise<BigNumber>;
-
     REASON_NON_PAYMENT(overrides?: CallOverrides): Promise<BigNumber>;
 
-    RegisterMiner(
+    REASON_PROVIDER_TERMINATED(overrides?: CallOverrides): Promise<BigNumber>;
+
+    RegisterProvider(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -982,7 +982,7 @@ export interface Broker extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    SetMinerUrl(
+    SetProviderUrl(
       url: PromiseOrValue<BytesLike>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
@@ -1035,8 +1035,8 @@ export interface Broker extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    FindBookingsByMiner(
-      _miner: PromiseOrValue<string>,
+    FindBookingsByProvider(
+      _provider: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -1059,29 +1059,29 @@ export interface Broker extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    GetMinerUrl(
-      _user: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    GetMinersOffers(
-      miner: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     GetOffer(
       index: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    GetTime(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    IsMinerRegistered(
+    GetProviderUrl(
       _user: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    MINER_REGISTRATION_FEE(
+    GetProvidersOffers(
+      provider: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    GetTime(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    IsProviderRegistered(
+      _user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    PROVIDER_REGISTRATION_FEE(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -1089,15 +1089,15 @@ export interface Broker extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    REASON_MINER_TERMINATED(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     REASON_NON_PAYMENT(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    RegisterMiner(
+    REASON_PROVIDER_TERMINATED(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    RegisterProvider(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1123,7 +1123,7 @@ export interface Broker extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    SetMinerUrl(
+    SetProviderUrl(
       url: PromiseOrValue<BytesLike>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;

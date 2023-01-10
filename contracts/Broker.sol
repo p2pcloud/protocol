@@ -40,7 +40,7 @@ contract Broker {
         uint32 bookedAt;
         //slot 2
         uint32 lastPayment;
-        address miner;
+        address provider;
         //slot 3
         address user;
     }
@@ -50,7 +50,7 @@ contract Broker {
         //slot 1
         bytes32 specsIpfsHash;
         //slot 2
-        address miner;
+        address provider;
         uint32 index;
         //slot 3
         uint32 pricePerSecond;
@@ -79,12 +79,12 @@ contract Broker {
 
     event NewBooking(
         address indexed user,
-        address indexed miner,
+        address indexed provider,
         uint32 bookingIndex,
         uint32 pps
     );
 
-    struct MinerInfo {
+    struct ProviderInfo {
         //slot 1
         bytes32 url;
         //slot 2
@@ -92,47 +92,47 @@ contract Broker {
         uint128 feePaid;
     }
 
-    mapping(address => MinerInfo) minerInfo;
+    mapping(address => ProviderInfo) providerInfo;
 
-    //01_miner_url
+    //01_provider_url
 
-    function SetMinerUrl(bytes32 url) public {
+    function SetProviderUrl(bytes32 url) public {
         require(
-            minerInfo[msg.sender].isRegistered,
-            "Miner must be registered to set url"
+            providerInfo[msg.sender].isRegistered,
+            "Provider must be registered to set url"
         );
-        minerInfo[msg.sender].url = url;
+        providerInfo[msg.sender].url = url;
     }
 
-    function GetMinerUrl(address _user) public view returns (bytes32) {
-        return minerInfo[_user].url;
+    function GetProviderUrl(address _user) public view returns (bytes32) {
+        return providerInfo[_user].url;
     }
 
-    function IsMinerRegistered(address _user) public view returns (bool) {
-        return minerInfo[_user].isRegistered;
+    function IsProviderRegistered(address _user) public view returns (bool) {
+        return providerInfo[_user].isRegistered;
     }
 
     //02_offers
 
-    uint64 public constant MINER_REGISTRATION_FEE = 100 * 1000000;
+    uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
 
-    function RegisterMiner() public {
+    function RegisterProvider() public {
         uint256 freeBalance = coinBalance[msg.sender] -
             GetLockedCoinBalance(msg.sender);
         require(
-            freeBalance >= MINER_REGISTRATION_FEE,
+            freeBalance >= PROVIDER_REGISTRATION_FEE,
             "Not enough coin to register "
         );
         require(
-            !minerInfo[msg.sender].isRegistered,
-            "Miner is already registered"
+            !providerInfo[msg.sender].isRegistered,
+            "Provider is already registered"
         );
 
-        coinBalance[msg.sender] -= MINER_REGISTRATION_FEE;
-        coinBalance[communityContract] += MINER_REGISTRATION_FEE;
+        coinBalance[msg.sender] -= PROVIDER_REGISTRATION_FEE;
+        coinBalance[communityContract] += PROVIDER_REGISTRATION_FEE;
 
-        minerInfo[msg.sender].isRegistered = true;
-        minerInfo[msg.sender].feePaid += MINER_REGISTRATION_FEE;
+        providerInfo[msg.sender].isRegistered = true;
+        providerInfo[msg.sender].feePaid += PROVIDER_REGISTRATION_FEE;
     }
 
     function AddOffer(
@@ -141,8 +141,8 @@ contract Broker {
         bytes32 specsIpfsHash
     ) public returns (uint32) {
         require(
-            minerInfo[msg.sender].isRegistered,
-            "Miner must be registered to add offers"
+            providerInfo[msg.sender].isRegistered,
+            "Provider must be registered to add offers"
         );
 
         offers[nextVmOfferId] = Offer(
@@ -163,7 +163,7 @@ contract Broker {
         uint32 pps
     ) public {
         require(
-            offers[offerIndex].miner == msg.sender,
+            offers[offerIndex].provider == msg.sender,
             "Only the owner can update an offer"
         );
         require(
@@ -176,7 +176,7 @@ contract Broker {
 
     function RemoveOffer(uint32 offerIndex) public {
         require(
-            offers[offerIndex].miner == msg.sender,
+            offers[offerIndex].provider == msg.sender,
             "Only the owner can remove an offer"
         );
         require(
@@ -186,13 +186,13 @@ contract Broker {
         delete offers[offerIndex];
     }
 
-    function GetMinersOffers(
-        address miner
+    function GetProvidersOffers(
+        address provider
     ) public view returns (Offer[] memory filteredOffers) {
         Offer[] memory offersTemp = new Offer[](nextVmOfferId);
         uint32 count;
         for (uint32 i = 0; i < nextVmOfferId; i++) {
-            if (offers[i].miner == miner) {
+            if (offers[i].provider == provider) {
                 offersTemp[count] = offers[i];
                 count += 1;
             }
@@ -299,7 +299,7 @@ contract Broker {
             offers[offerIndex].pricePerSecond,
             uint32(block.timestamp),
             uint32(block.timestamp),
-            offers[offerIndex].miner,
+            offers[offerIndex].provider,
             msg.sender
         );
         bookings[nextBookingId] = booking;
@@ -311,7 +311,7 @@ contract Broker {
 
         emit NewBooking(
             msg.sender, // address indexed user,
-            offers[offerIndex].miner, // address indexed miner,
+            offers[offerIndex].provider, // address indexed provider,
             nextBookingId - 1, // uint32 bookingIndex,
             offers[offerIndex].pricePerSecond // uint32 pps
         );
@@ -329,18 +329,18 @@ contract Broker {
         delete bookings[bookingId];
     }
 
-    uint16 public constant REASON_MINER_TERMINATED = 2;
+    uint16 public constant REASON_PROVIDER_TERMINATED = 2;
     uint16 public constant REASON_NON_PAYMENT = 3;
     uint16 public constant REASON_COMMUNITY_TERMINATED = 4;
 
     function Terminate(uint32 bookingId, uint16 reason) public {
         require(
             bookings[bookingId].user == msg.sender ||
-                (bookings[bookingId].miner == msg.sender &&
-                    reason == REASON_MINER_TERMINATED) ||
+                (bookings[bookingId].provider == msg.sender &&
+                    reason == REASON_PROVIDER_TERMINATED) ||
                 (msg.sender == communityContract &&
                     reason == REASON_COMMUNITY_TERMINATED),
-            "Only the user can stop a VM with reason 0 or 1, only the miner can stop a VM with reason 2"
+            "Only the user can stop a VM with reason 0 or 1, only the provider can stop a VM with reason 2"
         );
 
         _executeClaimPayment(bookingId);
@@ -349,8 +349,8 @@ contract Broker {
 
     function ClaimPayment(uint32 bookingId) public {
         require(
-            bookings[bookingId].miner == msg.sender,
-            "Only the miner can claim a payment"
+            bookings[bookingId].provider == msg.sender,
+            "Only the provider can claim a payment"
         );
         bool enoughMoney = _executeClaimPayment(bookingId);
         if (!enoughMoney) {
@@ -370,12 +370,12 @@ contract Broker {
         }
 
         uint256 communityPayout = (totalPayout * communityFee) / (100 * 100);
-        uint256 minerPayout = totalPayout - communityPayout;
+        uint256 providerPayout = totalPayout - communityPayout;
 
         bookings[bookingId].lastPayment = uint32(block.timestamp);
 
         coinBalance[communityContract] += communityPayout;
-        coinBalance[bookings[bookingId].miner] += minerPayout;
+        coinBalance[bookings[bookingId].provider] += providerPayout;
         coinBalance[bookings[bookingId].user] -= totalPayout;
 
         return enoughMoney;
@@ -399,13 +399,13 @@ contract Broker {
         }
     }
 
-    function FindBookingsByMiner(
-        address _miner
+    function FindBookingsByProvider(
+        address _provider
     ) public view returns (Booking[] memory filteredBookings) {
         Booking[] memory bookingsTemp = new Booking[](nextBookingId);
         uint32 count;
         for (uint32 i = 0; i < nextBookingId; i++) {
-            if (bookings[i].miner == _miner) {
+            if (bookings[i].provider == _provider) {
                 bookingsTemp[count] = bookings[i];
                 count += 1;
             }

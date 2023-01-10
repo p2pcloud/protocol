@@ -10,7 +10,7 @@ import bs58 from 'bs58'
 export type Fixture = {
     broker: Broker,
     token: Token
-    miner: SignerWithAddress,
+    provider: SignerWithAddress,
     user: SignerWithAddress,
     admin: SignerWithAddress,
     anotherUser: SignerWithAddress,
@@ -22,7 +22,7 @@ export async function deployBrokerFixture(): Promise<Fixture> {
 
 
 async function _deployBrokerFixture(): Promise<Fixture> {
-    const [admin, miner, user, anotherUser] = await ethers.getSigners();
+    const [admin, provider, user, anotherUser] = await ethers.getSigners();
 
     const BrokerContract = await ethers.getContractFactory("Broker");
     const broker = await upgrades.deployProxy(BrokerContract) as Broker;
@@ -35,13 +35,13 @@ async function _deployBrokerFixture(): Promise<Fixture> {
     await broker.SetCommunityContract(admin.address)
     await broker.SetCoinAddress(token.address)
 
-    const fee = await broker.MINER_REGISTRATION_FEE()
-    await token.connect(admin).transfer(miner.address, fee)
-    await token.connect(miner).increaseAllowance(broker.address, fee)
-    await broker.connect(miner).DepositCoin(fee)
-    await broker.connect(miner).RegisterMiner()
+    const fee = await broker.PROVIDER_REGISTRATION_FEE()
+    await token.connect(admin).transfer(provider.address, fee)
+    await token.connect(provider).increaseAllowance(broker.address, fee)
+    await broker.connect(provider).DepositCoin(fee)
+    await broker.connect(provider).RegisterProvider()
 
-    return { broker, token, miner, user, admin, anotherUser };
+    return { broker, token, provider, user, admin, anotherUser };
 }
 
 export async function brokerWithOfferAndUserBalance(): Promise<Fixture> {
@@ -70,7 +70,7 @@ export async function brokerWithFiveOffers(): Promise<Fixture> {
 async function _brokerWithFiveOffers(): Promise<Fixture> {
     const fixture = await _deployBrokerFixture()
 
-    const { broker, miner } = fixture
+    const { broker, provider } = fixture
 
     type OfferType = [number, number, BytesLike]
 
@@ -82,7 +82,7 @@ async function _brokerWithFiveOffers(): Promise<Fixture> {
         [5, 5, exampleSpecBytes],
     ]
 
-    await Promise.all(offers.map(offer => broker.connect(miner).AddOffer(...offer)))
+    await Promise.all(offers.map(offer => broker.connect(provider).AddOffer(...offer)))
 
     return fixture;
 }
