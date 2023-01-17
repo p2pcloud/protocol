@@ -93,6 +93,7 @@ contract Broker {
     }
 
     mapping(address => ProviderInfo) providerInfo;
+    mapping(address => uint64) freeTrial;
 
     //01_provider_url
 
@@ -260,6 +261,10 @@ contract Broker {
             GetLockedCoinBalance(msg.sender);
 
         require(freeBalance >= amt, "Not enough balance to withdraw");
+        require(
+            freeTrial[msg.sender] == 0,
+            "Cannot withdraw during free trial"
+        );
 
         require(coin.transfer(msg.sender, amt), "ERC20 transfer failed");
 
@@ -451,5 +456,32 @@ contract Broker {
     function GetTime() public view returns (uint256) {
         //TODO: remove. Test function only
         return block.timestamp;
+    }
+
+    function AddTrial(address user, uint64 amt) public {
+        require(
+            msg.sender == communityContract,
+            "only community contract can add trial"
+        );
+        freeTrial[user] += amt;
+        coinBalance[user] += amt;
+    }
+
+    function RemoveTrial(address user) public {
+        require(
+            (msg.sender == communityContract) || (msg.sender == user),
+            "only community contract or user themselves can remove trial"
+        );
+        uint256 freeBalance = coinBalance[user] - GetLockedCoinBalance(user);
+        require(
+            freeBalance >= freeTrial[user],
+            "user has not enough coins to cancel trial"
+        );
+        coinBalance[user] -= freeTrial[user];
+        freeTrial[user] = 0;
+    }
+
+    function GetTrialAmount(address user) public view returns (uint64) {
+        return freeTrial[user];
     }
 }

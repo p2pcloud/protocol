@@ -85,6 +85,7 @@ export declare namespace Broker {
 export interface BrokerInterface extends utils.Interface {
   functions: {
     "AddOffer(uint32,uint16,bytes32)": FunctionFragment;
+    "AddTrial(address,uint64)": FunctionFragment;
     "Book(uint32)": FunctionFragment;
     "ClaimPayment(uint32)": FunctionFragment;
     "DepositCoin(uint256)": FunctionFragment;
@@ -97,6 +98,7 @@ export interface BrokerInterface extends utils.Interface {
     "GetProviderUrl(address)": FunctionFragment;
     "GetProvidersOffers(address)": FunctionFragment;
     "GetTime()": FunctionFragment;
+    "GetTrialAmount(address)": FunctionFragment;
     "IsProviderRegistered(address)": FunctionFragment;
     "PROVIDER_REGISTRATION_FEE()": FunctionFragment;
     "REASON_COMMUNITY_TERMINATED()": FunctionFragment;
@@ -104,6 +106,7 @@ export interface BrokerInterface extends utils.Interface {
     "REASON_PROVIDER_TERMINATED()": FunctionFragment;
     "RegisterProvider()": FunctionFragment;
     "RemoveOffer(uint32)": FunctionFragment;
+    "RemoveTrial(address)": FunctionFragment;
     "SECONDS_IN_WEEK()": FunctionFragment;
     "SetCoinAddress(address)": FunctionFragment;
     "SetCommunityContract(address)": FunctionFragment;
@@ -120,6 +123,7 @@ export interface BrokerInterface extends utils.Interface {
   getFunction(
     nameOrSignatureOrTopic:
       | "AddOffer"
+      | "AddTrial"
       | "Book"
       | "ClaimPayment"
       | "DepositCoin"
@@ -132,6 +136,7 @@ export interface BrokerInterface extends utils.Interface {
       | "GetProviderUrl"
       | "GetProvidersOffers"
       | "GetTime"
+      | "GetTrialAmount"
       | "IsProviderRegistered"
       | "PROVIDER_REGISTRATION_FEE"
       | "REASON_COMMUNITY_TERMINATED"
@@ -139,6 +144,7 @@ export interface BrokerInterface extends utils.Interface {
       | "REASON_PROVIDER_TERMINATED"
       | "RegisterProvider"
       | "RemoveOffer"
+      | "RemoveTrial"
       | "SECONDS_IN_WEEK"
       | "SetCoinAddress"
       | "SetCommunityContract"
@@ -159,6 +165,10 @@ export interface BrokerInterface extends utils.Interface {
       PromiseOrValue<BigNumberish>,
       PromiseOrValue<BytesLike>
     ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "AddTrial",
+    values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "Book",
@@ -206,6 +216,10 @@ export interface BrokerInterface extends utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "GetTime", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "GetTrialAmount",
+    values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
     functionFragment: "IsProviderRegistered",
     values: [PromiseOrValue<string>]
   ): string;
@@ -232,6 +246,10 @@ export interface BrokerInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "RemoveOffer",
     values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "RemoveTrial",
+    values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
     functionFragment: "SECONDS_IN_WEEK",
@@ -280,6 +298,7 @@ export interface BrokerInterface extends utils.Interface {
   ): string;
 
   decodeFunctionResult(functionFragment: "AddOffer", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "AddTrial", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "Book", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "ClaimPayment",
@@ -317,6 +336,10 @@ export interface BrokerInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "GetTime", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "GetTrialAmount",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "IsProviderRegistered",
     data: BytesLike
   ): Result;
@@ -342,6 +365,10 @@ export interface BrokerInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "RemoveOffer",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "RemoveTrial",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -450,6 +477,12 @@ export interface Broker extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    AddTrial(
+      user: PromiseOrValue<string>,
+      amt: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     Book(
       offerIndex: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -526,6 +559,11 @@ export interface Broker extends BaseContract {
 
     GetTime(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    GetTrialAmount(
+      user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     IsProviderRegistered(
       _user: PromiseOrValue<string>,
       overrides?: CallOverrides
@@ -545,6 +583,11 @@ export interface Broker extends BaseContract {
 
     RemoveOffer(
       offerIndex: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    RemoveTrial(
+      user: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -599,6 +642,12 @@ export interface Broker extends BaseContract {
     pricePerSecond: PromiseOrValue<BigNumberish>,
     machinesTotal: PromiseOrValue<BigNumberish>,
     specsIpfsHash: PromiseOrValue<BytesLike>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  AddTrial(
+    user: PromiseOrValue<string>,
+    amt: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -658,6 +707,11 @@ export interface Broker extends BaseContract {
 
   GetTime(overrides?: CallOverrides): Promise<BigNumber>;
 
+  GetTrialAmount(
+    user: PromiseOrValue<string>,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   IsProviderRegistered(
     _user: PromiseOrValue<string>,
     overrides?: CallOverrides
@@ -677,6 +731,11 @@ export interface Broker extends BaseContract {
 
   RemoveOffer(
     offerIndex: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  RemoveTrial(
+    user: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -734,6 +793,12 @@ export interface Broker extends BaseContract {
       overrides?: CallOverrides
     ): Promise<number>;
 
+    AddTrial(
+      user: PromiseOrValue<string>,
+      amt: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     Book(
       offerIndex: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
@@ -790,6 +855,11 @@ export interface Broker extends BaseContract {
 
     GetTime(overrides?: CallOverrides): Promise<BigNumber>;
 
+    GetTrialAmount(
+      user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     IsProviderRegistered(
       _user: PromiseOrValue<string>,
       overrides?: CallOverrides
@@ -807,6 +877,11 @@ export interface Broker extends BaseContract {
 
     RemoveOffer(
       offerIndex: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    RemoveTrial(
+      user: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -889,6 +964,12 @@ export interface Broker extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    AddTrial(
+      user: PromiseOrValue<string>,
+      amt: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     Book(
       offerIndex: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -943,6 +1024,11 @@ export interface Broker extends BaseContract {
 
     GetTime(overrides?: CallOverrides): Promise<BigNumber>;
 
+    GetTrialAmount(
+      user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     IsProviderRegistered(
       _user: PromiseOrValue<string>,
       overrides?: CallOverrides
@@ -962,6 +1048,11 @@ export interface Broker extends BaseContract {
 
     RemoveOffer(
       offerIndex: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    RemoveTrial(
+      user: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -1017,6 +1108,12 @@ export interface Broker extends BaseContract {
       pricePerSecond: PromiseOrValue<BigNumberish>,
       machinesTotal: PromiseOrValue<BigNumberish>,
       specsIpfsHash: PromiseOrValue<BytesLike>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    AddTrial(
+      user: PromiseOrValue<string>,
+      amt: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1076,6 +1173,11 @@ export interface Broker extends BaseContract {
 
     GetTime(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    GetTrialAmount(
+      user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     IsProviderRegistered(
       _user: PromiseOrValue<string>,
       overrides?: CallOverrides
@@ -1103,6 +1205,11 @@ export interface Broker extends BaseContract {
 
     RemoveOffer(
       offerIndex: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    RemoveTrial(
+      user: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 

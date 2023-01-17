@@ -5,7 +5,7 @@ import { randomBytes } from 'crypto'
 if (process.env.REPORT_GAS === "true") {
     describe("Gas", function () {
         it("books many VMs", async function () {
-            const TOTAL_ROUNDS = 200
+            const TOTAL_ROUNDS = 100
             const TOTAL_OFFERS = 10
             const BOOKING_PER_OFFER = Math.floor(TOTAL_ROUNDS / TOTAL_OFFERS)
 

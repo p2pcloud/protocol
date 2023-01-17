@@ -3,7 +3,7 @@ import { ethers, upgrades } from "hardhat";
 import type { Contract, BigNumberish, BytesLike } from "ethers";
 import { BigNumber } from "ethers";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import type { Broker, Token } from "../typechain-types";
+import type { Broker, OldBroker, Token } from "../typechain-types";
 import { PromiseOrValue } from "../typechain-types/common";
 import bs58 from 'bs58'
 
@@ -24,22 +24,24 @@ export async function deployBrokerFixture(): Promise<Fixture> {
 async function _deployBrokerFixture(): Promise<Fixture> {
     const [admin, provider, user, anotherUser] = await ethers.getSigners();
 
-    const BrokerContract = await ethers.getContractFactory("Broker");
-    const broker = await upgrades.deployProxy(BrokerContract) as Broker;
-
-    //TODO: test upgradability
+    const OldBrokerContract = await ethers.getContractFactory("OldBroker");
+    const oldBroker = await upgrades.deployProxy(OldBrokerContract) as OldBroker;
 
     const Token = await ethers.getContractFactory("Token");
     const token = await Token.connect(admin).deploy('10000000000000000000000');
 
-    await broker.SetCommunityContract(admin.address)
-    await broker.SetCoinAddress(token.address)
+    await oldBroker.SetCommunityContract(admin.address)
+    await oldBroker.SetCoinAddress(token.address)
 
-    const fee = await broker.PROVIDER_REGISTRATION_FEE()
+    const fee = await oldBroker.PROVIDER_REGISTRATION_FEE()
     await token.connect(admin).transfer(provider.address, fee)
-    await token.connect(provider).increaseAllowance(broker.address, fee)
-    await broker.connect(provider).DepositCoin(fee)
-    await broker.connect(provider).RegisterProvider()
+    await token.connect(provider).increaseAllowance(oldBroker.address, fee)
+    await oldBroker.connect(provider).DepositCoin(fee)
+    await oldBroker.connect(provider).RegisterProvider()
+
+    //upgrade broker
+    const Broker = await ethers.getContractFactory("Broker");
+    const broker = await upgrades.upgradeProxy(oldBroker.address, Broker) as Broker;
 
     return { broker, token, provider, user, admin, anotherUser };
 }
