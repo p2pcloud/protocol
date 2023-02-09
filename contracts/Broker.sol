@@ -31,33 +31,36 @@ interface IERC20 {
     ) external returns (bool);
 }
 
-//TODO: try rearranging fields to optimize gas usage
-
-contract BrokerV1 {
+contract Broker {
     struct Booking {
+        //slot 1
         uint32 index;
         uint32 offerIndex;
         uint32 pricePerSecond;
-        uint256 bookedAt; //TODO: change timestamp to uint48
-        uint256 lastPayment; //TODO: change timestamp to uint48
-        address miner;
+        uint32 bookedAt;
+        //slot 2
+        uint32 lastPayment;
+        address provider;
+        //slot 3
         address user;
     }
 
     //TODO: try rearranging fields to optimize gas usage
     struct Offer {
-        uint32 index;
-        uint32 pricePerSecond;
-        uint16 machinesAvailable; //TODO: change to uint16
+        //slot 1
         bytes32 specsIpfsHash;
-        address miner;
+        //slot 2
+        address provider;
+        uint32 index;
+        //slot 3
+        uint32 pricePerSecond;
+        uint16 machinesTotal;
+        uint16 machinesBooked;
     }
 
-    //TODO: try optimizing into an array. will it save any gas?
     mapping(uint32 => Offer) offers;
     uint32 nextVmOfferId;
 
-    //TODO: try optimizing into an array. will it save any gas?
     mapping(uint32 => Booking) bookings;
     uint32 nextBookingId;
 
@@ -65,46 +68,91 @@ contract BrokerV1 {
 
     mapping(address => uint32) userTotalPps;
 
-    mapping(address => bytes32) minerUrls;
-
     IERC20 public coin;
 
     address public communityContract;
-    uint16 public communityFee; //TODO: change to uint16
+    uint16 public communityFee;
 
     uint64 public constant SECONDS_IN_WEEK = 604800;
 
-    event Payment(address indexed user, address indexed miner, uint256 amount);
+    event Termination(uint32 bookingIndex, uint16 indexed reason);
 
-    event Complaint(
+    event NewBooking(
         address indexed user,
-        address indexed miner,
-        uint8 indexed reason
+        address indexed provider,
+        uint32 bookingIndex,
+        uint32 pps
     );
 
-    //01_miner_url
-
-    function SetMinerUrl(bytes32 url) public {
-        minerUrls[msg.sender] = url;
+    struct ProviderInfo {
+        //slot 1
+        bytes32 url;
+        //slot 2
+        bool isRegistered;
+        uint128 feePaid;
     }
 
-    function GetMinerUrl(address _user) public view returns (bytes32) {
-        return minerUrls[_user];
+    mapping(address => ProviderInfo) providerInfo;
+    mapping(address => uint64) freeTrial;
+
+    //01_provider_url
+
+    function SetProviderUrl(bytes32 url) public {
+        require(
+            providerInfo[msg.sender].isRegistered,
+            "Provider must be registered to set url"
+        );
+        providerInfo[msg.sender].url = url;
+    }
+
+    function GetProviderUrl(address _user) public view returns (bytes32) {
+        return providerInfo[_user].url;
+    }
+
+    function IsProviderRegistered(address _user) public view returns (bool) {
+        return providerInfo[_user].isRegistered;
     }
 
     //02_offers
 
+    uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
+
+    function RegisterProvider() public {
+        uint256 freeBalance = coinBalance[msg.sender] -
+            GetLockedCoinBalance(msg.sender);
+        require(
+            freeBalance >= PROVIDER_REGISTRATION_FEE,
+            "Not enough coin to register "
+        );
+        require(
+            !providerInfo[msg.sender].isRegistered,
+            "Provider is already registered"
+        );
+
+        coinBalance[msg.sender] -= PROVIDER_REGISTRATION_FEE;
+        coinBalance[communityContract] += PROVIDER_REGISTRATION_FEE;
+
+        providerInfo[msg.sender].isRegistered = true;
+        providerInfo[msg.sender].feePaid += PROVIDER_REGISTRATION_FEE;
+    }
+
     function AddOffer(
         uint32 pricePerSecond,
-        uint16 machinesAvailable,
+        uint16 machinesTotal,
         bytes32 specsIpfsHash
     ) public returns (uint32) {
+        require(
+            providerInfo[msg.sender].isRegistered,
+            "Provider must be registered to add offers"
+        );
+
         offers[nextVmOfferId] = Offer(
+            specsIpfsHash,
+            msg.sender,
             nextVmOfferId,
             pricePerSecond,
-            machinesAvailable,
-            specsIpfsHash,
-            msg.sender
+            machinesTotal,
+            0
         );
         nextVmOfferId++;
         return nextVmOfferId - 1;
@@ -112,32 +160,40 @@ contract BrokerV1 {
 
     function UpdateOffer(
         uint32 offerIndex,
-        uint16 machinesAvailable,
+        uint16 machinesTotal,
         uint32 pps
     ) public {
         require(
-            offers[offerIndex].miner == msg.sender,
+            offers[offerIndex].provider == msg.sender,
             "Only the owner can update an offer"
         );
-        offers[offerIndex].machinesAvailable = machinesAvailable;
+        require(
+            offers[offerIndex].machinesBooked <= machinesTotal,
+            "Cannot reduce machinesTotal below machinesBooked"
+        );
+        offers[offerIndex].machinesTotal = machinesTotal;
         offers[offerIndex].pricePerSecond = pps;
     }
 
     function RemoveOffer(uint32 offerIndex) public {
         require(
-            offers[offerIndex].miner == msg.sender,
+            offers[offerIndex].provider == msg.sender,
             "Only the owner can remove an offer"
+        );
+        require(
+            offers[offerIndex].machinesBooked == 0,
+            "Cannot remove an offer with booked machines"
         );
         delete offers[offerIndex];
     }
 
-    function GetMinersOffers(
-        address miner
+    function GetProvidersOffers(
+        address provider
     ) public view returns (Offer[] memory filteredOffers) {
         Offer[] memory offersTemp = new Offer[](nextVmOfferId);
         uint32 count;
         for (uint32 i = 0; i < nextVmOfferId; i++) {
-            if (offers[i].miner == miner) {
+            if (offers[i].provider == provider) {
                 offersTemp[count] = offers[i];
                 count += 1;
             }
@@ -157,7 +213,7 @@ contract BrokerV1 {
         Offer[] memory offersTemp = new Offer[](nextVmOfferId);
         uint32 count;
         for (uint32 i = 0; i < nextVmOfferId; i++) {
-            if (offers[i].machinesAvailable > 0) {
+            if (offers[i].machinesTotal > offers[i].machinesBooked) {
                 offersTemp[count] = offers[i];
                 count += 1;
             }
@@ -205,6 +261,10 @@ contract BrokerV1 {
             GetLockedCoinBalance(msg.sender);
 
         require(freeBalance >= amt, "Not enough balance to withdraw");
+        require(
+            freeTrial[msg.sender] == 0,
+            "Cannot withdraw during free trial"
+        );
 
         require(coin.transfer(msg.sender, amt), "ERC20 transfer failed");
 
@@ -212,20 +272,20 @@ contract BrokerV1 {
         return true;
     }
 
-    //TODO: needed named returns (uint256 free, uint256 locked) for true order in ABI compile
     function GetCoinBalance(
         address user
-    ) public view returns (uint256, uint256) {
-        // TODO: maybe need guard require( msg.sender == address )
-        uint256 locked = GetLockedCoinBalance(user);
-        return (coinBalance[user] - locked, locked);
+    ) public view returns (uint256 free, uint256 locked) {
+        locked = GetLockedCoinBalance(user);
+        free = coinBalance[user] - locked;
+        return (free, locked);
     }
 
     //04_bookings
 
     function Book(uint32 offerIndex) public returns (uint32) {
         require(
-            offers[offerIndex].machinesAvailable > 0,
+            offers[offerIndex].machinesTotal >
+                offers[offerIndex].machinesBooked,
             "No machines available"
         );
 
@@ -242,9 +302,9 @@ contract BrokerV1 {
             nextBookingId,
             offerIndex,
             offers[offerIndex].pricePerSecond,
-            block.timestamp,
-            block.timestamp,
-            offers[offerIndex].miner,
+            uint32(block.timestamp),
+            uint32(block.timestamp),
+            offers[offerIndex].provider,
             msg.sender
         );
         bookings[nextBookingId] = booking;
@@ -252,45 +312,54 @@ contract BrokerV1 {
 
         userTotalPps[msg.sender] += offers[offerIndex].pricePerSecond;
 
-        offers[offerIndex].machinesAvailable -= 1;
+        offers[offerIndex].machinesBooked += 1;
+
+        emit NewBooking(
+            msg.sender, // address indexed user,
+            offers[offerIndex].provider, // address indexed provider,
+            nextBookingId - 1, // uint32 bookingIndex,
+            offers[offerIndex].pricePerSecond // uint32 pps
+        );
 
         return nextBookingId - 1;
     }
 
-    function _executeBookingDelete(uint32 bookingId) private {
-        offers[bookings[bookingId].offerIndex].machinesAvailable += 1;
+    function _executeBookingDelete(uint32 bookingId, uint16 reason) private {
+        offers[bookings[bookingId].offerIndex].machinesBooked -= 1;
         userTotalPps[bookings[bookingId].user] -= bookings[bookingId]
             .pricePerSecond;
+
+        emit Termination(bookingId, reason);
+
         delete bookings[bookingId];
     }
 
-    function Terminate(uint32 bookingId, uint8 reason) public {
+    uint16 public constant REASON_PROVIDER_TERMINATED = 2;
+    uint16 public constant REASON_NON_PAYMENT = 3;
+    uint16 public constant REASON_COMMUNITY_TERMINATED = 4;
+
+    function Terminate(uint32 bookingId, uint16 reason) public {
         require(
-            (bookings[bookingId].user == msg.sender && reason != 2) ||
-                (bookings[bookingId].miner == msg.sender && reason == 2),
-            "Only the user can stop a VM with reason 0 or 1, only the miner can stop a VM with reason 2"
+            bookings[bookingId].user == msg.sender ||
+                (bookings[bookingId].provider == msg.sender &&
+                    reason == REASON_PROVIDER_TERMINATED) ||
+                (msg.sender == communityContract &&
+                    reason == REASON_COMMUNITY_TERMINATED),
+            "Only the user can stop a VM with reason 0 or 1, only the provider can stop a VM with reason 2"
         );
 
-        if (reason != 0) {
-            emit Complaint(
-                bookings[bookingId].user,
-                bookings[bookingId].miner,
-                reason
-            );
-        }
-
         _executeClaimPayment(bookingId);
-        _executeBookingDelete(bookingId);
+        _executeBookingDelete(bookingId, reason);
     }
 
     function ClaimPayment(uint32 bookingId) public {
         require(
-            bookings[bookingId].miner == msg.sender,
-            "Only the miner can claim a payment"
+            bookings[bookingId].provider == msg.sender,
+            "Only the provider can claim a payment"
         );
         bool enoughMoney = _executeClaimPayment(bookingId);
         if (!enoughMoney) {
-            _executeBookingDelete(bookingId);
+            _executeBookingDelete(bookingId, REASON_NON_PAYMENT);
         }
     }
 
@@ -306,19 +375,14 @@ contract BrokerV1 {
         }
 
         uint256 communityPayout = (totalPayout * communityFee) / (100 * 100);
-        uint256 minerPayout = totalPayout - communityPayout;
+        uint256 providerPayout = totalPayout - communityPayout;
 
-        bookings[bookingId].lastPayment = block.timestamp;
+        bookings[bookingId].lastPayment = uint32(block.timestamp);
 
         coinBalance[communityContract] += communityPayout;
-        coinBalance[bookings[bookingId].miner] += minerPayout;
+        coinBalance[bookings[bookingId].provider] += providerPayout;
         coinBalance[bookings[bookingId].user] -= totalPayout;
 
-        emit Payment(
-            bookings[bookingId].user,
-            bookings[bookingId].miner,
-            minerPayout
-        );
         return enoughMoney;
     }
 
@@ -340,13 +404,13 @@ contract BrokerV1 {
         }
     }
 
-    function FindBookingsByMiner(
-        address _miner
+    function FindBookingsByProvider(
+        address _provider
     ) public view returns (Booking[] memory filteredBookings) {
         Booking[] memory bookingsTemp = new Booking[](nextBookingId);
         uint32 count;
         for (uint32 i = 0; i < nextBookingId; i++) {
-            if (bookings[i].miner == _miner) {
+            if (bookings[i].provider == _provider) {
                 bookingsTemp[count] = bookings[i];
                 count += 1;
             }
@@ -392,5 +456,32 @@ contract BrokerV1 {
     function GetTime() public view returns (uint256) {
         //TODO: remove. Test function only
         return block.timestamp;
+    }
+
+    function AddTrial(address user, uint64 amt) public {
+        require(
+            msg.sender == communityContract,
+            "only community contract can add trial"
+        );
+        freeTrial[user] += amt;
+        coinBalance[user] += amt;
+    }
+
+    function RemoveTrial(address user) public {
+        require(
+            (msg.sender == communityContract) || (msg.sender == user),
+            "only community contract or user themselves can remove trial"
+        );
+        uint256 freeBalance = coinBalance[user] - GetLockedCoinBalance(user);
+        require(
+            freeBalance >= freeTrial[user],
+            "user has not enough coins to cancel trial"
+        );
+        coinBalance[user] -= freeTrial[user];
+        freeTrial[user] = 0;
+    }
+
+    function GetTrialAmount(address user) public view returns (uint64) {
+        return freeTrial[user];
     }
 }

@@ -4,10 +4,10 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { deployBrokerFixture, brokerWithFiveOffers, brokerWithOfferAndUserBalance } from './fixtures'
 import { BigNumber } from "ethers";
 
-describe("BrokerV1_coin", function () {
+describe("Broker_coin", function () {
     describe("DepositCoin", function () {
         it("should incrase balance", async function () {
-            const { broker, token, miner, user, admin } = await loadFixture(deployBrokerFixture);
+            const { broker, token, provider, user, admin } = await loadFixture(deployBrokerFixture);
 
             await token.connect(admin).transfer(user.address, '123456')
 
@@ -22,13 +22,13 @@ describe("BrokerV1_coin", function () {
         });
 
         it("should revert if transfer fails", async function () {
-            const { broker, token, miner, user, admin } = await loadFixture(deployBrokerFixture);
+            const { broker, token, provider, user, admin } = await loadFixture(deployBrokerFixture);
             await expect(broker.connect(user).DepositCoin('123')).to.be.reverted
         });
     })
     describe("GetLockedCoinBalance", function () {
         it("should increase with vm booking", async function () {
-            const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
+            const { broker, token, provider, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
             const [free1, locked1] = await broker.connect(user).GetCoinBalance(user.address)
 
@@ -42,7 +42,7 @@ describe("BrokerV1_coin", function () {
             expect(free1.sub(free2)).is.equal(expectedIncrease)
         });
         it("should decrease with vm termination", async function () {
-            const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
+            const { broker, token, provider, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
             const [free1, locked1] = await broker.connect(user).GetCoinBalance(user.address)
             expect(locked1.toString()).is.equal('0')
@@ -60,7 +60,7 @@ describe("BrokerV1_coin", function () {
     })
     describe("WithdrawCoin", function () {
         it("should withdraw only free balance", async function () {
-            const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
+            const { broker, token, provider, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
             await broker.connect(user).Book(0)
             const [free, locked] = await broker.connect(user).GetCoinBalance(user.address)
@@ -70,7 +70,7 @@ describe("BrokerV1_coin", function () {
         });
         it("should revert if transfer fails", async function () {
             //TODO: modify coin contract to make this test pass
-            const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
+            const { broker, token, provider, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
             await token.transferShouldFail(true)
             await expect(broker.connect(user).WithdrawCoin(1)).to.be.reverted
@@ -78,7 +78,7 @@ describe("BrokerV1_coin", function () {
     })
     describe("GetCoinBalance", function () {
         it("should return locked and free balance", async function () {
-            const { broker, token, miner, user } = await loadFixture(brokerWithOfferAndUserBalance);
+            const { broker, token, provider, user } = await loadFixture(brokerWithOfferAndUserBalance);
 
             await broker.connect(user).Book(0)
 
@@ -95,7 +95,7 @@ describe("BrokerV1_coin", function () {
             expect(await broker.coin()).is.equal(token.address)
         });
         it("should revert if not owner", async function () {
-            const { broker, token, miner, user } = await loadFixture(deployBrokerFixture);
+            const { broker, token, provider, user } = await loadFixture(deployBrokerFixture);
 
             await expect(broker.connect(user).SetCoinAddress(token.address)).to.be.reverted
         });

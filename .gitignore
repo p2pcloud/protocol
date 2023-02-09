@@ -3,16 +3,23 @@ node_modules
 coverage
 coverage.json
 typechain
-typechain-types
 
 #Hardhat files
 cache
-artifacts
 
 *openzeppelin
 
+# artifacts
+artifacts/*/*/*
+artifacts/*/*.json
+!artifacts/contracts/
+!artifacts/contracts/Broker.sol/Broker.json
+!artifacts/contracts/Broker.sol/IERC20.json
+
+# types
+typechain-types/*
+!typechain-types/contracts
+typechain-types/contracts/*
 !typechain-types/common.ts
-!/typechain-types/contracts/BrokerV1.sol/**/*
-!artifacts/contracts/BrokerV1.sol/BrokerV1.json
-!artifacts/contracts/BrokerV1.sol/IERC20.json
-!artifacts/contracts/Community.sol/Community.json
+!typechain-types/contracts/Broker.sol
+!typechain-types/contracts/Broker.sol/*.ts

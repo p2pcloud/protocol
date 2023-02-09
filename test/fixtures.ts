@@ -3,50 +3,47 @@ import { ethers, upgrades } from "hardhat";
 import type { Contract, BigNumberish, BytesLike } from "ethers";
 import { BigNumber } from "ethers";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import type { BrokerV1, Token } from "../typechain-types";
+import type { Broker, OldBroker, Token } from "../typechain-types";
 import { PromiseOrValue } from "../typechain-types/common";
 import bs58 from 'bs58'
 
 export type Fixture = {
-    broker: BrokerV1,
+    broker: Broker,
     token: Token
-    miner: SignerWithAddress,
+    provider: SignerWithAddress,
     user: SignerWithAddress,
     admin: SignerWithAddress,
     anotherUser: SignerWithAddress,
 }
 
-export type Offer = {
-    Index: number,
-    Miner: string,
-    PPS: number,
-    Availablility: number,
-    VmTypeId: number
-}
-
-export type OffersItem = [
-    pricePerSecond: PromiseOrValue<BigNumberish>,
-    machinesAvailable: PromiseOrValue<BigNumberish>,
-    specsIpfsHash: PromiseOrValue<BytesLike>,
-]
-
 export async function deployBrokerFixture(): Promise<Fixture> {
     return await _deployBrokerFixture()
 }
 
-async function _deployBrokerFixture(): Promise<Fixture> {
-    const [admin, miner, user, anotherUser] = await ethers.getSigners();
 
-    const Broker = await ethers.getContractFactory("BrokerV1");
-    const broker = await upgrades.deployProxy(Broker) as BrokerV1;
+async function _deployBrokerFixture(): Promise<Fixture> {
+    const [admin, provider, user, anotherUser] = await ethers.getSigners();
+
+    const OldBrokerContract = await ethers.getContractFactory("OldBroker");
+    const oldBroker = await upgrades.deployProxy(OldBrokerContract) as OldBroker;
 
     const Token = await ethers.getContractFactory("Token");
     const token = await Token.connect(admin).deploy('10000000000000000000000');
 
-    await broker.SetCommunityContract(admin.address)
-    await broker.SetCoinAddress(token.address)
+    await oldBroker.SetCommunityContract(admin.address)
+    await oldBroker.SetCoinAddress(token.address)
 
-    return { broker, token, miner, user, admin, anotherUser };
+    const fee = await oldBroker.PROVIDER_REGISTRATION_FEE()
+    await token.connect(admin).transfer(provider.address, fee)
+    await token.connect(provider).increaseAllowance(oldBroker.address, fee)
+    await oldBroker.connect(provider).DepositCoin(fee)
+    await oldBroker.connect(provider).RegisterProvider()
+
+    //upgrade broker
+    const Broker = await ethers.getContractFactory("Broker");
+    const broker = await upgrades.upgradeProxy(oldBroker.address, Broker) as Broker;
+
+    return { broker, token, provider, user, admin, anotherUser };
 }
 
 export async function brokerWithOfferAndUserBalance(): Promise<Fixture> {
@@ -65,24 +62,6 @@ export async function brokerWithOfferAndUserBalance(): Promise<Fixture> {
     return fixture
 }
 
-
-function toNumber(val: BigNumber | number) {
-    if (typeof val === 'number') {
-        return val
-    }
-    return val.toNumber()
-}
-
-// //TODO: remove this 
-// Number.prototype.toNumber = function () {
-//     return this.valueOf()
-// }
-// //TODO: remove this
-// Number.prototype.mul = function (val: any) {
-//     return BigNumber.from(this.valueOf()).mul(val)
-// }
-
-
 const specCid = "QmYnq93f9NJ1aCBLCoboncFE6GSZJDqn5RCDVV3ywziXd9"
 export const exampleSpecBytes = "0x" + Buffer.from(bs58.decode(specCid).slice(2)).toString('hex')
 
@@ -93,9 +72,11 @@ export async function brokerWithFiveOffers(): Promise<Fixture> {
 async function _brokerWithFiveOffers(): Promise<Fixture> {
     const fixture = await _deployBrokerFixture()
 
-    const { broker, miner } = fixture
+    const { broker, provider } = fixture
 
-    const offers: OffersItem[] = [
+    type OfferType = [number, number, BytesLike]
+
+    const offers: OfferType[] = [
         [1, 1, exampleSpecBytes],
         [2, 2, exampleSpecBytes],
         [3, 3, exampleSpecBytes],
@@ -103,7 +84,7 @@ async function _brokerWithFiveOffers(): Promise<Fixture> {
         [5, 5, exampleSpecBytes],
     ]
 
-    await Promise.all(offers.map(offer => broker.connect(miner).AddOffer(...offer)))
+    await Promise.all(offers.map(offer => broker.connect(provider).AddOffer(...offer)))
 
     return fixture;
 }
