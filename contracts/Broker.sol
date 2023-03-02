@@ -81,7 +81,7 @@ contract Broker {
         address indexed user,
         address indexed provider,
         uint32 bookingIndex,
-        uint32 pps
+        uint32 pps //TODO: remove this field
     );
 
     struct ProviderInfo {
