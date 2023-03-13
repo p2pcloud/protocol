@@ -118,6 +118,8 @@ export interface BrokerInterface extends utils.Interface {
     "coin()": FunctionFragment;
     "communityContract()": FunctionFragment;
     "communityFee()": FunctionFragment;
+    "getTrustedKey(address)": FunctionFragment;
+    "setTrustedKey(bytes32)": FunctionFragment;
   };
 
   getFunction(
@@ -156,6 +158,8 @@ export interface BrokerInterface extends utils.Interface {
       | "coin"
       | "communityContract"
       | "communityFee"
+      | "getTrustedKey"
+      | "setTrustedKey"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -296,6 +300,14 @@ export interface BrokerInterface extends utils.Interface {
     functionFragment: "communityFee",
     values?: undefined
   ): string;
+  encodeFunctionData(
+    functionFragment: "getTrustedKey",
+    values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setTrustedKey",
+    values: [PromiseOrValue<BytesLike>]
+  ): string;
 
   decodeFunctionResult(functionFragment: "AddOffer", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "AddTrial", data: BytesLike): Result;
@@ -407,6 +419,14 @@ export interface BrokerInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "communityFee",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getTrustedKey",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setTrustedKey",
     data: BytesLike
   ): Result;
 
@@ -636,6 +656,16 @@ export interface Broker extends BaseContract {
     communityContract(overrides?: CallOverrides): Promise<[string]>;
 
     communityFee(overrides?: CallOverrides): Promise<[number]>;
+
+    getTrustedKey(
+      user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<[string]>;
+
+    setTrustedKey(
+      pubkey: PromiseOrValue<BytesLike>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
   };
 
   AddOffer(
@@ -785,6 +815,16 @@ export interface Broker extends BaseContract {
 
   communityFee(overrides?: CallOverrides): Promise<number>;
 
+  getTrustedKey(
+    user: PromiseOrValue<string>,
+    overrides?: CallOverrides
+  ): Promise<string>;
+
+  setTrustedKey(
+    pubkey: PromiseOrValue<BytesLike>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   callStatic: {
     AddOffer(
       pricePerSecond: PromiseOrValue<BigNumberish>,
@@ -930,6 +970,16 @@ export interface Broker extends BaseContract {
     communityContract(overrides?: CallOverrides): Promise<string>;
 
     communityFee(overrides?: CallOverrides): Promise<number>;
+
+    getTrustedKey(
+      user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<string>;
+
+    setTrustedKey(
+      pubkey: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {
@@ -1101,6 +1151,16 @@ export interface Broker extends BaseContract {
     communityContract(overrides?: CallOverrides): Promise<BigNumber>;
 
     communityFee(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getTrustedKey(
+      user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    setTrustedKey(
+      pubkey: PromiseOrValue<BytesLike>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -1258,5 +1318,15 @@ export interface Broker extends BaseContract {
     communityContract(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     communityFee(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    getTrustedKey(
+      user: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    setTrustedKey(
+      pubkey: PromiseOrValue<BytesLike>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
   };
 }

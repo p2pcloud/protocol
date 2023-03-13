@@ -484,4 +484,15 @@ contract Broker {
     function GetTrialAmount(address user) public view returns (uint64) {
         return freeTrial[user];
     }
+
+    mapping(address => bytes32) trustedPubKeys;
+
+    //FIXME: probably we will need multiple keys per user
+    function setTrustedKey(bytes32 pubkey) public {
+        trustedPubKeys[msg.sender] = pubkey;
+    }
+
+    function getTrustedKey(address user) public view returns (bytes32) {
+        return trustedPubKeys[user];
+    }
 }
