@@ -24,7 +24,7 @@ describe("Broker_getProviderUrl", function () {
 
 
         const urlBytes = ethers.utils.formatBytes32String("woop.woop/woop");
-        expect(broker.connect(anotherUser).SetProviderUrl(urlBytes)).to.be.revertedWith("Provider not registered")
+        expect(broker.connect(anotherUser).SetProviderUrl(urlBytes)).to.be.revertedWith("Provider must be registered to set url")
 
         const fee = await broker.PROVIDER_REGISTRATION_FEE()
         await token.connect(admin).transfer(anotherUser.address, fee)

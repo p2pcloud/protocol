@@ -118,8 +118,8 @@ export interface BrokerInterface extends utils.Interface {
     "coin()": FunctionFragment;
     "communityContract()": FunctionFragment;
     "communityFee()": FunctionFragment;
-    "getTrustedKey(address)": FunctionFragment;
-    "setTrustedKey(bytes32)": FunctionFragment;
+    "getTrustedAddress(address)": FunctionFragment;
+    "setTrustedAddress(address)": FunctionFragment;
   };
 
   getFunction(
@@ -158,8 +158,8 @@ export interface BrokerInterface extends utils.Interface {
       | "coin"
       | "communityContract"
       | "communityFee"
-      | "getTrustedKey"
-      | "setTrustedKey"
+      | "getTrustedAddress"
+      | "setTrustedAddress"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -301,12 +301,12 @@ export interface BrokerInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "getTrustedKey",
+    functionFragment: "getTrustedAddress",
     values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
-    functionFragment: "setTrustedKey",
-    values: [PromiseOrValue<BytesLike>]
+    functionFragment: "setTrustedAddress",
+    values: [PromiseOrValue<string>]
   ): string;
 
   decodeFunctionResult(functionFragment: "AddOffer", data: BytesLike): Result;
@@ -422,11 +422,11 @@ export interface BrokerInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "getTrustedKey",
+    functionFragment: "getTrustedAddress",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "setTrustedKey",
+    functionFragment: "setTrustedAddress",
     data: BytesLike
   ): Result;
 
@@ -657,13 +657,13 @@ export interface Broker extends BaseContract {
 
     communityFee(overrides?: CallOverrides): Promise<[number]>;
 
-    getTrustedKey(
+    getTrustedAddress(
       user: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<[string]>;
 
-    setTrustedKey(
-      pubkey: PromiseOrValue<BytesLike>,
+    setTrustedAddress(
+      trusted: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
   };
@@ -815,13 +815,13 @@ export interface Broker extends BaseContract {
 
   communityFee(overrides?: CallOverrides): Promise<number>;
 
-  getTrustedKey(
+  getTrustedAddress(
     user: PromiseOrValue<string>,
     overrides?: CallOverrides
   ): Promise<string>;
 
-  setTrustedKey(
-    pubkey: PromiseOrValue<BytesLike>,
+  setTrustedAddress(
+    trusted: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -971,13 +971,13 @@ export interface Broker extends BaseContract {
 
     communityFee(overrides?: CallOverrides): Promise<number>;
 
-    getTrustedKey(
+    getTrustedAddress(
       user: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<string>;
 
-    setTrustedKey(
-      pubkey: PromiseOrValue<BytesLike>,
+    setTrustedAddress(
+      trusted: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -1152,13 +1152,13 @@ export interface Broker extends BaseContract {
 
     communityFee(overrides?: CallOverrides): Promise<BigNumber>;
 
-    getTrustedKey(
+    getTrustedAddress(
       user: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    setTrustedKey(
-      pubkey: PromiseOrValue<BytesLike>,
+    setTrustedAddress(
+      trusted: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
   };
@@ -1319,13 +1319,13 @@ export interface Broker extends BaseContract {
 
     communityFee(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    getTrustedKey(
+    getTrustedAddress(
       user: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    setTrustedKey(
-      pubkey: PromiseOrValue<BytesLike>,
+    setTrustedAddress(
+      trusted: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
   };

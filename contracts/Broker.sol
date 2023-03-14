@@ -485,14 +485,14 @@ contract Broker {
         return freeTrial[user];
     }
 
-    mapping(address => bytes32) trustedPubKeys;
+    mapping(address => bytes32) trustedPubKeys; //TODO: remove
+    mapping(address => address) trustedAddresses;
 
-    //FIXME: probably we will need multiple keys per user
-    function setTrustedKey(bytes32 pubkey) public {
-        trustedPubKeys[msg.sender] = pubkey;
+    function setTrustedAddress(address trusted) public {
+        trustedAddresses[msg.sender] = trusted;
     }
 
-    function getTrustedKey(address user) public view returns (bytes32) {
-        return trustedPubKeys[user];
+    function getTrustedAddress(address user) public view returns (address) {
+        return trustedAddresses[user];
     }
 }
