@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract TestToken is ERC20 {
+contract MockERC20 is ERC20 {
     bool public transferWillFail = false;
 
     constructor(uint256 initialSupply) ERC20("Gold", "GLD") {

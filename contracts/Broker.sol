@@ -6,9 +6,8 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./CommunityOwnable.sol";
 import "./BalanceHolder.sol";
 import "./ProviderRegistry.sol";
-import "./utils/Testable.sol";
 
-contract Broker is BalanceHolder, ProviderRegistry, Testable {
+contract Broker is BalanceHolder, ProviderRegistry {
     bytes32 public constant DOMAIN_TYPEHASH =
         keccak256(
             "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
@@ -42,6 +41,8 @@ contract Broker is BalanceHolder, ProviderRegistry, Testable {
         );
 
         _transferOwnership(msg.sender);
+        setCommunityFee(1000);
+        _disableInitializers();
     }
 }
 

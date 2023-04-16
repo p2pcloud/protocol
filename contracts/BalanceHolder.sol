@@ -6,78 +6,76 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./CommunityOwnable.sol";
 
 abstract contract BalanceHolder is CommunityOwnable {
-    mapping(address => uint256) coinBalance;
-    mapping(address => uint32) lockedBalance;
-    mapping(address => uint256) nonWithdrawableBalance;
-    IERC20 public coin;
+    mapping(address => uint256) private _coinBalance;
+    mapping(address => uint256) internal _lockedBalance;
+    IERC20 private _coin;
 
-    function SetCoinAddress(IERC20 newCoinAddress) public onlyOwner {
-        coin = newCoinAddress;
+    function coin() public view returns (IERC20) {
+        return _coin;
     }
 
-    function DepositCoin(uint256 numTokens) public {
+    function setCoin(IERC20 newCoinAddress) public onlyOwner {
+        _coin = newCoinAddress;
+    }
+
+    function depositCoin(uint256 numTokens) public {
         require(
-            coin.transferFrom(msg.sender, address(this), numTokens),
+            _coin.transferFrom(msg.sender, address(this), numTokens),
             "Failed to transfer tokens"
         );
 
-        coinBalance[msg.sender] = coinBalance[msg.sender] + numTokens;
+        _coinBalance[msg.sender] = _coinBalance[msg.sender] + numTokens;
     }
 
-    function WithdrawCoin(uint256 amt) public {
-        uint256 freeBalance = coinBalance[msg.sender] -
-            lockedBalance[msg.sender] -
-            nonWithdrawableBalance[msg.sender];
-
-        require(freeBalance >= amt, "Not enough balance to withdraw");
-
-        coinBalance[msg.sender] -= amt;
-
-        require(coin.transfer(msg.sender, amt), "ERC20 transfer failed");
+    function _changeLockedBalance(address user, int256 amt) internal {
+        if (amt > 0) {
+            _lockedBalance[user] += uint256(amt);
+        } else {
+            _lockedBalance[user] -= uint256(-amt);
+        }
     }
 
-    function GetCoinBalance(
+    function withdrawCoin(uint256 amt) public {
+        uint256 withdrawableBalance = _coinBalance[msg.sender] -
+            _lockedBalance[msg.sender];
+
+        require(withdrawableBalance >= amt, "Not enough balance to withdraw");
+
+        _coinBalance[msg.sender] -= amt;
+
+        require(_coin.transfer(msg.sender, amt), "ERC20 transfer failed");
+    }
+
+    function getCoinBalance(
         address user
-    )
-        public
-        view
-        returns (uint256 free, uint256 locked, uint256 nonWithdrawable)
-    {
-        locked = lockedBalance[user];
-        free = coinBalance[user] - locked;
-        nonWithdrawable = nonWithdrawableBalance[user];
-        return (free, locked, nonWithdrawable);
+    ) public view returns (uint256 free, uint256 locked) {
+        locked = _lockedBalance[user];
+        free = _coinBalance[user] - locked;
+        return (free, locked);
     }
 
-    function NonWithdrawableTransfer(uint256 amt, address to) public {
-        uint256 freeBalance = coinBalance[msg.sender] -
-            lockedBalance[msg.sender] -
-            nonWithdrawableBalance[msg.sender];
-
-        require(freeBalance >= amt, "Not enough balance to transfer");
-
-        coinBalance[msg.sender] -= amt;
-
-        coinBalance[to] += amt;
-        nonWithdrawableBalance[to] += amt;
-    }
-
-    function _spend(
-        address user,
+    function _spendWithComission(
+        address spender,
+        address receiver,
         uint256 amt
-    ) internal returns (uint256, bool) {
-        uint256 spentAmt = _min(coinBalance[user], amt);
+    ) internal returns (bool defaulted) {
+        uint256 spentAmt = _min(_coinBalance[spender], amt);
 
-        coinBalance[user] -= spentAmt;
-        nonWithdrawableBalance[user] -= _min(nonWithdrawableBalance[user], amt);
-        return (spentAmt, spentAmt == amt);
+        uint256 communityPayout = (spentAmt * communityFee()) / (100 * 100);
+        uint256 providerPayout = spentAmt - communityPayout;
+
+        _coinBalance[spender] -= spentAmt;
+        _coinBalance[receiver] += providerPayout;
+        _coinBalance[owner()] += communityPayout;
+
+        return spentAmt != amt;
     }
 
     function _isSpendable(
         address user,
         uint256 amt
     ) internal view returns (bool) {
-        uint256 freeBalance = coinBalance[user] - lockedBalance[user];
+        uint256 freeBalance = _coinBalance[user] - _lockedBalance[user];
         return freeBalance >= amt;
     }
 

@@ -15,7 +15,7 @@ abstract contract ProviderRegistry is BalanceHolder {
 
     mapping(address => ProviderInfo) providerInfo;
 
-    function SetProviderUrl(bytes32 url) public {
+    function setProviderUrl(bytes32 url) public {
         require(
             providerInfo[msg.sender].isRegistered,
             "Provider must be registered to set url"
@@ -23,17 +23,17 @@ abstract contract ProviderRegistry is BalanceHolder {
         providerInfo[msg.sender].url = url;
     }
 
-    function GetProviderUrl(address _user) public view returns (bytes32) {
+    function getProviderUrl(address _user) public view returns (bytes32) {
         return providerInfo[_user].url;
     }
 
-    function IsProviderRegistered(address _user) public view returns (bool) {
+    function isProviderRegistered(address _user) public view returns (bool) {
         return providerInfo[_user].isRegistered;
     }
 
     uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
 
-    function RegisterProvider() public {
+    function registerProvider() public {
         require(
             !providerInfo[msg.sender].isRegistered,
             "Provider is already registered"
@@ -44,7 +44,7 @@ abstract contract ProviderRegistry is BalanceHolder {
             "Not enough coin to register "
         );
 
-        _spend(msg.sender, PROVIDER_REGISTRATION_FEE);
+        _spendWithComission(msg.sender, owner(), PROVIDER_REGISTRATION_FEE);
 
         providerInfo[msg.sender].isRegistered = true;
         providerInfo[msg.sender].feePaid += PROVIDER_REGISTRATION_FEE;
