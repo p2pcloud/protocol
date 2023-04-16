@@ -30,6 +30,7 @@
         "@nomicfoundation/hardhat-toolbox": "^1.0.2",
         "@nomiclabs/hardhat-ethers": "^2.2.1",
         "@openzeppelin/contracts": "^4.8.0",
+        "@openzeppelin/contracts-upgradeable": "^4.8.3",
         "@openzeppelin/hardhat-upgrades": "^1.22.0",
         "@types/prompt": "^1.1.4",
         "bs58": "^5.0.0",

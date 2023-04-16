@@ -4,7 +4,7 @@ pragma solidity >=0.7.0 <0.9.0;
 
 import "./BalanceHolder.sol";
 
-contract ProviderRegistry is BalanceHolder{
+abstract contract ProviderRegistry is BalanceHolder {
     struct ProviderInfo {
         //slot 1
         bytes32 url;
@@ -14,7 +14,6 @@ contract ProviderRegistry is BalanceHolder{
     }
 
     mapping(address => ProviderInfo) providerInfo;
-
 
     function SetProviderUrl(bytes32 url) public {
         require(
@@ -32,23 +31,20 @@ contract ProviderRegistry is BalanceHolder{
         return providerInfo[_user].isRegistered;
     }
 
-
     uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
 
     function RegisterProvider() public {
-        uint256 freeBalance = coinBalance[msg.sender] -
-            lockedBalance[msg.sender];
-        require(
-            freeBalance >= PROVIDER_REGISTRATION_FEE,
-            "Not enough coin to register "
-        );
         require(
             !providerInfo[msg.sender].isRegistered,
             "Provider is already registered"
         );
 
-        coinBalance[msg.sender] -= PROVIDER_REGISTRATION_FEE;
-        coinBalance[owner()] += PROVIDER_REGISTRATION_FEE;
+        require(
+            _isSpendable(msg.sender, PROVIDER_REGISTRATION_FEE),
+            "Not enough coin to register "
+        );
+
+        _spend(msg.sender, PROVIDER_REGISTRATION_FEE);
 
         providerInfo[msg.sender].isRegistered = true;
         providerInfo[msg.sender].feePaid += PROVIDER_REGISTRATION_FEE;

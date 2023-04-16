@@ -3,9 +3,9 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./CommunityOwnable.sol";
 
-contract BalanceHolder is Ownable {
+abstract contract BalanceHolder is CommunityOwnable {
     mapping(address => uint256) coinBalance;
     mapping(address => uint32) lockedBalance;
     mapping(address => uint256) nonWithdrawableBalance;
@@ -69,8 +69,16 @@ contract BalanceHolder is Ownable {
         uint256 spentAmt = _min(coinBalance[user], amt);
 
         coinBalance[user] -= spentAmt;
-        nonWithdrawableBalance[user] -= spentAmt;
+        nonWithdrawableBalance[user] -= _min(nonWithdrawableBalance[user], amt);
         return (spentAmt, spentAmt == amt);
+    }
+
+    function _isSpendable(
+        address user,
+        uint256 amt
+    ) internal view returns (bool) {
+        uint256 freeBalance = coinBalance[user] - lockedBalance[user];
+        return freeBalance >= amt;
     }
 
     function _min(uint256 a, uint256 b) internal pure returns (uint256) {

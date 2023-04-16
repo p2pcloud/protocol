@@ -2,9 +2,9 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract CommunityOwnable is Ownable {
+abstract contract CommunityOwnable is OwnableUpgradeable {
     uint16 public communityFee;
 
     function SetCommunityFee(uint16 fee) public onlyOwner returns (bool) {

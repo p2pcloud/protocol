@@ -24,24 +24,20 @@ export async function deployBrokerFixture(): Promise<Fixture> {
 async function _deployBrokerFixture(): Promise<Fixture> {
     const [admin, provider, user, anotherUser] = await ethers.getSigners();
 
-    const OldBrokerContract = await ethers.getContractFactory("OldBroker");
-    const oldBroker = await upgrades.deployProxy(OldBrokerContract) as OldBroker;
+    const Broker = await ethers.getContractFactory("Broker");
+    const broker = await upgrades.deployProxy(Broker) as Broker;
 
-    const Token = await ethers.getContractFactory("Token");
+    const Token = await ethers.getContractFactory("TestToken");
     const token = await Token.connect(admin).deploy('10000000000000000000000');
 
-    await oldBroker.SetCommunityContract(admin.address)
-    await oldBroker.SetCoinAddress(token.address)
+    // await broker.connect(admin).initialize()
+    await broker.connect(admin).SetCoinAddress(token.address)
 
-    const fee = await oldBroker.PROVIDER_REGISTRATION_FEE()
+    const fee = await broker.PROVIDER_REGISTRATION_FEE()
     await token.connect(admin).transfer(provider.address, fee)
-    await token.connect(provider).increaseAllowance(oldBroker.address, fee)
-    await oldBroker.connect(provider).DepositCoin(fee)
-    await oldBroker.connect(provider).RegisterProvider()
-
-    //upgrade broker
-    const Broker = await ethers.getContractFactory("Broker");
-    const broker = await upgrades.upgradeProxy(oldBroker.address, Broker) as Broker;
+    await token.connect(provider).increaseAllowance(broker.address, fee)
+    await broker.connect(provider).DepositCoin(fee)
+    await broker.connect(provider).RegisterProvider()
 
     return { broker, token, provider, user, admin, anotherUser };
 }
