@@ -7,6 +7,7 @@
         "test": "hardhat test",
         "gas": "REPORT_GAS=true hardhat test",
         "compile": "hardhat compile",
+        "coverage": "hardhat coverage",
         "run_in_docker": "docker build -t protocol_test . && docker run -v $(pwd)/artifacts:/app/artifacts protocol_test",
         "test:docker": "npm run run_in_docker -- npm test",
         "compile:docker": "npm run run_in_docker -- npm run compile",

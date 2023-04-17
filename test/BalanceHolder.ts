@@ -5,7 +5,7 @@ import { deployBrokerFixture } from './fixtures'
 describe("BalanceHolder", function () {
     describe("depositCoin", function () {
         it("should incrase balance", async function () {
-            const { broker, token, provider, user, admin } = await loadFixture(deployBrokerFixture);
+            const { broker, token, user, admin } = await loadFixture(deployBrokerFixture);
 
             await token.connect(admin).transfer(user.address, '123456')
 
@@ -20,13 +20,13 @@ describe("BalanceHolder", function () {
         });
 
         it("should revert if transfer fails", async function () {
-            const { broker, token, provider, user, admin } = await loadFixture(deployBrokerFixture);
+            const { broker, user } = await loadFixture(deployBrokerFixture);
             await expect(broker.connect(user).depositCoin('123')).to.be.reverted
         });
     })
     describe("WithdrawCoin", function () {
         it("should not withdraw locked balance", async function () {
-            const { broker, token, provider, user, admin } = await loadFixture(deployBrokerFixture);
+            const { broker, token, user, admin } = await loadFixture(deployBrokerFixture);
 
             //deposit 123 tokens
             await token.connect(admin).transfer(user.address, '123456')
@@ -44,7 +44,7 @@ describe("BalanceHolder", function () {
         });
         it("should revert if transfer fails", async function () {
             //TODO: modify coin contract to make this test pass
-            const { broker, token, provider, user, admin } = await loadFixture(deployBrokerFixture);
+            const { broker, token, user } = await loadFixture(deployBrokerFixture);
 
             const [userBalance1] = await broker.connect(user).getCoinBalance(user.address)
 
@@ -58,7 +58,7 @@ describe("BalanceHolder", function () {
     })
     describe("getCoinBalance", function () {
         it("should return locked and free balance", async function () {
-            const { broker, token, provider, user, admin } = await loadFixture(deployBrokerFixture);
+            const { broker, token, user, admin } = await loadFixture(deployBrokerFixture);
 
             //deposit 123 tokens
             await token.connect(admin).transfer(user.address, '123456')
@@ -81,7 +81,7 @@ describe("BalanceHolder", function () {
             expect(await broker.coin()).is.equal(token.address)
         });
         it("should revert if not owner", async function () {
-            const { broker, token, provider, user } = await loadFixture(deployBrokerFixture);
+            const { broker, token, user } = await loadFixture(deployBrokerFixture);
 
             await expect(broker.connect(user).setCoin(token.address)).to.be.reverted
         });
