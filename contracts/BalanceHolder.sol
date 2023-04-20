@@ -2,10 +2,12 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./CommunityOwnable.sol";
 
-abstract contract BalanceHolder is CommunityOwnable {
+abstract contract BalanceHolder is OwnableUpgradeable {
+    uint16 public communityFee;
+
     mapping(address => uint256) private _coinBalance;
     mapping(address => uint256) internal _lockedBalance;
     IERC20 private _coin;
@@ -61,7 +63,7 @@ abstract contract BalanceHolder is CommunityOwnable {
     ) internal returns (bool defaulted) {
         uint256 spentAmt = _min(_coinBalance[spender], amt);
 
-        uint256 communityPayout = (spentAmt * communityFee()) / (100 * 100);
+        uint256 communityPayout = (spentAmt * communityFee) / (100 * 100);
         uint256 providerPayout = spentAmt - communityPayout;
 
         _coinBalance[spender] -= spentAmt;

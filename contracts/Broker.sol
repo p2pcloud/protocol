@@ -3,7 +3,6 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "./CommunityOwnable.sol";
 import "./BalanceHolder.sol";
 import "./ProviderRegistry.sol";
 
@@ -41,10 +40,11 @@ contract Broker is BalanceHolder, ProviderRegistry {
         );
 
         _transferOwnership(msg.sender);
-        setCommunityFee(1000);
         agreementCount = 1;
 
         _disableInitializers();
+
+        communityFee = 2000;
     }
 
     uint256 public constant MONEY_LOCK_MINUTES = 60 * 24 * 7; // 7 days
@@ -79,51 +79,30 @@ contract Broker is BalanceHolder, ProviderRegistry {
         Amendment calldata amendment,
         bytes calldata signature
     ) external {
-        uint256 agreementId = agreementCount;
-        agreementCount++;
+        address provider = _getAmendmentSigner(0, amendment, signature);
 
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(
-                    abi.encode(
-                        AMENDMENT_TYPEHASH,
-                        0,
-                        amendment.ipfsHash,
-                        amendment.pricePerMinute
-                    )
-                )
-            )
-        );
-
-        agreements[agreementId] = Agreement({
+        agreements[agreementCount] = Agreement({
             ipfsHash: amendment.ipfsHash,
             pricePerMinute: amendment.pricePerMinute,
             client: msg.sender,
-            provider: digest.recover(signature),
+            provider: provider,
             lastPayment: block.timestamp
         });
 
         emit AgreementAmended(
-            agreementId,
+            agreementCount,
             amendment.ipfsHash,
             amendment.pricePerMinute
         );
+
+        agreementCount++;
     }
 
-    function amendAgreement(
+    function _getAmendmentSigner(
         uint256 agreementId,
         Amendment calldata amendment,
         bytes calldata signature
-    ) external {
-        Agreement storage agreement = agreements[agreementId];
-        require(
-            agreement.client == msg.sender,
-            "Only client can submit amendment"
-        );
-        require(agreement.provider != address(0), "Agreement not found");
-
+    ) internal view returns (address) {
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
@@ -139,10 +118,23 @@ contract Broker is BalanceHolder, ProviderRegistry {
             )
         );
 
+        return digest.recover(signature);
+    }
+
+    function amendAgreement(
+        uint256 agreementId,
+        Amendment calldata amendment,
+        bytes calldata signature
+    ) external {
+        Agreement storage agreement = agreements[agreementId];
         require(
-            digest.recover(signature) == agreement.provider,
-            "Invalid provider signature"
+            agreement.client == msg.sender,
+            "Only client can submit amendment"
         );
+
+        address signer = _getAmendmentSigner(agreementId, amendment, signature);
+
+        require(signer == agreement.provider, "Invalid provider signature");
 
         agreement.ipfsHash = amendment.ipfsHash;
         agreement.pricePerMinute = amendment.pricePerMinute;
