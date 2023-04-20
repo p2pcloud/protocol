@@ -53,7 +53,7 @@ abstract contract ProviderRegistry is BalanceHolder {
         providerList.push(msg.sender);
     }
 
-    function getProviderURLs()
+    function getAllProviderURLs()
         public
         view
         returns (address[] memory, bytes32[] memory)

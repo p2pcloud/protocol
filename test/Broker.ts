@@ -2,6 +2,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { deployMarketplaceFixture } from './fixtures'
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { ethers } from "ethers";
 
 const HARDHAT_NETWORK_ID = 31337;
 
@@ -38,11 +39,11 @@ async function signOffer(
 
 describe("Broker", function () {
     describe("BookVM", function () {
-        it.only("should create a new Booking", async function () {
+        it("should create a new Booking", async function () {
             const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
 
             const offer: UnsignedOffer = {
-                specs: "0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9",
+                specs: ethers.utils.formatBytes32String("hello world"),
                 pricePerMinute: 100,
                 client: user.address,
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,

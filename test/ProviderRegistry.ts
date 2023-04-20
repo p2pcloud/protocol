@@ -36,6 +36,35 @@ describe("ProviderRegistry", function () {
             await marketplace.connect(anotherUser).setProviderUrl(urlBytes)
         });
     })
+    describe("getAllProviderURLs", function () {
+        it("should return all provider urls", async function () {
+            const { marketplace, token, anotherUser, admin, provider } = await loadFixture(deployMarketplaceFixture);
+
+            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
+            await token.connect(admin).transfer(anotherUser.address, fee)
+            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
+            await marketplace.connect(anotherUser).depositCoin(fee)
+            await marketplace.connect(anotherUser).registerProvider()
+
+            const urlBytes = ethers.utils.formatBytes32String("another.example.com");
+            await marketplace.connect(anotherUser).setProviderUrl(urlBytes)
+
+            // Register admin as another provider
+            await token.connect(admin).increaseAllowance(marketplace.address, fee)
+            await marketplace.connect(admin).depositCoin(fee)
+            await marketplace.connect(admin).registerProvider()
+
+            const anotherUrlBytes = ethers.utils.formatBytes32String("admin.com");
+            await marketplace.connect(admin).setProviderUrl(anotherUrlBytes)
+
+            // Get all provider URLs
+            const [addresses, urls] = await marketplace.connect(anotherUser).getAllProviderURLs();
+
+            expect(addresses).to.deep.equal([provider.address, anotherUser.address, admin.address]);
+            expect(urls.map(ethers.utils.parseBytes32String))
+                .to.deep.equal(["", "another.example.com", "admin.com"]);
+        });
+    });
 
 
     describe("isProviderRegistered", function () {
