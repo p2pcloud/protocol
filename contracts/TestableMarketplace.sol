@@ -2,9 +2,9 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-import "./Broker.sol";
+import "./Marketplace.sol";
 
-contract TestableBroker is Broker {
+contract TestableMarketplace is Marketplace {
     function test__getTime() public view returns (uint256) {
         return block.timestamp;
     }

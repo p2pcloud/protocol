@@ -1,6 +1,6 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
-import { deployBrokerFixture } from './fixtures'
+import { deployMarketplaceFixture } from './fixtures'
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 const HARDHAT_NETWORK_ID = 31337;
@@ -37,7 +37,7 @@ async function signAmendment(
 describe("Broker", function () {
     describe("createAgreement", function () {
         it("should create a new agreement and return an id", async function () {
-            const { broker, user, provider } = await loadFixture(deployBrokerFixture);
+            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
 
             const agreement = {
                 agreementId: 0,
@@ -45,15 +45,15 @@ describe("Broker", function () {
                 pricePerMinute: 100,
             };
 
-            const signature = await signAmendment(provider, agreement, broker.address);
+            const signature = await signAmendment(provider, agreement, marketplace.address);
 
-            const tx = await broker.connect(user).createAgreement(agreement, signature);
+            const tx = await marketplace.connect(user).createAgreement(agreement, signature);
             const rc = await tx.wait();
 
             const event = rc.events?.find(event => event.event === 'AgreementAmended');
             const newId = event?.args?.agreementId;
 
-            const agreementFromChain = await broker.getAgreement(newId);
+            const agreementFromChain = await marketplace.getAgreement(newId);
 
             expect(agreementFromChain.ipfsHash).to.equal(agreement.ipfsHash);
             expect(agreementFromChain.pricePerMinute).to.equal(agreement.pricePerMinute);

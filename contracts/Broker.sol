@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./BalanceHolder.sol";
 import "./ProviderRegistry.sol";
 
-contract Broker is BalanceHolder, ProviderRegistry {
+abstract contract Broker {
     bytes32 public constant DOMAIN_TYPEHASH =
         keccak256(
             "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
@@ -17,35 +17,6 @@ contract Broker is BalanceHolder, ProviderRegistry {
         );
 
     bytes32 public DOMAIN_SEPARATOR;
-
-    bool private initialized;
-
-    function initialize() public {
-        require(initialized != true, "Already initialized");
-        initialized = true;
-
-        uint256 chainId;
-        assembly {
-            chainId := chainid()
-        }
-
-        DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                DOMAIN_TYPEHASH,
-                keccak256(bytes("p2pcloud.io")),
-                keccak256(bytes("2")),
-                chainId,
-                address(this)
-            )
-        );
-
-        _transferOwnership(msg.sender);
-        agreementCount = 1;
-
-        _disableInitializers();
-
-        communityFee = 2000;
-    }
 
     uint256 public constant MONEY_LOCK_MINUTES = 60 * 24 * 7; // 7 days
 
