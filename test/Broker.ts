@@ -5,15 +5,16 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 const HARDHAT_NETWORK_ID = 31337;
 
-type Agreement = {
-    agreementId: number;
-    ipfsHash: string;
+type UnsignedOffer = {
+    specs: string;
     pricePerMinute: number;
+    client: string;
+    expiresAt: number;
 }
 
-async function signAmendment(
+async function signOffer(
     provider: SignerWithAddress,
-    agreement: Agreement,
+    offer: UnsignedOffer,
     brokerAddress: string,
 ): Promise<string> {
     const domain = {
@@ -24,56 +25,43 @@ async function signAmendment(
     }
 
     const types = {
-        Amendment: [
-            { name: 'agreementId', type: 'uint256' },
-            { name: 'ipfsHash', type: 'bytes32' },
+        UnsignedOffer: [
+            { name: 'specs', type: 'bytes32' },
             { name: 'pricePerMinute', type: 'uint256' },
+            { name: 'client', type: 'address' },
+            { name: 'expiresAt', type: 'uint256' },
         ]
     }
 
-    return provider._signTypedData(domain, types, agreement)
+    return provider._signTypedData(domain, types, offer)
 }
 
 describe("Broker", function () {
-    describe("createAgreement", function () {
-        it("should create a new agreement and return an id", async function () {
+    describe("BookVM", function () {
+        it.only("should create a new Booking", async function () {
             const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
 
-            const agreement = {
-                agreementId: 0,
-                ipfsHash: "0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9",
+            const offer: UnsignedOffer = {
+                specs: "0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9",
                 pricePerMinute: 100,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
             };
 
-            const signature = await signAmendment(provider, agreement, marketplace.address);
+            const signature = await signOffer(provider, offer, marketplace.address);
 
-            const tx = await marketplace.connect(user).createAgreement(agreement, signature);
+            const tx = await marketplace.connect(user).Book(offer, signature);
             const rc = await tx.wait();
 
-            const event = rc.events?.find(event => event.event === 'AgreementAmended');
-            const newId = event?.args?.agreementId;
+            const event = rc.events?.find(event => event.event === 'BookingCreated');
+            const newId = event?.args?.bookingId;
 
-            const agreementFromChain = await marketplace.getAgreement(newId);
+            const bookingFromChain = await marketplace.getBooking(newId);
 
-            expect(agreementFromChain.ipfsHash).to.equal(agreement.ipfsHash);
-            expect(agreementFromChain.pricePerMinute).to.equal(agreement.pricePerMinute);
-            expect(agreementFromChain.client).to.equal(user.address);
-            expect(agreementFromChain.provider).to.equal(provider.address);
+            expect(bookingFromChain.specs).to.equal(offer.specs);
+            expect(bookingFromChain.pricePerMinute).to.equal(offer.pricePerMinute);
+            expect(bookingFromChain.client).to.equal(user.address);
+            expect(bookingFromChain.provider).to.equal(provider.address);
         })
-    })
-
-    describe("amendAgreement", function () {
-        it("should create a new agreement if agreementId = 0 ??")
-        it("should amend an existing agreement")
-        it("should not amend an existing agreement if agreementId is not correct")
-        it("should not amend an existing agreement if the new agreement is not signed by the cprovider")
-        it("should not amend an existing agreement owned by another client")
-        it("should not amend if ipfs hash in signature is not valid")
-        it("should not amend if price in signature is not valid")
-        it("should not amend if price in signature is expired")
-    })
-
-    describe("listClientsAgreements", function () {
-        it("should list all agreements for a client")
     })
 })

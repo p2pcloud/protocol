@@ -2,168 +2,93 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./BalanceHolder.sol";
 import "./ProviderRegistry.sol";
+import "./VerifiableOffer.sol";
 
-abstract contract Broker {
-    bytes32 public constant DOMAIN_TYPEHASH =
-        keccak256(
-            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-        );
-    bytes32 public constant AMENDMENT_TYPEHASH =
-        keccak256(
-            "Amendment(uint256 agreementId,bytes32 ipfsHash,uint256 pricePerMinute)"
-        );
+abstract contract Broker is VerifiableOffer {
+    struct UserProviderAccounting {
+        uint256 lastPaymentTs;
+        uint256 pricePerMinute;
+    }
 
-    bytes32 public DOMAIN_SEPARATOR;
+    mapping(address => mapping(address => UserProviderAccounting)) public userProviderAccounting;
 
-    uint256 public constant MONEY_LOCK_MINUTES = 60 * 24 * 7; // 7 days
-
-    using ECDSA for bytes32;
-
-    struct Agreement {
-        bytes32 ipfsHash;
+    struct Booking {
+        bytes32 specs;
         uint256 pricePerMinute;
         address client;
         address provider;
-        uint256 lastPayment;
     }
 
-    struct Amendment {
-        bytes32 ipfsHash;
-        uint256 pricePerMinute;
-    }
+    uint256 public bookingCount;
 
-    mapping(uint256 => Agreement) public agreements;
-    uint256 public agreementCount;
+    mapping(uint256 => Booking) public bookings;
 
-    event AgreementAmended(
-        uint256 agreementId,
-        bytes32 ipfsHash,
-        uint256 pricePerMinute
-    );
-    event AgreementBroken(uint256 agreementId);
-    event PaymentClaimed(uint256 agreementId, uint256 amount);
+    uint256 public constant MONEY_LOCK_MINUTES = 60 * 24 * 7; // 7 days
 
-    function createAgreement(
-        Amendment calldata amendment,
-        bytes calldata signature
-    ) external {
-        address provider = _getAmendmentSigner(0, amendment, signature);
+    event BookingCreated(uint256 bookingId, uint256 pricePerMinute, address client, address provider);
 
-        agreements[agreementCount] = Agreement({
-            ipfsHash: amendment.ipfsHash,
-            pricePerMinute: amendment.pricePerMinute,
-            client: msg.sender,
-            provider: provider,
-            lastPayment: block.timestamp
+    function Book(UnsignedOffer calldata offer, bytes calldata signature) external {
+        address provider = _getOfferProvider(offer, signature);
+
+        //TODO: execute payment claim
+        //TODO: check enough non-locked balance
+        //TODO: check provider is registered
+        bookings[bookingCount] = Booking({
+            specs: offer.specs,
+            pricePerMinute: offer.pricePerMinute,
+            client: offer.client,
+            provider: provider
         });
+        emit BookingCreated(bookingCount, offer.pricePerMinute, offer.client, provider);
 
-        emit AgreementAmended(
-            agreementCount,
-            amendment.ipfsHash,
-            amendment.pricePerMinute
-        );
+        userProviderAccounting[provider][msg.sender].pricePerMinute += offer.pricePerMinute;
 
-        agreementCount++;
+        bookingCount++;
     }
 
-    function _getAmendmentSigner(
-        uint256 agreementId,
-        Amendment calldata amendment,
-        bytes calldata signature
-    ) internal view returns (address) {
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(
-                    abi.encode(
-                        AMENDMENT_TYPEHASH,
-                        agreementId,
-                        amendment.ipfsHash,
-                        amendment.pricePerMinute
-                    )
-                )
-            )
-        );
-
-        return digest.recover(signature);
-    }
-
-    function amendAgreement(
-        uint256 agreementId,
-        Amendment calldata amendment,
-        bytes calldata signature
-    ) external {
-        Agreement storage agreement = agreements[agreementId];
-        require(
-            agreement.client == msg.sender,
-            "Only client can submit amendment"
-        );
-
-        address signer = _getAmendmentSigner(agreementId, amendment, signature);
-
-        require(signer == agreement.provider, "Invalid provider signature");
-
-        agreement.ipfsHash = amendment.ipfsHash;
-        agreement.pricePerMinute = amendment.pricePerMinute;
-
-        emit AgreementAmended(
-            agreementId,
-            amendment.ipfsHash,
-            amendment.pricePerMinute
-        );
-    }
-
-    function listClientsAgreements(
-        address client
-    ) external view returns (Agreement[] memory) {
+    function listClientBookings(address client) external view returns (Booking[] memory) {
         uint256 count = 0;
-        for (uint256 i = 1; i <= agreementCount; i++) {
-            if (agreements[i].client == client) {
+        for (uint256 i = 1; i <= bookingCount; i++) {
+            if (bookings[i].client == client) {
                 count++;
             }
         }
 
-        Agreement[] memory clientAgreements = new Agreement[](count);
+        Booking[] memory result = new Booking[](count);
         uint256 index = 0;
-        for (uint256 i = 1; i <= agreementCount; i++) {
-            if (agreements[i].client == client) {
-                clientAgreements[index] = agreements[i];
+        for (uint256 i = 1; i <= bookingCount; i++) {
+            if (bookings[i].client == client) {
+                result[index] = bookings[i];
                 index++;
             }
         }
 
-        return clientAgreements;
+        return result;
     }
 
-    function listProvidersAgreements(
-        address provider
-    ) external view returns (Agreement[] memory) {
+    function listProvidersBookings(address provider) external view returns (Booking[] memory) {
         uint256 count = 0;
-        for (uint256 i = 1; i <= agreementCount; i++) {
-            if (agreements[i].provider == provider) {
+        for (uint256 i = 1; i <= bookingCount; i++) {
+            if (bookings[i].provider == provider) {
                 count++;
             }
         }
 
-        Agreement[] memory providerAgreements = new Agreement[](count);
+        Booking[] memory result = new Booking[](count);
         uint256 index = 0;
-        for (uint256 i = 1; i <= agreementCount; i++) {
-            if (agreements[i].provider == provider) {
-                providerAgreements[index] = agreements[i];
+        for (uint256 i = 1; i <= bookingCount; i++) {
+            if (bookings[i].provider == provider) {
+                result[index] = bookings[i];
                 index++;
             }
         }
 
-        return providerAgreements;
+        return result;
     }
 
-    function getAgreement(
-        uint256 agreementId
-    ) external view returns (Agreement memory) {
-        return agreements[agreementId];
+    function getBooking(uint256 id) external view returns (Booking memory) {
+        return bookings[id];
     }
 }

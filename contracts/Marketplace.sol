@@ -7,32 +7,10 @@ import "./ProviderRegistry.sol";
 import "./Broker.sol";
 
 contract Marketplace is BalanceHolder, ProviderRegistry, Broker {
-    bool private initialized;
-
-    function initialize() public {
-        require(initialized != true, "Already initialized");
-        initialized = true;
-
-        uint256 chainId;
-        assembly {
-            chainId := chainid()
-        }
-
-        DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                DOMAIN_TYPEHASH,
-                keccak256(bytes("p2pcloud.io")),
-                keccak256(bytes("2")),
-                chainId,
-                address(this)
-            )
-        );
-
+    function initialize() public initializer {
         _transferOwnership(msg.sender);
-        agreementCount = 1;
 
-        _disableInitializers();
-
+        __VerifiableOffer_init();
         communityFee = 2000;
     }
 }
