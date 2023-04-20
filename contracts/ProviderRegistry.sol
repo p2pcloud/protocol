@@ -14,6 +14,7 @@ abstract contract ProviderRegistry is BalanceHolder {
     }
 
     mapping(address => ProviderInfo) providerInfo;
+    address[] public providerList;
 
     function setProviderUrl(bytes32 url) public {
         require(
@@ -48,5 +49,24 @@ abstract contract ProviderRegistry is BalanceHolder {
 
         providerInfo[msg.sender].isRegistered = true;
         providerInfo[msg.sender].feePaid += PROVIDER_REGISTRATION_FEE;
+
+        providerList.push(msg.sender);
+    }
+
+    function getProviderURLs()
+        public
+        view
+        returns (address[] memory, bytes32[] memory)
+    {
+        uint256 providerCount = providerList.length;
+        address[] memory addresses = new address[](providerCount);
+        bytes32[] memory urls = new bytes32[](providerCount);
+
+        for (uint256 i = 0; i < providerCount; i++) {
+            addresses[i] = providerList[i];
+            urls[i] = providerInfo[providerList[i]].url;
+        }
+
+        return (addresses, urls);
     }
 }
