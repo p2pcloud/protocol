@@ -87,7 +87,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
 
     function listClientBookings(address client) external view returns (Booking[] memory) {
         uint256 count = 0;
-        for (uint256 i = 0; i <= bookingCount; i++) {
+        for (uint256 i = 0; i < bookingCount; i++) {
             if (bookings[i].client == client) {
                 count++;
             }
@@ -95,7 +95,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
 
         Booking[] memory result = new Booking[](count);
         uint256 index = 0;
-        for (uint256 i = 0; i <= bookingCount; i++) {
+        for (uint256 i = 0; i < bookingCount; i++) {
             if (bookings[i].client == client) {
                 result[index] = bookings[i];
                 index++;
@@ -107,7 +107,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
 
     function listProvidersBookings(address provider) external view returns (Booking[] memory) {
         uint256 count = 0;
-        for (uint256 i = 0; i <= bookingCount; i++) {
+        for (uint256 i = 0; i < bookingCount; i++) {
             if (bookings[i].provider == provider) {
                 count++;
             }
@@ -115,7 +115,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
 
         Booking[] memory result = new Booking[](count);
         uint256 index = 0;
-        for (uint256 i = 0; i <= bookingCount; i++) {
+        for (uint256 i = 0; i < bookingCount; i++) {
             if (bookings[i].provider == provider) {
                 result[index] = bookings[i];
                 index++;
