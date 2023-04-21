@@ -118,5 +118,7 @@ describe("ProviderRegistry", function () {
             await expect(marketplace.connect(anotherUser).registerProvider()).to.be.rejected
         });
     });
-
+    describe("setProviderRegistrationFee", function () {
+        it("change set provider fee for new providers only")
+    })
 });
