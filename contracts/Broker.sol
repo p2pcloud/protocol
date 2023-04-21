@@ -157,6 +157,10 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
         return result;
     }
 
+    function claimPayment(address client) external {
+        _executeClaimPayment(msg.sender, client);
+    }
+
     function getBooking(uint256 id) external view returns (Booking memory) {
         return bookings[id];
     }
