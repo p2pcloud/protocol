@@ -6,14 +6,21 @@ import "./BalanceHolder.sol";
 import "./ProviderRegistry.sol";
 import "./VerifiableOffer.sol";
 
-abstract contract Broker is VerifiableOffer, BalanceHolder {
+abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry {
+    uint8 public constant CANCEL_REASON_NOT_NEEDED = 0;
+    uint8 public constant CANCEL_REASON_NOT_SATISFIED = 1;
+    uint8 public constant CANCEL_REASON_PROVIDER = 2;
+    uint8 public constant CANCEL_REASON_NON_PAYMENT = 3;
+
+    uint32 public constant MONEY_LOCK_MINUTES = 60 * 24 * 7; // 7 days
+
+    event BookingCreated(uint256 bookingId, uint256 pricePerMinute, address client, address provider);
+    event BookingCancelled(uint256 bookingId, uint8 reason);
+
     struct UserProviderAccounting {
         uint256 lastPaymentTs;
         uint256 pricePerMinute;
     }
-
-    mapping(address => mapping(address => UserProviderAccounting)) public userProviderAccounting;
-
     struct Booking {
         bytes32 specs;
         uint256 pricePerMinute;
@@ -21,25 +28,19 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
         address provider;
     }
 
-    uint256 public bookingCount;
-
-    mapping(uint256 => Booking) public bookings;
+    mapping(address => mapping(address => UserProviderAccounting)) public userProviderAccounting;
     mapping(address => uint256) internal _totalSpendingPerMinute;
 
-    //TODO: solve a client zero balance problem
-
-    uint32 public constant MONEY_LOCK_MINUTES = 60 * 24 * 7; // 7 days
-
-    event BookingCreated(uint256 bookingId, uint256 pricePerMinute, address client, address provider);
-    event BookingCancelled(uint256 bookingId, uint8 reason);
+    uint256 public bookingCount;
+    mapping(uint256 => Booking) public bookings;
 
     function bookResource(UnsignedOffer calldata offer, bytes calldata signature) external {
         address provider = _getOfferProvider(offer, signature);
 
         _executeClaimPayment(provider, offer.client);
 
-        //TODO: check enough non-locked balance
         //TODO: check provider is registered
+        require(isProviderRegistered(provider), "Provider is not registered");
 
         bookings[bookingCount] = Booking({
             specs: offer.specs,
@@ -47,17 +48,19 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
             client: offer.client,
             provider: provider
         });
-        emit BookingCreated(bookingCount, offer.pricePerMinute, offer.client, provider);
 
         require(
             getFreeBalance(msg.sender) >= offer.pricePerMinute * MONEY_LOCK_MINUTES,
             "Not enough balance to add a new the booking"
         );
+
         userProviderAccounting[provider][msg.sender].pricePerMinute += offer.pricePerMinute;
+        _totalSpendingPerMinute[msg.sender] += offer.pricePerMinute;
+
+        emit BookingCreated(bookingCount, offer.pricePerMinute, offer.client, provider);
 
         bookingCount++;
         nonce[msg.sender]++;
-        _totalSpendingPerMinute[msg.sender] += offer.pricePerMinute;
     }
 
     function _executeClaimPayment(address provider, address client) internal {
@@ -76,11 +79,6 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
         _spendWithComission(client, provider, amount);
         userProviderAccounting[provider][client].lastPaymentTs += minutesPassed * 60;
     }
-
-    uint8 public constant CANCEL_REASON_NOT_NEEDED = 0;
-    uint8 public constant CANCEL_REASON_NOT_SATISFIED = 1;
-    uint8 public constant CANCEL_REASON_PROVIDER = 2;
-    uint8 public constant CANCEL_REASON_NON_PAYMENT = 3;
 
     function cancelBooking(uint256 bookingId, bool satisfyed) external {
         Booking memory booking = bookings[bookingId];
@@ -119,7 +117,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
 
     function listClientBookings(address client) external view returns (Booking[] memory) {
         uint256 count = 0;
-        for (uint256 i = 1; i <= bookingCount; i++) {
+        for (uint256 i = 0; i <= bookingCount; i++) {
             if (bookings[i].client == client) {
                 count++;
             }
@@ -127,7 +125,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
 
         Booking[] memory result = new Booking[](count);
         uint256 index = 0;
-        for (uint256 i = 1; i <= bookingCount; i++) {
+        for (uint256 i = 0; i <= bookingCount; i++) {
             if (bookings[i].client == client) {
                 result[index] = bookings[i];
                 index++;
@@ -139,7 +137,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
 
     function listProvidersBookings(address provider) external view returns (Booking[] memory) {
         uint256 count = 0;
-        for (uint256 i = 1; i <= bookingCount; i++) {
+        for (uint256 i = 0; i <= bookingCount; i++) {
             if (bookings[i].provider == provider) {
                 count++;
             }
@@ -147,7 +145,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
 
         Booking[] memory result = new Booking[](count);
         uint256 index = 0;
-        for (uint256 i = 1; i <= bookingCount; i++) {
+        for (uint256 i = 0; i <= bookingCount; i++) {
             if (bookings[i].provider == provider) {
                 result[index] = bookings[i];
                 index++;

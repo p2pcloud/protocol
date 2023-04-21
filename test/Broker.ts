@@ -141,6 +141,23 @@ describe("Broker", function () {
             await setUserCoinBalance(fixture, minBalanceToBook);
             await expect(marketplace.connect(user).bookResource(offer, signature)).to.not.be.reverted;
         })
+        it("should fail if provider is not registered", async function () {
+            const { marketplace, user, anotherUser } = await loadFixture(deployMarketplaceFixture);
+
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
+            };
+
+            const locked1 = await marketplace.connect(user).getLockedBalance(user.address)
+            expect(locked1).to.equal(0);
+
+            const signature = await signOffer(anotherUser, offer, marketplace.address);
+            await expect(marketplace.connect(user).bookResource(offer, signature)).to.be.revertedWith("Provider is not registered");
+        })
     })
     describe("cancelBooking", function () {
         it("should remove a booking and decrease locked balance", async function () {
