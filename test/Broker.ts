@@ -37,8 +37,9 @@ async function signOffer(
     return provider._signTypedData(domain, types, offer)
 }
 
+
 describe("Broker", function () {
-    describe("BookVM", function () {
+    describe("bsookResource", function () {
         it("should create a new Booking", async function () {
             const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
 
@@ -48,10 +49,9 @@ describe("Broker", function () {
                 client: user.address,
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
             };
-
             const signature = await signOffer(provider, offer, marketplace.address);
 
-            const tx = await marketplace.connect(user).Book(offer, signature);
+            const tx = await marketplace.connect(user).bookResource(offer, signature);
             const rc = await tx.wait();
 
             const event = rc.events?.find(event => event.event === 'BookingCreated');
@@ -64,5 +64,40 @@ describe("Broker", function () {
             expect(bookingFromChain.client).to.equal(user.address);
             expect(bookingFromChain.provider).to.equal(provider.address);
         })
+
+        it("should increase locked balance", async function () {
+            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+            };
+
+            const [, locked1] = await marketplace.connect(user).getCoinBalance(user.address)
+            expect(locked1).to.equal(0);
+
+            const signature = await signOffer(provider, offer, marketplace.address);
+            await marketplace.connect(user).bookResource(offer, signature);
+
+            const [, locked2] = await marketplace.connect(user).getCoinBalance(user.address)
+            expect(locked2).to.equal(100 * 60 * 24 * 7);
+        })
+        it("should execute claim payment")
+        it("should fail if not enough balance to cover a new VM booking")
     })
-})
+    describe("cancelBooking", function () {
+        it("should remove a booking")
+        it("should decrease locked balance")
+        it("should fail if booking is already cancelled")
+        it("should create an event with reason = 0 or 1 depending on client's selection")
+        it("should create an event with reason = 2 if provider cancelled with no reason")
+        it("should create an event with reason = 3 if provider cancelled and user's balance is zero")
+    })
+    describe("claimPayment", function () {
+        it("should increase provider's balance")
+        it("should transfer not more than user's balance")
+    });
+
+});

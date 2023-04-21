@@ -9,7 +9,7 @@ contract TestableMarketplace is Marketplace {
         return block.timestamp;
     }
 
-    function test__increaseLockedBalance(address user, uint256 amt) public {
-        _lockedBalance[user] += uint32(amt);
+    function test__increaseSpendingPerMinute(address user, uint256 amt) public {
+        _totalSpendingPerMinute[user] += amt;
     }
 }

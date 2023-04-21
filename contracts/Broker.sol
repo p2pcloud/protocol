@@ -6,7 +6,7 @@ import "./BalanceHolder.sol";
 import "./ProviderRegistry.sol";
 import "./VerifiableOffer.sol";
 
-abstract contract Broker is VerifiableOffer {
+abstract contract Broker is VerifiableOffer, BalanceHolder {
     struct UserProviderAccounting {
         uint256 lastPaymentTs;
         uint256 pricePerMinute;
@@ -24,17 +24,21 @@ abstract contract Broker is VerifiableOffer {
     uint256 public bookingCount;
 
     mapping(uint256 => Booking) public bookings;
+    mapping(address => uint256) internal _totalSpendingPerMinute;
+
+    //TODO: solve a client zero balance problem
 
     uint256 public constant MONEY_LOCK_MINUTES = 60 * 24 * 7; // 7 days
 
     event BookingCreated(uint256 bookingId, uint256 pricePerMinute, address client, address provider);
 
-    function Book(UnsignedOffer calldata offer, bytes calldata signature) external {
+    function bookResource(UnsignedOffer calldata offer, bytes calldata signature) external {
         address provider = _getOfferProvider(offer, signature);
 
         //TODO: execute payment claim
         //TODO: check enough non-locked balance
         //TODO: check provider is registered
+
         bookings[bookingCount] = Booking({
             specs: offer.specs,
             pricePerMinute: offer.pricePerMinute,
@@ -46,6 +50,11 @@ abstract contract Broker is VerifiableOffer {
         userProviderAccounting[provider][msg.sender].pricePerMinute += offer.pricePerMinute;
 
         bookingCount++;
+        _totalSpendingPerMinute[msg.sender] += offer.pricePerMinute;
+    }
+
+    function _getLockedBalance(address user) internal view override returns (uint256) {
+        return _totalSpendingPerMinute[user] * MONEY_LOCK_MINUTES;
     }
 
     function listClientBookings(address client) external view returns (Booking[] memory) {

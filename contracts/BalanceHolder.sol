@@ -8,8 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 abstract contract BalanceHolder is OwnableUpgradeable {
     uint16 public communityFee;
 
-    mapping(address => uint256) private _coinBalance;
-    mapping(address => uint256) internal _lockedBalance;
+    mapping(address => uint256) internal _coinBalance;
     IERC20 private _coin;
 
     function coin() public view returns (IERC20) {
@@ -20,26 +19,16 @@ abstract contract BalanceHolder is OwnableUpgradeable {
         _coin = newCoinAddress;
     }
 
+    function _getLockedBalance(address user) internal view virtual returns (uint256);
+
     function depositCoin(uint256 numTokens) public {
-        require(
-            _coin.transferFrom(msg.sender, address(this), numTokens),
-            "Failed to transfer tokens"
-        );
+        require(_coin.transferFrom(msg.sender, address(this), numTokens), "Failed to transfer tokens");
 
         _coinBalance[msg.sender] = _coinBalance[msg.sender] + numTokens;
     }
 
-    function _changeLockedBalance(address user, int256 amt) internal {
-        if (amt > 0) {
-            _lockedBalance[user] += uint256(amt);
-        } else {
-            _lockedBalance[user] -= uint256(-amt);
-        }
-    }
-
     function withdrawCoin(uint256 amt) public {
-        uint256 withdrawableBalance = _coinBalance[msg.sender] -
-            _lockedBalance[msg.sender];
+        uint256 withdrawableBalance = _coinBalance[msg.sender] - _getLockedBalance(msg.sender);
 
         require(withdrawableBalance >= amt, "Not enough balance to withdraw");
 
@@ -48,19 +37,13 @@ abstract contract BalanceHolder is OwnableUpgradeable {
         require(_coin.transfer(msg.sender, amt), "ERC20 transfer failed");
     }
 
-    function getCoinBalance(
-        address user
-    ) public view returns (uint256 free, uint256 locked) {
-        locked = _lockedBalance[user];
+    function getCoinBalance(address user) public view returns (uint256 free, uint256 locked) {
+        locked = _getLockedBalance(user);
         free = _coinBalance[user] - locked;
         return (free, locked);
     }
 
-    function _spendWithComission(
-        address spender,
-        address receiver,
-        uint256 amt
-    ) internal returns (bool defaulted) {
+    function _spendWithComission(address spender, address receiver, uint256 amt) internal returns (bool defaulted) {
         uint256 spentAmt = _min(_coinBalance[spender], amt);
 
         uint256 communityPayout = (spentAmt * communityFee) / (100 * 100);
@@ -73,11 +56,8 @@ abstract contract BalanceHolder is OwnableUpgradeable {
         return spentAmt != amt;
     }
 
-    function _isSpendable(
-        address user,
-        uint256 amt
-    ) internal view returns (bool) {
-        uint256 freeBalance = _coinBalance[user] - _lockedBalance[user];
+    function _isSpendable(address user, uint256 amt) internal view returns (bool) {
+        uint256 freeBalance = _coinBalance[user] - _getLockedBalance(user);
         return freeBalance >= amt;
     }
 

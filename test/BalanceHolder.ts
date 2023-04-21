@@ -7,7 +7,9 @@ describe("BalanceHolder", function () {
         it("should incrase balance", async function () {
             const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceFixture);
 
-            await token.connect(admin).transfer(user.address, '123456')
+            //remove default balance
+            const [defaultBalance] = await marketplace.connect(user).getCoinBalance(user.address)
+            await marketplace.connect(user).withdrawCoin(defaultBalance)
 
             const [userBalance1] = await marketplace.connect(user).getCoinBalance(user.address)
             expect(userBalance1.toString()).is.equal('0')
@@ -28,19 +30,25 @@ describe("BalanceHolder", function () {
         it("should not withdraw locked balance", async function () {
             const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceFixture);
 
-            //deposit 123 tokens
-            await token.connect(admin).transfer(user.address, '123456')
+            //remove default balance
+            const [defaultBalance] = await marketplace.connect(user).getCoinBalance(user.address)
+            await marketplace.connect(user).withdrawCoin(defaultBalance)
+
+            //deposit 123456 tokens
             await token.connect(user).approve(marketplace.address, '123456')
-            await marketplace.connect(user).depositCoin('123')
+            await marketplace.connect(user).depositCoin('123456')
 
-            //lock 23 tokens
-            await marketplace.test__increaseLockedBalance(user.address, '23')
+            //lock 1 * 60 * 24 * 7 tokens
+            await marketplace.test__increaseSpendingPerMinute(user.address, '1')
+            const [free1, locked1] = await marketplace.connect(user).getCoinBalance(user.address)
+            expect(locked1.toString()).is.equal('10080')
+            expect(free1.toString()).is.equal(String(123456 - 10080))
 
-            //fail to withdraw 101 tokens
-            await expect(marketplace.connect(user).withdrawCoin('101')).to.be.reverted
+            //fail to withdraw free+1
+            await expect(marketplace.connect(user).withdrawCoin(123456 - 10080 + 1)).to.be.reverted
 
-            //withdraw 100 tokens
-            await marketplace.connect(user).withdrawCoin('100')
+            //withdraw excatly free
+            await marketplace.connect(user).withdrawCoin(123456 - 10080)
         });
         it("should revert if transfer fails", async function () {
             //TODO: modify coin contract to make this test pass
@@ -60,17 +68,20 @@ describe("BalanceHolder", function () {
         it("should return locked and free balance", async function () {
             const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceFixture);
 
-            //deposit 123 tokens
-            await token.connect(admin).transfer(user.address, '123456')
-            await token.connect(user).approve(marketplace.address, '123456')
-            await marketplace.connect(user).depositCoin('123')
+            //remove default balance
+            const [defaultBalance] = await marketplace.connect(user).getCoinBalance(user.address)
+            await marketplace.connect(user).withdrawCoin(defaultBalance)
 
-            //lock 23 tokens
-            await marketplace.test__increaseLockedBalance(user.address, '23')
+            //deposit 123 tokens
+            await token.connect(user).approve(marketplace.address, '123456')
+            await marketplace.connect(user).depositCoin('123456')
+
+            //lock 1 * 60 * 24 * 7 tokens
+            await marketplace.test__increaseSpendingPerMinute(user.address, '1')
 
             const [free, locked] = await marketplace.connect(user).getCoinBalance(user.address)
-            expect(free.toString()).is.equal('100')
-            expect(locked.toString()).is.equal('23')
+            expect(free.toString()).is.equal(String(123456 - 60 * 24 * 7))
+            expect(locked.toString()).is.equal(String(60 * 24 * 7))
         });
     })
     describe("SetCoinAddress", function () {

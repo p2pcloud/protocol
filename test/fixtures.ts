@@ -34,5 +34,11 @@ async function _deployMarketplaceFixture(): Promise<Fixture> {
     await marketplace.connect(provider).depositCoin(fee)
     await marketplace.connect(provider).registerProvider()
 
+    //transfer some tokens to user
+    await token.connect(admin).transfer(user.address, '10000000')
+    await token.connect(user).approve(marketplace.address, '10000000')
+    await marketplace.connect(user).depositCoin('10000000')
+
+
     return { marketplace, token, provider, user, admin, anotherUser };
 }
