@@ -25,3 +25,4 @@ typechain-types/contracts/*
 # !typechain-types/contracts/Broker.sol/*.ts
 
 temp.txt
+flat.sol

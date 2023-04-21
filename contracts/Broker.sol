@@ -6,8 +6,9 @@ import "./BalanceHolder.sol";
 import "./ProviderRegistry.sol";
 import "./VerifiableOffer.sol";
 import "./Payments.sol";
+import "./AddressBook.sol";
 
-abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Payments {
+abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Payments, AddressBook {
     uint8 public constant CANCEL_REASON_NOT_NEEDED = 0;
     uint8 public constant CANCEL_REASON_NOT_SATISFIED = 1;
     uint8 public constant CANCEL_REASON_PROVIDER = 2;
@@ -17,6 +18,13 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
     event BookingCancelled(uint256 bookingId, uint8 reason);
 
     struct Booking {
+        bytes32 specs;
+        uint64 pricePerMinute;
+        uint32 clientId;
+        uint32 providerId;
+    }
+
+    struct BookingFull {
         bytes32 specs;
         uint64 pricePerMinute;
         address client;
@@ -33,11 +41,14 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
 
         require(isProviderRegistered(provider), "Provider is not registered");
 
+        uint32 providerId = idByAddress(provider);
+        uint32 clientId = idByAddress(offer.client);
+
         bookings[bookingCount] = Booking({
             specs: offer.specs,
             pricePerMinute: offer.pricePerMinute,
-            client: offer.client,
-            provider: provider
+            clientId: clientId,
+            providerId: providerId
         });
 
         require(
@@ -59,45 +70,55 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
 
         uint8 reason = 0;
 
-        if (booking.client == msg.sender) {
+        address client = addressById(booking.clientId);
+        address provider = addressById(booking.providerId);
+
+        if (client == msg.sender) {
             if (satisfyed) {
                 reason = CANCEL_REASON_NOT_NEEDED;
             } else {
                 reason = CANCEL_REASON_NOT_SATISFIED;
             }
-        } else if (booking.provider == msg.sender) {
+        } else if (provider == msg.sender) {
             reason = CANCEL_REASON_PROVIDER;
         } else {
             revert("Only client or provider can cancel the booking");
         }
 
-        _executeClaimPayment(booking.provider, booking.client);
+        _executeClaimPayment(provider, client);
 
-        if (getTotalBalance(booking.client) == 0) {
+        if (getTotalBalance(client) == 0) {
             reason = CANCEL_REASON_NON_PAYMENT;
         }
 
-        userProviderAccounting[booking.provider][booking.client].pricePerMinute -= booking.pricePerMinute;
-        _totalSpendingPerMinute[booking.client] -= booking.pricePerMinute;
+        userProviderAccounting[provider][client].pricePerMinute -= booking.pricePerMinute;
+        _totalSpendingPerMinute[client] -= booking.pricePerMinute;
 
         delete bookings[bookingId];
 
         emit BookingCancelled(bookingId, reason);
     }
 
-    function listClientBookings(address client) external view returns (Booking[] memory) {
+    function listClientBookings(address client) external view returns (BookingFull[] memory) {
+        uint32 clientId = idByAddressReadOnly(client);
+
         uint256 count = 0;
         for (uint256 i = 0; i < bookingCount; i++) {
-            if (bookings[i].client == client) {
+            if (bookings[i].clientId == clientId) {
                 count++;
             }
         }
 
-        Booking[] memory result = new Booking[](count);
+        BookingFull[] memory result = new BookingFull[](count);
         uint256 index = 0;
         for (uint256 i = 0; i < bookingCount; i++) {
-            if (bookings[i].client == client) {
-                result[index] = bookings[i];
+            if (bookings[i].clientId == clientId) {
+                result[index] = BookingFull({
+                    specs: bookings[i].specs,
+                    pricePerMinute: bookings[i].pricePerMinute,
+                    client: client,
+                    provider: addressById(bookings[i].providerId)
+                });
                 index++;
             }
         }
@@ -105,19 +126,26 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
         return result;
     }
 
-    function listProvidersBookings(address provider) external view returns (Booking[] memory) {
+    function listProvidersBookings(address provider) external view returns (BookingFull[] memory) {
+        uint32 providerId = idByAddressReadOnly(provider);
+
         uint256 count = 0;
         for (uint256 i = 0; i < bookingCount; i++) {
-            if (bookings[i].provider == provider) {
+            if (bookings[i].providerId == providerId) {
                 count++;
             }
         }
 
-        Booking[] memory result = new Booking[](count);
+        BookingFull[] memory result = new BookingFull[](count);
         uint256 index = 0;
         for (uint256 i = 0; i < bookingCount; i++) {
-            if (bookings[i].provider == provider) {
-                result[index] = bookings[i];
+            if (bookings[i].providerId == providerId) {
+                result[index] = BookingFull({
+                    specs: bookings[i].specs,
+                    pricePerMinute: bookings[i].pricePerMinute,
+                    client: addressById(bookings[i].clientId),
+                    provider: provider
+                });
                 index++;
             }
         }
@@ -125,7 +153,13 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
         return result;
     }
 
-    function getBooking(uint256 id) external view returns (Booking memory) {
-        return bookings[id];
+    function getBooking(uint256 id) external view returns (BookingFull memory) {
+        return
+            BookingFull({
+                specs: bookings[id].specs,
+                pricePerMinute: bookings[id].pricePerMinute,
+                client: addressById(bookings[id].clientId),
+                provider: addressById(bookings[id].providerId)
+            });
     }
 }
