@@ -4,8 +4,9 @@ pragma solidity ^0.8.17;
 
 import "./BalanceHolder.sol";
 import "./Broker.sol";
+import "./TrustedAddress.sol";
 
-contract Marketplace is BalanceHolder, Broker {
+contract Marketplace is BalanceHolder, Broker, TrustedAddress {
     function initialize(IERC20 _coin) public initializer {
         _transferOwnership(msg.sender);
 
