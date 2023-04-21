@@ -56,7 +56,6 @@ describe("Broker", function () {
 
             const tx = await marketplace.connect(user).bookResource(offer, signature);
             const rc = await tx.wait();
-
             const event = rc.events?.find(event => event.event === 'BookingCreated');
             const newId = event?.args?.bookingId;
 
@@ -179,12 +178,120 @@ describe("Broker", function () {
         })
     })
     describe("cancelBooking", function () {
-        it("should remove a booking")
-        it("should decrease locked balance")
-        it("should fail if booking is already cancelled")
-        it("should create an event with reason = 0 or 1 depending on client's selection")
-        it("should create an event with reason = 2 if provider cancelled with no reason")
-        it("should create an event with reason = 3 if provider cancelled and user's balance is zero")
+        it("should remove a booking and decrease locked balance", async function () {
+            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
+            };
+            const signature = await signOffer(provider, offer, marketplace.address);
+
+            await marketplace.connect(user).bookResource(offer, signature);
+
+            //check booking
+            let bookingFromChain = await marketplace.getBooking(0);
+            expect(bookingFromChain.specs).to.equal(offer.specs);
+
+            //check locked balance
+            const locked1 = await marketplace.connect(user).getLockedBalance(user.address)
+            expect(locked1).to.equal(offer.pricePerMinute * 60 * 24 * 7);
+
+            //delete
+            await marketplace.connect(user).cancelBooking(0, true);
+
+            //check deleted
+            bookingFromChain = await marketplace.getBooking(0);
+            expect(bookingFromChain.specs).to.equal(ethers.utils.formatBytes32String(""));
+
+            //check locked balance
+            const locked2 = await marketplace.connect(user).getLockedBalance(user.address)
+            expect(locked2).to.equal(0);
+        })
+        it("should fail if booking is already cancelled", async function () {
+            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
+            };
+            const signature = await signOffer(provider, offer, marketplace.address);
+
+            await marketplace.connect(user).bookResource(offer, signature);
+
+            //delete
+            await marketplace.connect(user).cancelBooking(0, true);
+            //once more
+            await expect(marketplace.connect(user).cancelBooking(0, true)).to.be.revertedWith("Only client or provider can cancel the booking");
+        })
+        it("should create an event with reason = 0 or 1 depending on client's selection", async function () {
+            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+
+            //book vm 0
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
+            };
+            const signature = await signOffer(provider, offer, marketplace.address);
+            await marketplace.connect(user).bookResource(offer, signature);
+
+            //book vm 1
+            offer.nonce++
+            const signature2 = await signOffer(provider, offer, marketplace.address);
+            await marketplace.connect(user).bookResource(offer, signature2);
+
+            //delete CANCEL_REASON_NOT_SATISFIED
+            const tx = await marketplace.connect(user).cancelBooking(0, false);
+            await expect(tx).to.emit(marketplace, "BookingCancelled").withArgs(0, await marketplace.CANCEL_REASON_NOT_SATISFIED());
+
+            //delete CANCEL_REASON_NOT_NEEDED
+            const tx2 = await marketplace.connect(user).cancelBooking(1, true);
+            await expect(tx2).to.emit(marketplace, "BookingCancelled").withArgs(1, await marketplace.CANCEL_REASON_NOT_NEEDED());
+        })
+        it("should create an event with reason = 2 if provider cancelled or reason = 3 if client defauled", async function () {
+            const fixture = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, provider } = fixture;
+
+            //book vm 0
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
+            };
+            const signature = await signOffer(provider, offer, marketplace.address);
+            await marketplace.connect(user).bookResource(offer, signature);
+
+            //set user balance to have enough to book 2 vms
+            await setUserCoinBalance(fixture, offer.pricePerMinute * await marketplace.MONEY_LOCK_MINUTES() * 2);
+
+            //book vm 1
+            offer.nonce++
+            const signature2 = await signOffer(provider, offer, marketplace.address);
+            await marketplace.connect(user).bookResource(offer, signature2);
+
+            //delete CANCEL_REASON_PROVIDER
+            const tx = await marketplace.connect(provider).cancelBooking(0, true);
+            await expect(tx).to.emit(marketplace, "BookingCancelled").withArgs(0, await marketplace.CANCEL_REASON_PROVIDER());
+
+            //skip 10 weeks
+            await time.increase(60 * await marketplace.MONEY_LOCK_MINUTES() * 2);
+
+            //delete CANCEL_REASON_NON_PAYMENT
+            const tx2 = await marketplace.connect(user).cancelBooking(1, false);//doesn't matter what client selects
+            expect(await marketplace.connect(user).getTotalBalance(user.address)).to.equal(0);
+            await expect(tx2).to.emit(marketplace, "BookingCancelled").withArgs(1, await marketplace.CANCEL_REASON_NON_PAYMENT());
+        })
     })
     describe("claimPayment", function () {
         it("should increase provider's balance")

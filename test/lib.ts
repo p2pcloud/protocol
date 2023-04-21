@@ -1,11 +1,16 @@
 import { Fixture } from "./fixtures";
 import { BigNumber, BigNumberish } from "ethers";
 
+export async function getEvent<T>(tx: Promise<any>, eventName: string): Promise<T> {
+    const receipt = await tx;
+    const event = receipt.events.find((e: any) => e.event === eventName);
+    return event.args;
+}
+
 export async function setUserCoinBalance(fixture: Fixture, amt: BigNumberish) {
     const { marketplace, token, user, admin } = fixture;
 
-    const [free, locked] = await marketplace.connect(user).getBalance(user.address)
-    const total = free.add(locked)
+    const total = await marketplace.connect(user).getTotalBalance(user.address)
 
     const diff = BigNumber.from(amt).sub(total)
 
