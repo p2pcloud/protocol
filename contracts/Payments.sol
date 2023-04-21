@@ -8,8 +8,8 @@ abstract contract Payments is BalanceHolder {
     uint256 public constant MONEY_LOCK_MINUTES = 60 * 24 * 7; // 7 days
 
     struct UserProviderAccounting {
-        uint256 lastPaymentTs;
-        uint256 pricePerMinute;
+        uint128 lastPaymentTs;
+        uint128 pricePerMinute;
     }
 
     mapping(address => mapping(address => UserProviderAccounting)) public userProviderAccounting;
@@ -24,7 +24,7 @@ abstract contract Payments is BalanceHolder {
 
         if (pricePerMinute == 0) {
             //initialize account
-            userProviderAccounting[provider][client].lastPaymentTs = block.timestamp;
+            userProviderAccounting[provider][client].lastPaymentTs = uint128(block.timestamp);
             return;
         }
 
@@ -32,7 +32,7 @@ abstract contract Payments is BalanceHolder {
         uint256 amount = minutesPassed * pricePerMinute;
 
         _spendWithComission(client, provider, amount);
-        userProviderAccounting[provider][client].lastPaymentTs += minutesPassed * 60;
+        userProviderAccounting[provider][client].lastPaymentTs += uint128(minutesPassed * 60);
     }
 
     function claimPayment(address client) external {
