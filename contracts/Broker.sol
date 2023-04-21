@@ -35,7 +35,8 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
     function bookResource(UnsignedOffer calldata offer, bytes calldata signature) external {
         address provider = _getOfferProvider(offer, signature);
 
-        //TODO: execute payment claim
+        _executeClaimPayment(provider, offer.client);
+
         //TODO: check enough non-locked balance
         //TODO: check provider is registered
 
@@ -54,7 +55,24 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
         _totalSpendingPerMinute[msg.sender] += offer.pricePerMinute;
     }
 
-    function _getLockedBalance(address user) internal view override returns (uint256) {
+    function _executeClaimPayment(address provider, address client) internal {
+        // userProviderAccounting[provider][client].lastPaymentTs = block.timestamp;
+        uint256 pricePerMinute = userProviderAccounting[provider][client].pricePerMinute;
+
+        if (pricePerMinute == 0) {
+            //initialize account
+            userProviderAccounting[provider][client].lastPaymentTs = block.timestamp;
+            return;
+        }
+
+        uint256 minutesPassed = (block.timestamp - userProviderAccounting[provider][client].lastPaymentTs) / 60;
+        uint256 amount = minutesPassed * pricePerMinute;
+
+        _spendWithComission(client, provider, amount);
+        userProviderAccounting[provider][client].lastPaymentTs += minutesPassed * 60;
+    }
+
+    function getLockedBalance(address user) public view override returns (uint256) {
         return _totalSpendingPerMinute[user] * MONEY_LOCK_MINUTES;
     }
 

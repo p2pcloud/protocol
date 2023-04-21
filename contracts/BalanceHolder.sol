@@ -19,8 +19,6 @@ abstract contract BalanceHolder is OwnableUpgradeable {
         _coin = newCoinAddress;
     }
 
-    function _getLockedBalance(address user) internal view virtual returns (uint256);
-
     function depositCoin(uint256 numTokens) public {
         require(_coin.transferFrom(msg.sender, address(this), numTokens), "Failed to transfer tokens");
 
@@ -28,19 +26,9 @@ abstract contract BalanceHolder is OwnableUpgradeable {
     }
 
     function withdrawCoin(uint256 amt) public {
-        uint256 withdrawableBalance = _coinBalance[msg.sender] - _getLockedBalance(msg.sender);
-
-        require(withdrawableBalance >= amt, "Not enough balance to withdraw");
-
+        require(getFreeBalance(msg.sender) >= amt, "Not enough balance to withdraw");
         _coinBalance[msg.sender] -= amt;
-
         require(_coin.transfer(msg.sender, amt), "ERC20 transfer failed");
-    }
-
-    function getCoinBalance(address user) public view returns (uint256 free, uint256 locked) {
-        locked = _getLockedBalance(user);
-        free = _coinBalance[user] - locked;
-        return (free, locked);
     }
 
     function _spendWithComission(address spender, address receiver, uint256 amt) internal returns (bool defaulted) {
@@ -56,9 +44,14 @@ abstract contract BalanceHolder is OwnableUpgradeable {
         return spentAmt != amt;
     }
 
-    function _isSpendable(address user, uint256 amt) internal view returns (bool) {
-        uint256 freeBalance = _coinBalance[user] - _getLockedBalance(user);
-        return freeBalance >= amt;
+    function getFreeBalance(address user) public view returns (uint256) {
+        return _coinBalance[user] - getLockedBalance(user);
+    }
+
+    function getLockedBalance(address user) public view virtual returns (uint256);
+
+    function getBalance(address user) public view returns (uint256 free, uint256 locked) {
+        return (getFreeBalance(user), getLockedBalance(user));
     }
 
     function _min(uint256 a, uint256 b) internal pure returns (uint256) {

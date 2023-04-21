@@ -8,16 +8,16 @@ describe("BalanceHolder", function () {
             const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceFixture);
 
             //remove default balance
-            const [defaultBalance] = await marketplace.connect(user).getCoinBalance(user.address)
+            const [defaultBalance] = await marketplace.connect(user).getBalance(user.address)
             await marketplace.connect(user).withdrawCoin(defaultBalance)
 
-            const [userBalance1] = await marketplace.connect(user).getCoinBalance(user.address)
+            const [userBalance1] = await marketplace.connect(user).getBalance(user.address)
             expect(userBalance1.toString()).is.equal('0')
 
             await token.connect(user).approve(marketplace.address, '123456')
             await marketplace.connect(user).depositCoin('123')
 
-            const [userBalance2] = await marketplace.connect(user).getCoinBalance(user.address)
+            const [userBalance2] = await marketplace.connect(user).getBalance(user.address)
             expect(userBalance2.toString()).is.equal('123')
         });
 
@@ -31,7 +31,7 @@ describe("BalanceHolder", function () {
             const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceFixture);
 
             //remove default balance
-            const [defaultBalance] = await marketplace.connect(user).getCoinBalance(user.address)
+            const [defaultBalance] = await marketplace.connect(user).getBalance(user.address)
             await marketplace.connect(user).withdrawCoin(defaultBalance)
 
             //deposit 123456 tokens
@@ -40,7 +40,7 @@ describe("BalanceHolder", function () {
 
             //lock 1 * 60 * 24 * 7 tokens
             await marketplace.test__increaseSpendingPerMinute(user.address, '1')
-            const [free1, locked1] = await marketplace.connect(user).getCoinBalance(user.address)
+            const [free1, locked1] = await marketplace.connect(user).getBalance(user.address)
             expect(locked1.toString()).is.equal('10080')
             expect(free1.toString()).is.equal(String(123456 - 10080))
 
@@ -54,22 +54,22 @@ describe("BalanceHolder", function () {
             //TODO: modify coin contract to make this test pass
             const { marketplace, token, user } = await loadFixture(deployMarketplaceFixture);
 
-            const [userBalance1] = await marketplace.connect(user).getCoinBalance(user.address)
+            const [userBalance1] = await marketplace.connect(user).getBalance(user.address)
 
             await token.transferShouldFail(true)
             await expect(marketplace.connect(user).withdrawCoin(1)).to.be.reverted
 
-            const [userBalance2] = await marketplace.connect(user).getCoinBalance(user.address)
+            const [userBalance2] = await marketplace.connect(user).getBalance(user.address)
             expect(userBalance2.toString()).is.equal(userBalance1.toString())
 
         });
     })
-    describe("getCoinBalance", function () {
+    describe("getBalance", function () {
         it("should return locked and free balance", async function () {
             const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceFixture);
 
             //remove default balance
-            const [defaultBalance] = await marketplace.connect(user).getCoinBalance(user.address)
+            const defaultBalance = await marketplace.connect(user).getFreeBalance(user.address)
             await marketplace.connect(user).withdrawCoin(defaultBalance)
 
             //deposit 123 tokens
@@ -79,7 +79,7 @@ describe("BalanceHolder", function () {
             //lock 1 * 60 * 24 * 7 tokens
             await marketplace.test__increaseSpendingPerMinute(user.address, '1')
 
-            const [free, locked] = await marketplace.connect(user).getCoinBalance(user.address)
+            const [free, locked] = await marketplace.connect(user).getBalance(user.address)
             expect(free.toString()).is.equal(String(123456 - 60 * 24 * 7))
             expect(locked.toString()).is.equal(String(60 * 24 * 7))
         });

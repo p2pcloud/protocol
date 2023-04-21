@@ -1,4 +1,4 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { deployMarketplaceFixture } from './fixtures'
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -41,7 +41,7 @@ async function signOffer(
 
 
 describe("Broker", function () {
-    describe("bsookResource", function () {
+    describe("bookResource", function () {
         it("should create a new Booking", async function () {
             const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
 
@@ -79,30 +79,46 @@ describe("Broker", function () {
                 nonce: await marketplace.getNonce(user.address),
             };
 
-            const [, locked1] = await marketplace.connect(user).getCoinBalance(user.address)
+            const locked1 = await marketplace.connect(user).getLockedBalance(user.address)
             expect(locked1).to.equal(0);
 
             const signature = await signOffer(provider, offer, marketplace.address);
             await marketplace.connect(user).bookResource(offer, signature);
 
-            const [, locked2] = await marketplace.connect(user).getCoinBalance(user.address)
+            const locked2 = await marketplace.connect(user).getLockedBalance(user.address)
             expect(locked2).to.equal(100 * 60 * 24 * 7);
         })
-        it.skip("should execute claim payment", async function () {
+        it("should execute claim payment", async function () {
             const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
-                pricePerMinute: 100,
+                pricePerMinute: 2,
                 client: user.address,
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
                 nonce: await marketplace.getNonce(user.address),
             };
-
             const signature = await signOffer(provider, offer, marketplace.address);
             await marketplace.connect(user).bookResource(offer, signature);
 
-            expect(false).to.equal(true, "not implemented");
+            //wait for 1 day
+            const initialTime = await time.latest();
+            await time.increase(3600 * 24);
+
+            //balance is still 0
+            const balance1 = await marketplace.connect(provider).getFreeBalance(provider.address);
+            expect(balance1).to.equal(0);
+
+            //booking another resource will trigger claim payment
+            offer.nonce = await marketplace.getNonce(user.address);
+            const signature2 = await signOffer(provider, offer, marketplace.address);
+            await marketplace.connect(user).bookResource(offer, signature2);
+
+            //check balance
+            const wholeMinutesPassed = Math.floor((await time.latest() - initialTime) / 60);
+            const balance2 = await marketplace.connect(provider).getFreeBalance(provider.address);
+            const payoutPercent = (10000 - await marketplace.communityFee()) / 10000
+            expect(balance2).to.equal(2 * wholeMinutesPassed * payoutPercent);//pricePerMinute * wholeMinutesPassed
         })
         it("should fail if user tries to reuse the same offer", async function () {
             const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
@@ -115,7 +131,7 @@ describe("Broker", function () {
                 nonce: await marketplace.getNonce(user.address),
             };
 
-            const [, locked1] = await marketplace.connect(user).getCoinBalance(user.address)
+            const locked1 = await marketplace.connect(user).getLockedBalance(user.address)
             expect(locked1).to.equal(0);
 
             const signature = await signOffer(provider, offer, marketplace.address);

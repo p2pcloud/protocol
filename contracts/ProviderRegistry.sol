@@ -17,10 +17,7 @@ abstract contract ProviderRegistry is BalanceHolder {
     address[] public providerList;
 
     function setProviderUrl(bytes32 url) public {
-        require(
-            providerInfo[msg.sender].isRegistered,
-            "Provider must be registered to set url"
-        );
+        require(providerInfo[msg.sender].isRegistered, "Provider must be registered to set url");
         providerInfo[msg.sender].url = url;
     }
 
@@ -35,15 +32,9 @@ abstract contract ProviderRegistry is BalanceHolder {
     uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
 
     function registerProvider() public {
-        require(
-            !providerInfo[msg.sender].isRegistered,
-            "Provider is already registered"
-        );
+        require(!providerInfo[msg.sender].isRegistered, "Provider is already registered");
 
-        require(
-            _isSpendable(msg.sender, PROVIDER_REGISTRATION_FEE),
-            "Not enough coin to register "
-        );
+        require(getFreeBalance(msg.sender) >= PROVIDER_REGISTRATION_FEE, "Not enough coin to register ");
 
         _spendWithComission(msg.sender, owner(), PROVIDER_REGISTRATION_FEE);
 
@@ -53,11 +44,7 @@ abstract contract ProviderRegistry is BalanceHolder {
         providerList.push(msg.sender);
     }
 
-    function getAllProviderURLs()
-        public
-        view
-        returns (address[] memory, bytes32[] memory)
-    {
+    function getAllProviderURLs() public view returns (address[] memory, bytes32[] memory) {
         uint256 providerCount = providerList.length;
         address[] memory addresses = new address[](providerCount);
         bytes32[] memory urls = new bytes32[](providerCount);

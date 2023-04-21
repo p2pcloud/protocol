@@ -96,13 +96,13 @@ describe("ProviderRegistry", function () {
             await marketplace.connect(anotherUser).depositCoin(fee.add(123))
 
 
-            const balance1 = await marketplace.connect(anotherUser).getCoinBalance(anotherUser.address)
+            const balance1 = await marketplace.connect(anotherUser).getBalance(anotherUser.address)
             expect(balance1[0]).to.equal(fee.add(123))
             expect(balance1[1]).to.equal(0)
 
             await marketplace.connect(anotherUser).registerProvider()
 
-            const balance2 = await marketplace.connect(anotherUser).getCoinBalance(anotherUser.address)
+            const balance2 = await marketplace.connect(anotherUser).getBalance(anotherUser.address)
             expect(balance2[0]).to.equal(123)
             expect(balance2[1]).to.equal(0)
         });
