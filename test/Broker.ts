@@ -3,42 +3,7 @@ import { expect } from "chai";
 import { deployMarketplaceFixture } from './fixtures'
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
-import { setUserCoinBalance } from "./lib";
-
-const HARDHAT_NETWORK_ID = 31337;
-
-type UnsignedOffer = {
-    specs: string;
-    pricePerMinute: number;
-    client: string;
-    expiresAt: number;
-    nonce: number;
-}
-
-async function signOffer(
-    provider: SignerWithAddress,
-    offer: UnsignedOffer,
-    brokerAddress: string,
-): Promise<string> {
-    const domain = {
-        chainId: HARDHAT_NETWORK_ID,
-        name: 'p2pcloud.io',
-        verifyingContract: brokerAddress,
-        version: '2',
-    }
-
-    const types = {
-        UnsignedOffer: [
-            { name: 'specs', type: 'bytes32' },
-            { name: 'pricePerMinute', type: 'uint256' },
-            { name: 'client', type: 'address' },
-            { name: 'expiresAt', type: 'uint256' },
-            { name: 'nonce', type: 'uint32' },
-        ]
-    }
-
-    return provider._signTypedData(domain, types, offer)
-}
+import { UnsignedOffer, setUserCoinBalance, signOffer } from "./lib";
 
 describe("Broker", function () {
     describe("bookResource", function () {
