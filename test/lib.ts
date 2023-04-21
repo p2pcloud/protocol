@@ -34,7 +34,7 @@ export async function signOffer(
     const types = {
         UnsignedOffer: [
             { name: 'specs', type: 'bytes32' },
-            { name: 'pricePerMinute', type: 'uint256' },
+            { name: 'pricePerMinute', type: 'uint64' },
             { name: 'client', type: 'address' },
             { name: 'expiresAt', type: 'uint256' },
             { name: 'nonce', type: 'uint32' },

@@ -13,12 +13,12 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
     uint8 public constant CANCEL_REASON_PROVIDER = 2;
     uint8 public constant CANCEL_REASON_NON_PAYMENT = 3;
 
-    event BookingCreated(uint256 bookingId, uint256 pricePerMinute, address client, address provider);
+    event BookingCreated(uint256 bookingId, uint64 pricePerMinute, address client, address provider);
     event BookingCancelled(uint256 bookingId, uint8 reason);
 
     struct Booking {
         bytes32 specs;
-        uint256 pricePerMinute;
+        uint64 pricePerMinute;
         address client;
         address provider;
     }

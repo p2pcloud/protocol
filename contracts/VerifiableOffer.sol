@@ -12,7 +12,7 @@ abstract contract VerifiableOffer is Initializable {
 
     struct UnsignedOffer {
         bytes32 specs;
-        uint256 pricePerMinute;
+        uint64 pricePerMinute;
         address client;
         uint256 expiresAt;
         uint32 nonce;
@@ -36,7 +36,7 @@ abstract contract VerifiableOffer is Initializable {
     bytes32 public constant DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     bytes32 public constant OFFER_TYPEHASH =
-        keccak256("UnsignedOffer(bytes32 specs,uint256 pricePerMinute,address client,uint256 expiresAt,uint32 nonce)");
+        keccak256("UnsignedOffer(bytes32 specs,uint64 pricePerMinute,address client,uint256 expiresAt,uint32 nonce)");
 
     bytes32 public DOMAIN_SEPARATOR;
 
