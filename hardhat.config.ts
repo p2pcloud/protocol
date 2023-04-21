@@ -1,6 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import '@openzeppelin/hardhat-upgrades';
+import "hardhat-contract-sizer"
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -17,6 +18,13 @@ const config: HardhatUserConfig = {
         },
     },
     networks: {},
+    contractSizer: {
+        alphaSort: true,
+        disambiguatePaths: false,
+        runOnCompile: true,
+        strict: true,
+        only: [':Marketplace$'],
+    }
 };
 
 if (process.env.HARDAT_PRIVATE_KEY) {
