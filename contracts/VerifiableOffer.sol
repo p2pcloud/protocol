@@ -11,11 +11,11 @@ abstract contract VerifiableOffer is Initializable {
     mapping(address => uint32) internal nonce;
 
     struct UnsignedOffer {
-        bytes32 specs;
-        uint64 pricePerMinute;
-        address client;
-        uint256 expiresAt;
-        uint32 nonce;
+        address client; //20
+        uint64 pricePerMinute; //8
+        uint32 nonce; //4
+        bytes32 specs; //32
+        uint256 expiresAt; //32
     }
 
     function getNonce(address client) external view returns (uint32) {
@@ -36,7 +36,7 @@ abstract contract VerifiableOffer is Initializable {
     bytes32 public constant DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     bytes32 public constant OFFER_TYPEHASH =
-        keccak256("UnsignedOffer(bytes32 specs,uint64 pricePerMinute,address client,uint256 expiresAt,uint32 nonce)");
+        keccak256("UnsignedOffer(address client,uint64 pricePerMinute,uint32 nonce,bytes32 specs,uint256 expiresAt)");
 
     bytes32 public DOMAIN_SEPARATOR;
 
@@ -52,11 +52,11 @@ abstract contract VerifiableOffer is Initializable {
                 keccak256(
                     abi.encode(
                         OFFER_TYPEHASH,
-                        offer.specs,
-                        offer.pricePerMinute,
                         offer.client,
-                        offer.expiresAt,
-                        offer.nonce
+                        offer.pricePerMinute,
+                        offer.nonce,
+                        offer.specs,
+                        offer.expiresAt
                     )
                 )
             )
