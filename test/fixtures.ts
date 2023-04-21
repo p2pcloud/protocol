@@ -1,7 +1,7 @@
 import { ethers, upgrades } from "hardhat";
 
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import type { Marketplace, TestableMarketplace, MockERC20 } from "../typechain-types";
+import type { TestableMarketplace, MockERC20 } from "../typechain-types";
 
 export type Fixture = {
     marketplace: TestableMarketplace,

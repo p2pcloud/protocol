@@ -48,6 +48,10 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
         });
         emit BookingCreated(bookingCount, offer.pricePerMinute, offer.client, provider);
 
+        require(
+            getFreeBalance(msg.sender) >= offer.pricePerMinute * MONEY_LOCK_MINUTES,
+            "Not enough balance to add a new the booking"
+        );
         userProviderAccounting[provider][msg.sender].pricePerMinute += offer.pricePerMinute;
 
         bookingCount++;
