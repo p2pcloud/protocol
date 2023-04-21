@@ -7,10 +7,11 @@ import "./ProviderRegistry.sol";
 import "./Broker.sol";
 
 contract Marketplace is BalanceHolder, ProviderRegistry, Broker {
-    function initialize() public initializer {
+    function initialize(IERC20 _coin) public initializer {
         _transferOwnership(msg.sender);
 
         __VerifiableOffer_init();
         communityFee = 2000;
+        coin = _coin;
     }
 }

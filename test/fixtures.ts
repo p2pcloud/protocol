@@ -19,14 +19,11 @@ export async function deployMarketplaceFixture(): Promise<Fixture> {
 async function _deployMarketplaceFixture(): Promise<Fixture> {
     const [admin, provider, user, anotherUser] = await ethers.getSigners();
 
-    const Marketplace = await ethers.getContractFactory("TestableMarketplace");
-    const marketplace = await upgrades.deployProxy(Marketplace) as TestableMarketplace;
-
     const MockERC20 = await ethers.getContractFactory("MockERC20");
     const token = await MockERC20.connect(admin).deploy('10000000000000000000000');
 
-    // await marketplace.connect(admin).initialize()
-    await marketplace.connect(admin).setCoin(token.address)
+    const Marketplace = await ethers.getContractFactory("TestableMarketplace");
+    const marketplace = await upgrades.deployProxy(Marketplace, [token.address]) as TestableMarketplace;
 
     const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
     await token.connect(admin).transfer(provider.address, fee)

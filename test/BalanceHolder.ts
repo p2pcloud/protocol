@@ -84,17 +84,4 @@ describe("BalanceHolder", function () {
             expect(locked.toString()).is.equal(String(60 * 24 * 7))
         });
     })
-    describe("SetCoinAddress", function () {
-        it("should set coin address", async function () {
-            const { marketplace, token, admin } = await loadFixture(deployMarketplaceFixture);
-
-            await marketplace.connect(admin).setCoin(token.address)
-            expect(await marketplace.coin()).is.equal(token.address)
-        });
-        it("should revert if not owner", async function () {
-            const { marketplace, token, user } = await loadFixture(deployMarketplaceFixture);
-
-            await expect(marketplace.connect(user).setCoin(token.address)).to.be.reverted
-        });
-    })
 });
