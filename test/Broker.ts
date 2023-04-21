@@ -11,6 +11,7 @@ type UnsignedOffer = {
     pricePerMinute: number;
     client: string;
     expiresAt: number;
+    nonce: number;
 }
 
 async function signOffer(
@@ -31,6 +32,7 @@ async function signOffer(
             { name: 'pricePerMinute', type: 'uint256' },
             { name: 'client', type: 'address' },
             { name: 'expiresAt', type: 'uint256' },
+            { name: 'nonce', type: 'uint32' },
         ]
     }
 
@@ -48,6 +50,7 @@ describe("Broker", function () {
                 pricePerMinute: 100,
                 client: user.address,
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
             };
             const signature = await signOffer(provider, offer, marketplace.address);
 
@@ -73,6 +76,7 @@ describe("Broker", function () {
                 pricePerMinute: 100,
                 client: user.address,
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
             };
 
             const [, locked1] = await marketplace.connect(user).getCoinBalance(user.address)
@@ -84,7 +88,40 @@ describe("Broker", function () {
             const [, locked2] = await marketplace.connect(user).getCoinBalance(user.address)
             expect(locked2).to.equal(100 * 60 * 24 * 7);
         })
-        it("should execute claim payment")
+        it.skip("should execute claim payment", async function () {
+            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
+            };
+
+            const signature = await signOffer(provider, offer, marketplace.address);
+            await marketplace.connect(user).bookResource(offer, signature);
+
+            expect(false).to.equal(true, "not implemented");
+        })
+        it("should fail if user tries to reuse the same offer", async function () {
+            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
+            };
+
+            const [, locked1] = await marketplace.connect(user).getCoinBalance(user.address)
+            expect(locked1).to.equal(0);
+
+            const signature = await signOffer(provider, offer, marketplace.address);
+            await expect(marketplace.connect(user).bookResource(offer, signature)).to.not.be.reverted;
+            await expect(marketplace.connect(user).bookResource(offer, signature)).to.be.revertedWith("Invalid offer nonce");
+        })
         it("should fail if not enough balance to cover a new VM booking")
     })
     describe("cancelBooking", function () {

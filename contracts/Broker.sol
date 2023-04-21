@@ -50,6 +50,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder {
         userProviderAccounting[provider][msg.sender].pricePerMinute += offer.pricePerMinute;
 
         bookingCount++;
+        nonce[msg.sender]++;
         _totalSpendingPerMinute[msg.sender] += offer.pricePerMinute;
     }
 
