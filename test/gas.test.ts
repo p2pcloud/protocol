@@ -4,17 +4,18 @@ import { randomBytes } from 'crypto'
 import { UnsignedOffer, setUserCoinBalance, signOffer } from "./lib";
 import { ethers } from "ethers";
 
+const GAS_TEST_RUNS = parseInt(process.env.GAS_TEST_RUNS || "100")
+
+
 if (process.env.REPORT_GAS === "true") {
     describe("Gas", function () {
         it("books many VMs", async function () {
-            const TOTAL_ROUNDS = 200
-
             const fixture = await loadFixture(deployMarketplaceFixture);
             const { marketplace, provider, user } = fixture;
 
             await setUserCoinBalance(fixture, '100000000000')
 
-            for (let i = 0; i < TOTAL_ROUNDS; i++) {
+            for (let i = 0; i < GAS_TEST_RUNS; i++) {
                 const offer: UnsignedOffer = {
                     specs: ethers.utils.formatBytes32String("hello world " + i),
                     pricePerMinute: i,
@@ -27,9 +28,12 @@ if (process.env.REPORT_GAS === "true") {
                 await time.increase(3600);
             }
 
-            await time.increase(3600 * 24 * 7);
+            for (let i = 0; i < GAS_TEST_RUNS; i++) {
+                await marketplace.connect(provider).claimPayment(user.address)
+                await time.increase(3600);
+            }
 
-            for (let i = 0; i < TOTAL_ROUNDS; i++) {
+            for (let i = 0; i < GAS_TEST_RUNS; i++) {
                 if (i % 2 === 0) {
                     await marketplace.connect(user).cancelBooking(i, true)
                 } else {
