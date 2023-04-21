@@ -5,31 +5,23 @@ pragma solidity ^0.8.18;
 import "./BalanceHolder.sol";
 import "./ProviderRegistry.sol";
 import "./VerifiableOffer.sol";
+import "./Payments.sol";
 
-abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry {
+abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Payments {
     uint8 public constant CANCEL_REASON_NOT_NEEDED = 0;
     uint8 public constant CANCEL_REASON_NOT_SATISFIED = 1;
     uint8 public constant CANCEL_REASON_PROVIDER = 2;
     uint8 public constant CANCEL_REASON_NON_PAYMENT = 3;
 
-    uint32 public constant MONEY_LOCK_MINUTES = 60 * 24 * 7; // 7 days
-
     event BookingCreated(uint256 bookingId, uint256 pricePerMinute, address client, address provider);
     event BookingCancelled(uint256 bookingId, uint8 reason);
 
-    struct UserProviderAccounting {
-        uint256 lastPaymentTs;
-        uint256 pricePerMinute;
-    }
     struct Booking {
         bytes32 specs;
         uint256 pricePerMinute;
         address client;
         address provider;
     }
-
-    mapping(address => mapping(address => UserProviderAccounting)) public userProviderAccounting;
-    mapping(address => uint256) internal _totalSpendingPerMinute;
 
     uint256 public bookingCount;
     mapping(uint256 => Booking) public bookings;
@@ -39,7 +31,6 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry {
 
         _executeClaimPayment(provider, offer.client);
 
-        //TODO: check provider is registered
         require(isProviderRegistered(provider), "Provider is not registered");
 
         bookings[bookingCount] = Booking({
@@ -61,23 +52,6 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry {
 
         bookingCount++;
         nonce[msg.sender]++;
-    }
-
-    function _executeClaimPayment(address provider, address client) internal {
-        // userProviderAccounting[provider][client].lastPaymentTs = block.timestamp;
-        uint256 pricePerMinute = userProviderAccounting[provider][client].pricePerMinute;
-
-        if (pricePerMinute == 0) {
-            //initialize account
-            userProviderAccounting[provider][client].lastPaymentTs = block.timestamp;
-            return;
-        }
-
-        uint256 minutesPassed = (block.timestamp - userProviderAccounting[provider][client].lastPaymentTs) / 60;
-        uint256 amount = minutesPassed * pricePerMinute;
-
-        _spendWithComission(client, provider, amount);
-        userProviderAccounting[provider][client].lastPaymentTs += minutesPassed * 60;
     }
 
     function cancelBooking(uint256 bookingId, bool satisfyed) external {
@@ -109,10 +83,6 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry {
         delete bookings[bookingId];
 
         emit BookingCancelled(bookingId, reason);
-    }
-
-    function getLockedBalance(address user) public view override returns (uint256) {
-        return _totalSpendingPerMinute[user] * MONEY_LOCK_MINUTES;
     }
 
     function listClientBookings(address client) external view returns (Booking[] memory) {
@@ -153,10 +123,6 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry {
         }
 
         return result;
-    }
-
-    function claimPayment(address client) external {
-        _executeClaimPayment(msg.sender, client);
     }
 
     function getBooking(uint256 id) external view returns (Booking memory) {

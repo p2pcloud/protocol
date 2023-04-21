@@ -81,7 +81,7 @@ describe("Broker", function () {
             //check balance
             const wholeMinutesPassed = Math.floor((await time.latest() - initialTime) / 60);
             const balance2 = await marketplace.connect(provider).getFreeBalance(provider.address);
-            const payoutPercent = (10000 - await marketplace.communityFee()) / 10000
+            const payoutPercent = (10000 - await marketplace.COMMUNITY_FEE()) / 10000
             expect(balance2).to.equal(offer.pricePerMinute * wholeMinutesPassed * payoutPercent);//pricePerMinute * wholeMinutesPassed
         })
         it("should fail if user tries to reuse the same offer", async function () {

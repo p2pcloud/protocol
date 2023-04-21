@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract BalanceHolder is OwnableUpgradeable {
-    uint16 public communityFee;
+    uint16 public constant COMMUNITY_FEE = 2000;
 
     mapping(address => uint256) private _coinBalance;
     IERC20 public coin;
@@ -26,7 +26,7 @@ abstract contract BalanceHolder is OwnableUpgradeable {
     function _spendWithComission(address spender, address receiver, uint256 amt) internal returns (bool defaulted) {
         uint256 spentAmt = _min(_coinBalance[spender], amt);
 
-        uint256 communityPayout = (spentAmt * communityFee) / (100 * 100);
+        uint256 communityPayout = (spentAmt * COMMUNITY_FEE) / (100 * 100);
         uint256 providerPayout = spentAmt - communityPayout;
 
         _coinBalance[spender] -= spentAmt;

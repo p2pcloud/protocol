@@ -10,7 +10,6 @@ contract Marketplace is BalanceHolder, Broker {
         _transferOwnership(msg.sender);
 
         __VerifiableOffer_init();
-        communityFee = 2000;
         coin = _coin;
     }
 }
