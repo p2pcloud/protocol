@@ -25,14 +25,15 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
     }
 
     struct BookingFull {
+        uint32 id;
         bytes32 specs;
         uint64 pricePerMinute;
         address client;
         address provider;
     }
 
-    uint256 public bookingCount;
-    mapping(uint256 => Booking) public bookings;
+    uint32 public bookingCount;
+    mapping(uint32 => Booking) public bookings;
 
     function bookResource(UnsignedOffer calldata offer, bytes calldata signature) external {
         address provider = _getOfferProvider(offer, signature);
@@ -65,7 +66,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
         nonce[msg.sender]++;
     }
 
-    function cancelBooking(uint256 bookingId, bool satisfyed) external {
+    function cancelBooking(uint32 bookingId, bool satisfyed) external {
         Booking memory booking = bookings[bookingId];
 
         uint8 reason = 0;
@@ -103,7 +104,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
         uint32 clientId = idByAddressReadOnly(client);
 
         uint256 count = 0;
-        for (uint256 i = 0; i < bookingCount; i++) {
+        for (uint32 i = 0; i < bookingCount; i++) {
             if (bookings[i].clientId == clientId) {
                 count++;
             }
@@ -111,9 +112,10 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
 
         BookingFull[] memory result = new BookingFull[](count);
         uint256 index = 0;
-        for (uint256 i = 0; i < bookingCount; i++) {
+        for (uint32 i = 0; i < bookingCount; i++) {
             if (bookings[i].clientId == clientId) {
                 result[index] = BookingFull({
+                    id: i,
                     specs: bookings[i].specs,
                     pricePerMinute: bookings[i].pricePerMinute,
                     client: client,
@@ -129,18 +131,19 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
     function listProvidersBookings(address provider) external view returns (BookingFull[] memory) {
         uint32 providerId = idByAddressReadOnly(provider);
 
-        uint256 count = 0;
-        for (uint256 i = 0; i < bookingCount; i++) {
+        uint32 count = 0;
+        for (uint32 i = 0; i < bookingCount; i++) {
             if (bookings[i].providerId == providerId) {
                 count++;
             }
         }
 
         BookingFull[] memory result = new BookingFull[](count);
-        uint256 index = 0;
-        for (uint256 i = 0; i < bookingCount; i++) {
+        uint32 index = 0;
+        for (uint32 i = 0; i < bookingCount; i++) {
             if (bookings[i].providerId == providerId) {
                 result[index] = BookingFull({
+                    id: i,
                     specs: bookings[i].specs,
                     pricePerMinute: bookings[i].pricePerMinute,
                     client: addressById(bookings[i].clientId),
@@ -153,9 +156,10 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
         return result;
     }
 
-    function getBooking(uint256 id) external view returns (BookingFull memory) {
+    function getBooking(uint32 id) external view returns (BookingFull memory) {
         return
             BookingFull({
+                id: id,
                 specs: bookings[id].specs,
                 pricePerMinute: bookings[id].pricePerMinute,
                 client: addressById(bookings[id].clientId),
