@@ -7,6 +7,7 @@ export type Fixture = {
     marketplace: TestableMarketplace,
     token: MockERC20
     provider: SignerWithAddress,
+    providersSigner: SignerWithAddress,
     user: SignerWithAddress,
     admin: SignerWithAddress,
     anotherUser: SignerWithAddress,
@@ -17,7 +18,7 @@ export async function deployMarketplaceFixture(): Promise<Fixture> {
 }
 
 async function _deployMarketplaceFixture(): Promise<Fixture> {
-    const [admin, provider, user, anotherUser] = await ethers.getSigners();
+    const [admin, provider, user, anotherUser, providersSigner] = await ethers.getSigners();
 
     const MockERC20 = await ethers.getContractFactory("MockERC20");
     const token = await MockERC20.connect(admin).deploy('10000000000000000000000');
@@ -30,6 +31,7 @@ async function _deployMarketplaceFixture(): Promise<Fixture> {
     await token.connect(provider).increaseAllowance(marketplace.address, fee)
     await marketplace.connect(provider).depositCoin(fee)
     await marketplace.connect(provider).registerProvider()
+    await marketplace.connect(provider).setSigner(providersSigner.address)
 
     //transfer some tokens to user
     await token.connect(admin).transfer(user.address, '10000000')
@@ -37,5 +39,5 @@ async function _deployMarketplaceFixture(): Promise<Fixture> {
     await marketplace.connect(user).depositCoin('10000000')
 
 
-    return { marketplace, token, provider, user, admin, anotherUser };
+    return { marketplace, token, provider, user, admin, anotherUser, providersSigner };
 }

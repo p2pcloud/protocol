@@ -8,7 +8,7 @@ import { UnsignedOffer, setUserCoinBalance, signOffer } from "./lib";
 describe("Broker", function () {
     describe("bookResource", function () {
         it("should create a new Booking", async function () {
-            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, provider, providersSigner } = await loadFixture(deployMarketplaceFixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -17,7 +17,7 @@ describe("Broker", function () {
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
                 nonce: await marketplace.getNonce(user.address),
             };
-            const signature = await signOffer(provider, offer, marketplace.address);
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
 
             const tx = await marketplace.connect(user).bookResource(offer, signature);
             const rc = await tx.wait();
@@ -33,7 +33,7 @@ describe("Broker", function () {
         })
 
         it("should increase locked balance", async function () {
-            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceFixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -46,14 +46,14 @@ describe("Broker", function () {
             const locked1 = await marketplace.connect(user).getLockedBalance(user.address)
             expect(locked1).to.equal(0);
 
-            const signature = await signOffer(provider, offer, marketplace.address);
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
             await marketplace.connect(user).bookResource(offer, signature);
 
             const locked2 = await marketplace.connect(user).getLockedBalance(user.address)
             expect(locked2).to.equal(100 * 60 * 24 * 7);
         })
         it("should execute claim payment", async function () {
-            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, provider, providersSigner } = await loadFixture(deployMarketplaceFixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -62,7 +62,7 @@ describe("Broker", function () {
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
                 nonce: await marketplace.getNonce(user.address),
             };
-            const signature = await signOffer(provider, offer, marketplace.address);
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
             await marketplace.connect(user).bookResource(offer, signature);
 
             //wait for 1 day
@@ -75,7 +75,7 @@ describe("Broker", function () {
 
             //booking another resource will trigger claim payment
             offer.nonce = await marketplace.getNonce(user.address);
-            const signature2 = await signOffer(provider, offer, marketplace.address);
+            const signature2 = await signOffer(providersSigner, offer, marketplace.address);
             await marketplace.connect(user).bookResource(offer, signature2);
 
             //check balance
@@ -85,7 +85,7 @@ describe("Broker", function () {
             expect(balance2).to.equal(offer.pricePerMinute * wholeMinutesPassed * payoutPercent);//pricePerMinute * wholeMinutesPassed
         })
         it("should fail if user tries to reuse the same offer", async function () {
-            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceFixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -98,16 +98,15 @@ describe("Broker", function () {
             const locked1 = await marketplace.connect(user).getLockedBalance(user.address)
             expect(locked1).to.equal(0);
 
-            const signature = await signOffer(provider, offer, marketplace.address);
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
             await expect(marketplace.connect(user).bookResource(offer, signature)).to.not.be.reverted;
             await expect(marketplace.connect(user).bookResource(offer, signature)).to.be.revertedWith("Invalid offer nonce");
         })
         it("should fail if not enough balance to cover a new VM booking", async function () {
             const fixture = await loadFixture(deployMarketplaceFixture);
-            const { marketplace, user, provider, token } = fixture
+            const { marketplace, user, providersSigner } = fixture
 
             //remove default balance and deposit some tokens
-            const defaultBalance = await marketplace.connect(user).getFreeBalance(user.address)
 
             //add an offer
             const offer: UnsignedOffer = {
@@ -117,7 +116,7 @@ describe("Broker", function () {
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
                 nonce: await marketplace.getNonce(user.address),
             };
-            let signature = await signOffer(provider, offer, marketplace.address);
+            let signature = await signOffer(providersSigner, offer, marketplace.address);
             await marketplace.connect(user).bookResource(offer, signature);
 
             //wait for 1 day
@@ -133,7 +132,7 @@ describe("Broker", function () {
 
             //prepeare a new offer
             offer.nonce++
-            signature = await signOffer(provider, offer, marketplace.address);
+            signature = await signOffer(providersSigner, offer, marketplace.address);
 
             await setUserCoinBalance(fixture, minBalanceToBook.sub(1));
             await expect(marketplace.connect(user).bookResource(offer, signature)).to.be.revertedWith("Not enough balance to add a new the booking");
@@ -161,7 +160,7 @@ describe("Broker", function () {
     })
     describe("cancelBooking", function () {
         it("should remove a booking and decrease locked balance", async function () {
-            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceFixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -170,7 +169,7 @@ describe("Broker", function () {
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
                 nonce: await marketplace.getNonce(user.address),
             };
-            const signature = await signOffer(provider, offer, marketplace.address);
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
 
             await marketplace.connect(user).bookResource(offer, signature);
 
@@ -194,7 +193,7 @@ describe("Broker", function () {
             expect(locked2).to.equal(0);
         })
         it("should fail if booking is already cancelled", async function () {
-            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceFixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -203,7 +202,7 @@ describe("Broker", function () {
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
                 nonce: await marketplace.getNonce(user.address),
             };
-            const signature = await signOffer(provider, offer, marketplace.address);
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
 
             await marketplace.connect(user).bookResource(offer, signature);
 
@@ -213,7 +212,7 @@ describe("Broker", function () {
             await expect(marketplace.connect(user).cancelBooking(0, true)).to.be.revertedWith("Only client or provider can cancel the booking");
         })
         it("should create an event with reason = 0 or 1 depending on client's selection", async function () {
-            const { marketplace, user, provider } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceFixture);
 
             //book vm 0
             const offer: UnsignedOffer = {
@@ -223,12 +222,12 @@ describe("Broker", function () {
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
                 nonce: await marketplace.getNonce(user.address),
             };
-            const signature = await signOffer(provider, offer, marketplace.address);
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
             await marketplace.connect(user).bookResource(offer, signature);
 
             //book vm 1
             offer.nonce++
-            const signature2 = await signOffer(provider, offer, marketplace.address);
+            const signature2 = await signOffer(providersSigner, offer, marketplace.address);
             await marketplace.connect(user).bookResource(offer, signature2);
 
             //delete CANCEL_REASON_NOT_SATISFIED
@@ -241,7 +240,7 @@ describe("Broker", function () {
         })
         it("should create an event with reason = 2 if provider cancelled or reason = 3 if client defauled", async function () {
             const fixture = await loadFixture(deployMarketplaceFixture);
-            const { marketplace, user, provider } = fixture;
+            const { marketplace, user, provider, providersSigner } = fixture;
 
             //book vm 0
             const offer: UnsignedOffer = {
@@ -251,7 +250,7 @@ describe("Broker", function () {
                 expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
                 nonce: await marketplace.getNonce(user.address),
             };
-            const signature = await signOffer(provider, offer, marketplace.address);
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
             await marketplace.connect(user).bookResource(offer, signature);
 
             //set user balance to have enough to book 2 vms
@@ -259,7 +258,7 @@ describe("Broker", function () {
 
             //book vm 1
             offer.nonce++
-            const signature2 = await signOffer(provider, offer, marketplace.address);
+            const signature2 = await signOffer(providersSigner, offer, marketplace.address);
             await marketplace.connect(user).bookResource(offer, signature2);
 
             //delete CANCEL_REASON_PROVIDER

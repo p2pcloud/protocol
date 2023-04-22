@@ -4,8 +4,9 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "./DelegatedSigner.sol";
 
-abstract contract VerifiableOffer is Initializable {
+abstract contract VerifiableOffer is Initializable, DelegatedSigner {
     using ECDSA for bytes32;
 
     mapping(address => uint32) internal nonce;
@@ -62,6 +63,7 @@ abstract contract VerifiableOffer is Initializable {
             )
         );
 
-        return digest.recover(signature);
+        address recoveredSigner = digest.recover(signature);
+        return resolveSigner(recoveredSigner);
     }
 }
