@@ -8,6 +8,7 @@
         "gas": "REPORT_GAS=true hardhat test ./test/gas.test.ts",
         "compile": "hardhat compile",
         "coverage": "hardhat coverage",
+        "flat": "hardhat flatten contracts/Marketplace.sol | grep -v \"SPDX-License-Identifier\" > artifacts/flattened.sol  ",
         "run_in_docker": "docker build -t protocol_test . && docker run -v $(pwd)/artifacts:/app/artifacts protocol_test",
         "test:docker": "npm run run_in_docker -- npm test",
         "compile:docker": "npm run run_in_docker -- npm run compile",
