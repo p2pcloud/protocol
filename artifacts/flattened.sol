@@ -673,84 +673,6 @@ abstract contract BalanceHolder is OwnableUpgradeable {
 }
 
 
-// File contracts/TrustedAddress.sol
-
-
-pragma solidity ^0.8.17;
-
-contract TrustedAddress {
-    mapping(address => address) trustedAddresses;
-
-    function setTrustedAddress(address trusted) public {
-        trustedAddresses[msg.sender] = trusted;
-    }
-
-    function getTrustedAddress(address user) public view returns (address) {
-        return trustedAddresses[user];
-    }
-}
-
-
-// File contracts/ProviderRegistry.sol
-
-
-pragma solidity ^0.8.17;
-
-abstract contract ProviderRegistry is BalanceHolder {
-    struct ProviderInfo {
-        //slot 1
-        bytes32 url;
-        //slot 2
-        bool isRegistered;
-        uint128 feePaid;
-    }
-
-    mapping(address => ProviderInfo) providerInfo;
-    address[] public providerList;
-
-    function setProviderUrl(bytes32 url) public {
-        require(providerInfo[msg.sender].isRegistered, "Provider must be registered to set url");
-        providerInfo[msg.sender].url = url;
-    }
-
-    function getProviderUrl(address _user) public view returns (bytes32) {
-        return providerInfo[_user].url;
-    }
-
-    function isProviderRegistered(address _user) public view returns (bool) {
-        return providerInfo[_user].isRegistered;
-    }
-
-    uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
-
-    function registerProvider() public {
-        require(!providerInfo[msg.sender].isRegistered, "Provider is already registered");
-
-        require(getFreeBalance(msg.sender) >= PROVIDER_REGISTRATION_FEE, "Not enough coin to register ");
-
-        _spendWithComission(msg.sender, owner(), PROVIDER_REGISTRATION_FEE);
-
-        providerInfo[msg.sender].isRegistered = true;
-        providerInfo[msg.sender].feePaid += PROVIDER_REGISTRATION_FEE;
-
-        providerList.push(msg.sender);
-    }
-
-    function getAllProviderURLs() public view returns (address[] memory, bytes32[] memory) {
-        uint256 providerCount = providerList.length;
-        address[] memory addresses = new address[](providerCount);
-        bytes32[] memory urls = new bytes32[](providerCount);
-
-        for (uint256 i = 0; i < providerCount; i++) {
-            addresses[i] = providerList[i];
-            urls[i] = providerInfo[providerList[i]].url;
-        }
-
-        return (addresses, urls);
-    }
-}
-
-
 // File contracts/Payments.sol
 
 
@@ -789,6 +711,34 @@ abstract contract Payments is BalanceHolder {
 
     function claimPayment(address client) external {
         _executeClaimPayment(msg.sender, client);
+    }
+}
+
+
+// File contracts/DelegatedSigner.sol
+
+
+pragma solidity ^0.8.17;
+
+contract DelegatedSigner {
+    mapping(address => address) private _walletToSigner;
+    mapping(address => address) private _signerToWallet;
+
+    function setSigner(address signer) public {
+        if (_signerToWallet[signer] != address(0)) {
+            revert("Signer already in use");
+        }
+
+        _walletToSigner[msg.sender] = signer;
+        _signerToWallet[signer] = msg.sender;
+    }
+
+    function getSigner(address user) public view returns (address) {
+        return _walletToSigner[user];
+    }
+
+    function resolveSigner(address signer) public view returns (address) {
+        return _signerToWallet[signer];
     }
 }
 
@@ -1432,7 +1382,8 @@ library ECDSA {
 pragma solidity ^0.8.17;
 
 
-abstract contract VerifiableOffer is Initializable {
+
+abstract contract VerifiableOffer is Initializable, DelegatedSigner {
     using ECDSA for bytes32;
 
     mapping(address => uint32) internal nonce;
@@ -1489,7 +1440,8 @@ abstract contract VerifiableOffer is Initializable {
             )
         );
 
-        return digest.recover(signature);
+        address recoveredSigner = digest.recover(signature);
+        return resolveSigner(recoveredSigner);
     }
 }
 
@@ -1523,6 +1475,66 @@ abstract contract AddressBook {
 
     function addressById(uint32 _id) internal view returns (address) {
         return idToAddress[_id];
+    }
+}
+
+
+// File contracts/ProviderRegistry.sol
+
+
+pragma solidity ^0.8.17;
+
+abstract contract ProviderRegistry is BalanceHolder {
+    struct ProviderInfo {
+        //slot 1
+        bytes32 url;
+        //slot 2
+        bool isRegistered;
+        uint128 feePaid;
+    }
+
+    mapping(address => ProviderInfo) providerInfo;
+    address[] public providerList;
+
+    function setProviderUrl(bytes32 url) public {
+        require(providerInfo[msg.sender].isRegistered, "Provider must be registered to set url");
+        providerInfo[msg.sender].url = url;
+    }
+
+    function getProviderUrl(address _user) public view returns (bytes32) {
+        return providerInfo[_user].url;
+    }
+
+    function isProviderRegistered(address _user) public view returns (bool) {
+        return providerInfo[_user].isRegistered;
+    }
+
+    uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
+
+    function registerProvider() public {
+        require(!providerInfo[msg.sender].isRegistered, "Provider is already registered");
+
+        require(getFreeBalance(msg.sender) >= PROVIDER_REGISTRATION_FEE, "Not enough coin to register ");
+
+        _spendWithComission(msg.sender, owner(), PROVIDER_REGISTRATION_FEE);
+
+        providerInfo[msg.sender].isRegistered = true;
+        providerInfo[msg.sender].feePaid += PROVIDER_REGISTRATION_FEE;
+
+        providerList.push(msg.sender);
+    }
+
+    function getAllProviderURLs() public view returns (address[] memory, bytes32[] memory) {
+        uint256 providerCount = providerList.length;
+        address[] memory addresses = new address[](providerCount);
+        bytes32[] memory urls = new bytes32[](providerCount);
+
+        for (uint256 i = 0; i < providerCount; i++) {
+            addresses[i] = providerList[i];
+            urls[i] = providerInfo[providerList[i]].url;
+        }
+
+        return (addresses, urls);
     }
 }
 
@@ -1703,8 +1715,7 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
 pragma solidity ^0.8.17;
 
 
-
-contract Marketplace is BalanceHolder, Broker, TrustedAddress {
+contract Marketplace is BalanceHolder, Broker {
     function initialize(IERC20 _coin) public initializer {
         _transferOwnership(msg.sender);
 
