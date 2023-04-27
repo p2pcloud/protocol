@@ -9,7 +9,12 @@ import "./DelegatedSigner.sol";
 abstract contract VerifiableOffer is Initializable, DelegatedSigner {
     using ECDSA for bytes32;
 
-    mapping(address => uint32) internal nonce;
+    bytes32 public constant DOMAIN_TYPEHASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 public constant OFFER_TYPEHASH =
+        keccak256("UnsignedOffer(address client,uint64 pricePerMinute,uint32 nonce,bytes32 specs,uint256 expiresAt)");
+
+    bytes32 public DOMAIN_SEPARATOR;
 
     struct UnsignedOffer {
         address client; //20
@@ -18,6 +23,9 @@ abstract contract VerifiableOffer is Initializable, DelegatedSigner {
         bytes32 specs; //32
         uint256 expiresAt; //32
     }
+
+    mapping(address => uint32) internal nonce;
+    
 
     function getNonce(address client) external view returns (uint32) {
         return nonce[client];
@@ -33,13 +41,7 @@ abstract contract VerifiableOffer is Initializable, DelegatedSigner {
             abi.encode(DOMAIN_TYPEHASH, keccak256(bytes("p2pcloud.io")), keccak256(bytes("2")), chainId, address(this))
         );
     }
-
-    bytes32 public constant DOMAIN_TYPEHASH =
-        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-    bytes32 public constant OFFER_TYPEHASH =
-        keccak256("UnsignedOffer(address client,uint64 pricePerMinute,uint32 nonce,bytes32 specs,uint256 expiresAt)");
-
-    bytes32 public DOMAIN_SEPARATOR;
+    
 
     function _getOfferProvider(UnsignedOffer calldata offer, bytes calldata signature) internal view returns (address) {
         require(offer.expiresAt > block.timestamp, "Offer expired");

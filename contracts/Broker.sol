@@ -8,14 +8,13 @@ import "./VerifiableOffer.sol";
 import "./Payments.sol";
 import "./AddressBook.sol";
 
-abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Payments, AddressBook {
+abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, AddressBook {
     uint8 public constant CANCEL_REASON_NOT_NEEDED = 0;
     uint8 public constant CANCEL_REASON_NOT_SATISFIED = 1;
     uint8 public constant CANCEL_REASON_PROVIDER = 2;
     uint8 public constant CANCEL_REASON_NON_PAYMENT = 3;
 
-    event BookingCreated(uint256 bookingId, uint64 pricePerMinute, address client, address provider);
-    event BookingCancelled(uint256 bookingId, uint8 reason);
+    uint32 public bookingCount;    
 
     struct Booking {
         bytes32 specs;
@@ -31,16 +30,16 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
         address client;
         address provider;
     }
-
-    uint32 public bookingCount;
+    
     mapping(uint32 => Booking) public bookings;
+
+    event BookingCreated(uint256 bookingId, uint64 pricePerMinute, address client, address provider);
+    event BookingCancelled(uint256 bookingId, uint8 reason);
 
     function bookResource(UnsignedOffer calldata offer, bytes calldata signature) external {
         address provider = _getOfferProvider(offer, signature);
-
-        _executeClaimPayment(provider, offer.client);
-
         require(isProviderRegistered(provider), "Provider is not registered");
+        _executeClaimPayment(provider, offer.client);        
 
         uint32 providerId = idByAddress(provider);
         uint32 clientId = idByAddress(offer.client);
@@ -62,14 +61,14 @@ abstract contract Broker is VerifiableOffer, BalanceHolder, ProviderRegistry, Pa
 
         emit BookingCreated(bookingCount, offer.pricePerMinute, offer.client, provider);
 
-        bookingCount++;
+        bookingCount = bookingCount + 1;
         nonce[msg.sender]++;
     }
 
     function cancelBooking(uint32 bookingId, bool satisfyed) external {
         Booking memory booking = bookings[bookingId];
 
-        uint8 reason = 0;
+        uint8 reason;
 
         address client = addressById(booking.clientId);
         address provider = addressById(booking.providerId);

@@ -8,8 +8,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 abstract contract BalanceHolder is OwnableUpgradeable {
     uint16 public constant COMMUNITY_FEE = 2000;
 
-    mapping(address => uint256) private _coinBalance;
     IERC20 public coin;
+
+    mapping(address => uint256) private _coinBalance;
+    
 
     function depositCoin(uint256 numTokens) public {
         require(coin.transferFrom(msg.sender, address(this), numTokens), "Failed to transfer tokens");
@@ -56,7 +58,7 @@ abstract contract BalanceHolder is OwnableUpgradeable {
     }
 
     function _min(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a < b) {
+        if (a <= b) {
             return a;
         }
         return b;

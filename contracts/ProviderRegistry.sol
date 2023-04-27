@@ -5,6 +5,8 @@ pragma solidity ^0.8.17;
 import "./BalanceHolder.sol";
 
 abstract contract ProviderRegistry is BalanceHolder {
+    uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
+
     struct ProviderInfo {
         //slot 1
         bytes32 url;
@@ -28,8 +30,7 @@ abstract contract ProviderRegistry is BalanceHolder {
     function isProviderRegistered(address _user) public view returns (bool) {
         return providerInfo[_user].isRegistered;
     }
-
-    uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
+    
 
     function registerProvider() public {
         require(!providerInfo[msg.sender].isRegistered, "Provider is already registered");

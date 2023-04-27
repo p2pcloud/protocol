@@ -28,7 +28,11 @@ abstract contract Payments is BalanceHolder {
             return;
         }
 
-        uint256 minutesPassed = (block.timestamp - userProviderAccounting[provider][client].lastPaymentTs) / 60;
+        uint256 usedTime = (block.timestamp - userProviderAccounting[provider][client].lastPaymentTs);
+        uint256 minutesPassed;        
+        assembly {
+            minutesPassed := div(usedTime, 60)
+        }
         uint256 amount = minutesPassed * pricePerMinute;
 
         _spendWithComission(client, provider, amount);
