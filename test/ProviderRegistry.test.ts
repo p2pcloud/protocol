@@ -25,7 +25,7 @@ describe("ProviderRegistry", function () {
 
 
             const urlBytes = ethers.utils.formatBytes32String("woop.woop/woop");
-            expect(marketplace.connect(anotherUser).setProviderUrl(urlBytes)).to.be.revertedWith("Provider not registered")
+            expect(marketplace.connect(anotherUser).setProviderUrl(urlBytes)).to.be.revertedWith("Provider must be registered to set url")
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
             await token.connect(admin).transfer(anotherUser.address, fee)
