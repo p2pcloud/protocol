@@ -1,18 +1,17 @@
-FROM node:18-alpine as builder
+FROM node:16 as builder
 
 WORKDIR /app
 
-COPY package* ./
+COPY package* /app/
 RUN npm ci
 
-COPY ./contracts ./contracts
-COPY ./test ./test
-COPY ./hardhat.config.ts ./
+COPY ./contracts /app/contracts
+COPY ./test /app/test
+COPY ./hardhat.config.ts /app/
 
 RUN npm run test
 RUN npm run compile
 
-RUN mkdir -p artifacts
 RUN npm run flat
 
 # main container
