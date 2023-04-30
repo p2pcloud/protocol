@@ -10,6 +10,7 @@ cache
 *openzeppelin
 
 # artifacts
+artifacts/*.sol
 artifacts/*/*/*
 artifacts/*/*.json
 # !artifacts/contracts/
