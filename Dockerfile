@@ -10,8 +10,8 @@ COPY ./test ./test
 COPY ./hardhat.config.ts ./
 
 RUN npm run test
-RUN npm run flat
 RUN npm run compile
+RUN npm run flat
 
 # main container
 
