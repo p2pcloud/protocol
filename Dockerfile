@@ -11,6 +11,9 @@ COPY ./hardhat.config.ts ./
 
 RUN npm run test
 RUN npm run compile
+
+RUN ls -ltha
+
 RUN npm run flat
 
 # main container
