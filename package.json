@@ -9,9 +9,9 @@
         "compile": "hardhat compile",
         "coverage": "hardhat coverage",
         "flat": "hardhat flatten contracts/TestableMarketplace.sol | grep -v \"SPDX-License-Identifier\" > artifacts/flat.sol  ",
-        "deploy:staging": "PROXY_ADDRESS='0x65D85948cFB5fc4852433C1e205983dF1924A78f' hardhat run scripts/deploy-broker.ts --network fuji_staging",
-        "deploy:testnet": "PROXY_ADDRESS='0x8349c36cd54535BF980730681E959D88a7528d09' hardhat run scripts/deploy-broker.ts --network fuji_testnet",
-        "deploy:mainnet": "PROXY_ADDRESS='0x7A69374b3663559E9d70dFF9B916ee6A07F2c568' hardhat run scripts/deploy-broker.ts --network ava_mainnet"
+        "deploy:staging": "PROXY_ADDRESS='0xCEdbC690EA3F97B91A577138Da5E17de93047be9' COIN_ADDRESS='0xf01f12feb87181cea0edf713cb64fb4beaa4848d' hardhat run scripts/deploy.ts --network fuji_staging",
+        "deploy:testnet": "PROXY_ADDRESS='' COIN_ADDRESS='0xf01f12feb87181cea0edf713cb64fb4beaa4848d' hardhat run scripts/deploy.ts --network fuji_testnet",
+        "deploy:mainnet": "PROXY_ADDRESS='' hardhat run scripts/deploy.ts --network ava_mainnet"
     },
     "repository": {
         "type": "git",

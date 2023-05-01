@@ -1,17 +1,17 @@
 import { ethers, upgrades } from "hardhat";
 import prompt from "prompt";
 
-let PROXY_ADDRESS = process.env.PROXY_ADDRESS || "";
 
 if (String(process.env.HARDAT_PRIVATE_KEY).length < 20) {
     console.log("env HARDAT_PRIVATE_KEY is empty");
     process.exit(1);
 }
 
-const CONTRACT_TO_DEPLOY = "Broker";
+const CONTRACT_TO_DEPLOY = "Marketplace";
+const { COIN_ADDRESS, PROXY_ADDRESS } = process.env;
 
 async function main() {
-    if (PROXY_ADDRESS === "") {
+    if (!PROXY_ADDRESS) {
         console.log(`env PROXY_ADDRESS is empty. Type 'deploy' to deploy a new ${CONTRACT_TO_DEPLOY} contract`);
         const { response } = await prompt.get(['response']);
         if (response !== "deploy") {
@@ -20,7 +20,7 @@ async function main() {
         }
 
         const Broker = await ethers.getContractFactory(CONTRACT_TO_DEPLOY);
-        const broker = await upgrades.deployProxy(Broker);
+        const broker = await upgrades.deployProxy(Broker, [COIN_ADDRESS]);
         await broker.deployed();
         console.log(CONTRACT_TO_DEPLOY + " deployed to:", broker.address);
     } else {
