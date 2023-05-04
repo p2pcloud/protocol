@@ -14,13 +14,14 @@ abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, Address
     uint8 public constant CANCEL_REASON_PROVIDER = 2;
     uint8 public constant CANCEL_REASON_NON_PAYMENT = 3;
 
-    uint32 public bookingCount;    
+    uint32 public bookingCount;
 
     struct Booking {
         bytes32 specs;
         uint64 pricePerMinute;
         uint32 clientId;
         uint32 providerId;
+        uint32 startTime;
     }
 
     struct BookingFull {
@@ -29,8 +30,9 @@ abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, Address
         uint64 pricePerMinute;
         address client;
         address provider;
+        uint32 startTime;
     }
-    
+
     mapping(uint32 => Booking) public bookings;
 
     event BookingCreated(uint256 bookingId, uint64 pricePerMinute, address client, address provider);
@@ -39,7 +41,7 @@ abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, Address
     function bookResource(UnsignedOffer calldata offer, bytes calldata signature) external {
         address provider = _getOfferProvider(offer, signature);
         require(isProviderRegistered(provider), "Provider is not registered");
-        _executeClaimPayment(provider, offer.client);        
+        _executeClaimPayment(provider, offer.client);
 
         uint32 providerId = idByAddress(provider);
         uint32 clientId = idByAddress(offer.client);
@@ -48,7 +50,8 @@ abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, Address
             specs: offer.specs,
             pricePerMinute: offer.pricePerMinute,
             clientId: clientId,
-            providerId: providerId
+            providerId: providerId,
+            startTime: uint32(block.timestamp)
         });
 
         require(
@@ -118,7 +121,8 @@ abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, Address
                     specs: bookings[i].specs,
                     pricePerMinute: bookings[i].pricePerMinute,
                     client: client,
-                    provider: addressById(bookings[i].providerId)
+                    provider: addressById(bookings[i].providerId),
+                    startTime: bookings[i].startTime
                 });
                 index++;
             }
@@ -146,7 +150,8 @@ abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, Address
                     specs: bookings[i].specs,
                     pricePerMinute: bookings[i].pricePerMinute,
                     client: addressById(bookings[i].clientId),
-                    provider: provider
+                    provider: provider,
+                    startTime: bookings[i].startTime
                 });
                 index++;
             }
@@ -162,7 +167,8 @@ abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, Address
                 specs: bookings[id].specs,
                 pricePerMinute: bookings[id].pricePerMinute,
                 client: addressById(bookings[id].clientId),
-                provider: addressById(bookings[id].providerId)
+                provider: addressById(bookings[id].providerId),
+                startTime: bookings[id].startTime
             });
     }
 }

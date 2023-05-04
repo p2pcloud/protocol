@@ -19,6 +19,7 @@ describe("Broker", function () {
             };
             const signature = await signOffer(providersSigner, offer, marketplace.address);
 
+
             const tx = await marketplace.connect(user).bookResource(offer, signature);
             const rc = await tx.wait();
             const event = rc.events?.find(event => event.event === 'BookingCreated');
@@ -26,10 +27,13 @@ describe("Broker", function () {
 
             const bookingFromChain = await marketplace.getBooking(newId);
 
+            const initialTime = await time.latest();
+
             expect(bookingFromChain.specs).to.equal(offer.specs);
             expect(bookingFromChain.pricePerMinute).to.equal(offer.pricePerMinute);
             expect(bookingFromChain.client).to.equal(user.address);
             expect(bookingFromChain.provider).to.equal(provider.address);
+            expect(bookingFromChain.startTime).to.equal(initialTime);
         })
 
         it("should increase locked balance", async function () {
