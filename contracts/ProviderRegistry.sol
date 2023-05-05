@@ -45,15 +45,23 @@ abstract contract ProviderRegistry is BalanceHolder {
     }
 
     function getAllProviderURLs() public view returns (address[] memory, bytes32[] memory) {
-        uint256 providerCount = providerList.length;
+        uint256 providerCount = 0;
+        for (uint i = 0; i < providerList.length; i++) {
+            if (providerInfo[providerList[i]].isRegistered) {
+                providerCount++;
+            }
+        }
         address[] memory addresses = new address[](providerCount);
         bytes32[] memory urls = new bytes32[](providerCount);
-
-        for (uint256 i = 0; i < providerCount; i++) {
-            addresses[i] = providerList[i];
-            urls[i] = providerInfo[providerList[i]].url;
+        uint j = 0;
+        for (uint256 i = 0; i < providerList.length; i++) {
+            if (!providerInfo[providerList[i]].isRegistered) {
+                continue;
+            }
+            addresses[j] = providerList[i];
+            urls[j] = providerInfo[providerList[i]].url;
+            j++;
         }
-
         return (addresses, urls);
     }
 

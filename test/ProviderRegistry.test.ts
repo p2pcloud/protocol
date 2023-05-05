@@ -64,6 +64,43 @@ describe("ProviderRegistry", function () {
             expect(urls.map(ethers.utils.parseBytes32String))
                 .to.deep.equal(["", "another.example.com", "admin.com"]);
         });
+        it("should ignore deleted providers", async function () {
+            const { marketplace, token, anotherUser, admin, provider } = await loadFixture(deployMarketplaceFixture);
+
+            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
+            await token.connect(admin).transfer(anotherUser.address, fee)
+            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
+            await marketplace.connect(anotherUser).depositCoin(fee)
+            await marketplace.connect(anotherUser).registerProvider()
+
+            const urlBytes = ethers.utils.formatBytes32String("another.example.com");
+            await marketplace.connect(anotherUser).setProviderUrl(urlBytes)
+
+            // Register admin as another provider
+            await token.connect(admin).increaseAllowance(marketplace.address, fee)
+            await marketplace.connect(admin).depositCoin(fee)
+            await marketplace.connect(admin).registerProvider()
+
+            const anotherUrlBytes = ethers.utils.formatBytes32String("admin.com");
+            await marketplace.connect(admin).setProviderUrl(anotherUrlBytes)
+
+            // Get all provider URLs
+            const [addresses, urls] = await marketplace.getAllProviderURLs();
+            expect(addresses).to.deep.equal([provider.address, anotherUser.address, admin.address]);
+
+            //delete one provider
+            await marketplace.connect(provider).deleteProvider(provider.address)
+
+            const [addresses2, urls2] = await marketplace.getAllProviderURLs();
+            expect(addresses2).to.deep.equal([anotherUser.address, admin.address]);
+
+            //delete one provider
+            await marketplace.connect(admin).deleteProvider(admin.address)
+
+            const [addresses3, urls3] = await marketplace.getAllProviderURLs();
+            expect(addresses3).to.deep.equal([anotherUser.address]);
+
+        });
     });
 
 
