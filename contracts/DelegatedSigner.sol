@@ -11,6 +11,11 @@ contract DelegatedSigner {
             revert("Signer already in use");
         }
 
+        address oldValue = _walletToSigner[msg.sender];
+        if (oldValue != address(0)) {
+            delete _signerToWallet[oldValue];
+        }
+
         _walletToSigner[msg.sender] = signer;
         _signerToWallet[signer] = msg.sender;
     }
