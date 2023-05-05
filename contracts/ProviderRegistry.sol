@@ -30,7 +30,6 @@ abstract contract ProviderRegistry is BalanceHolder {
     function isProviderRegistered(address _user) public view returns (bool) {
         return providerInfo[_user].isRegistered;
     }
-    
 
     function registerProvider() public {
         require(!providerInfo[msg.sender].isRegistered, "Provider is already registered");
@@ -56,5 +55,10 @@ abstract contract ProviderRegistry is BalanceHolder {
         }
 
         return (addresses, urls);
+    }
+
+    function deleteProvider(address _user) public {
+        require(_user == msg.sender || owner() == msg.sender, "Provider or community only");
+        providerInfo[_user].isRegistered = false;
     }
 }

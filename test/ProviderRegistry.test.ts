@@ -121,4 +121,46 @@ describe("ProviderRegistry", function () {
     describe("setProviderRegistrationFee", function () {
         it("change set provider fee for new providers only")
     })
+
+    describe("deleteProvider", function () {
+        it("can be called by provdier", async () => {
+            const { marketplace, token, anotherUser, admin, user } = await loadFixture(deployMarketplaceFixture);
+            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
+            await token.connect(admin).transfer(anotherUser.address, fee.add(123))
+            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee.add(123))
+            await marketplace.connect(anotherUser).depositCoin(fee.add(123))
+
+            await marketplace.connect(anotherUser).registerProvider()
+
+            await expect(marketplace.connect(user).deleteProvider(anotherUser.address)).to.be.revertedWith("Provider or community only")
+            let isRegistered
+            isRegistered = await marketplace.connect(anotherUser).isProviderRegistered(anotherUser.address)
+            expect(isRegistered).to.equal(true)
+
+
+            await marketplace.connect(anotherUser).deleteProvider(anotherUser.address)
+            isRegistered = await marketplace.connect(anotherUser).isProviderRegistered(anotherUser.address)
+            expect(isRegistered).to.equal(false)
+
+        })
+        it("can be called by community", async () => {
+            const { marketplace, token, anotherUser, admin, user } = await loadFixture(deployMarketplaceFixture);
+            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
+            await token.connect(admin).transfer(anotherUser.address, fee.add(123))
+            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee.add(123))
+            await marketplace.connect(anotherUser).depositCoin(fee.add(123))
+
+            await marketplace.connect(anotherUser).registerProvider()
+
+            await expect(marketplace.connect(user).deleteProvider(anotherUser.address)).to.be.revertedWith("Provider or community only")
+            let isRegistered
+            isRegistered = await marketplace.connect(anotherUser).isProviderRegistered(anotherUser.address)
+            expect(isRegistered).to.equal(true)
+
+
+            await marketplace.connect(admin).deleteProvider(anotherUser.address)
+            isRegistered = await marketplace.connect(anotherUser).isProviderRegistered(anotherUser.address)
+            expect(isRegistered).to.equal(false)
+        })
+    })
 });
