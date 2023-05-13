@@ -5,7 +5,7 @@ import { UnsignedVoucher, signVoucher } from "./lib";
 import { ethers } from "ethers";
 
 
-describe.only("FiatMarketplace", () => {
+describe("FiatMarketplace", () => {
     describe("setVoucherSigner", () => {
         it("should set voucher signer", async () => {
             const { marketplace, provider, admin } = await loadFixture(deployFiatMarketplaceFixture);
@@ -104,8 +104,25 @@ describe.only("FiatMarketplace", () => {
         })
     })
     describe("burnCoin", () => {
-        it("should burn coin")
-        it("should not burn coin if not owner")
+        it("should burn coin", async () => {
+            const { marketplace, admin, user, voucherSigner } = await loadFixture(deployFiatMarketplaceFixture);
+
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000)
+
+            await marketplace.connect(admin).burnCoin(1234, user.address)
+
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000 - 1234)
+
+        })
+        it("should not burn coin if not owner", async () => {
+            const { marketplace, admin, user, voucherSigner, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
+
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000)
+
+            await expect(marketplace.connect(anotherUser).burnCoin(1234, user.address)).to.be.revertedWith("Ownable: caller is not the owner")
+
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000)
+        })
     })
     describe("withdrawCoin", () => {
         it("should withdraw coin if not a provider")
