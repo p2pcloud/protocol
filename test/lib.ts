@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Fixture } from "./fixtures";
+import { MarketplaceFixture } from "./fixtures";
 import { BigNumber, BigNumberish } from "ethers";
 
 export async function getEvent<T>(tx: Promise<any>, eventName: string): Promise<T> {
@@ -70,7 +70,7 @@ export async function signVoucher(
     return signer._signTypedData(domain, types, voucher)
 }
 
-export async function setUserCoinBalance(fixture: Fixture, amt: BigNumberish) {
+export async function setUserCoinBalance(fixture: MarketplaceFixture, amt: BigNumberish) {
     const { marketplace, token, user, admin } = fixture;
 
     const total = await marketplace.connect(user).getTotalBalance(user.address)
