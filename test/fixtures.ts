@@ -18,11 +18,12 @@ export type MarketplaceFixture = Fixture & {
 
 export type FiatMarketplaceFixture = Fixture & {
     marketplace: FiatMarketplace,
+    voucherSigner: SignerWithAddress,
 }
 
 
 export async function deployFiatMarketplaceFixture(): Promise<FiatMarketplaceFixture> {
-    const [admin, provider, user, anotherUser, providersSigner] = await ethers.getSigners();
+    const [admin, provider, user, anotherUser, providersSigner, voucherSigner] = await ethers.getSigners();
 
     const MockERC20 = await ethers.getContractFactory("MockERC20");
     const token = await MockERC20.connect(admin).deploy('10000000000000000000000');
@@ -43,7 +44,7 @@ export async function deployFiatMarketplaceFixture(): Promise<FiatMarketplaceFix
     await marketplace.connect(user).depositCoin('10000000')
 
 
-    return { marketplace, token, provider, user, admin, anotherUser, providersSigner };
+    return { marketplace, token, provider, user, admin, anotherUser, providersSigner, voucherSigner };
 }
 
 export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {

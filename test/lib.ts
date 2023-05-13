@@ -8,7 +8,6 @@ export async function getEvent<T>(tx: Promise<any>, eventName: string): Promise<
     return event.args;
 }
 
-
 const HARDHAT_NETWORK_ID = 31337;
 
 export type UnsignedOffer = {
@@ -20,7 +19,7 @@ export type UnsignedOffer = {
 }
 
 export async function signOffer(
-    provider: SignerWithAddress,
+    signer: SignerWithAddress,
     offer: UnsignedOffer,
     brokerAddress: string,
 ): Promise<string> {
@@ -41,9 +40,35 @@ export async function signOffer(
         ]
     }
 
-    return provider._signTypedData(domain, types, offer)
+    return signer._signTypedData(domain, types, offer)
 }
 
+export type UnsignedVoucher = {
+    amount: number;
+    paymentId: string;
+}
+
+export async function signVoucher(
+    signer: SignerWithAddress,
+    voucher: UnsignedVoucher,
+    brokerAddress: string,
+): Promise<string> {
+    const domain = {
+        chainId: HARDHAT_NETWORK_ID,
+        name: 'p2pcloud.io',
+        verifyingContract: brokerAddress,
+        version: '2',
+    }
+
+    const types = {
+        UnsignedVoucher: [
+            { name: 'amount', type: 'uint256' },
+            { name: 'paymentId', type: 'bytes32' },
+        ]
+    }
+
+    return signer._signTypedData(domain, types, voucher)
+}
 
 export async function setUserCoinBalance(fixture: Fixture, amt: BigNumberish) {
     const { marketplace, token, user, admin } = fixture;

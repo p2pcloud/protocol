@@ -10,11 +10,10 @@ contract FiatMarketplace is Marketplace {
     using ECDSA for bytes32;
 
     //voucher logic
-    bytes32 public constant VOUCHER_TYPEHASH = keccak256("Voucher(uint64 amount,bytes32 paymentId)");
+    bytes32 public constant VOUCHER_TYPEHASH = keccak256("UnsignedVoucher(uint256 amount,bytes32 paymentId)");
 
-    struct Voucher {
-        address client;
-        uint64 amount;
+    struct UnsignedVoucher {
+        uint256 amount;
         bytes32 paymentId;
     }
 
@@ -25,14 +24,14 @@ contract FiatMarketplace is Marketplace {
         voucherSigner = _voucherSigner;
     }
 
-    function claimVoucher(Voucher calldata voucher, bytes calldata signature) public {
+    function claimVoucher(UnsignedVoucher calldata voucher, bytes calldata signature) public {
         require(usedVouchers[voucher.paymentId] == false, "Voucher already used");
 
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
                 DOMAIN_SEPARATOR,
-                keccak256(abi.encode(VOUCHER_TYPEHASH, voucher.client, voucher.amount, voucher.paymentId))
+                keccak256(abi.encode(VOUCHER_TYPEHASH, voucher.amount, voucher.paymentId))
             )
         );
 
