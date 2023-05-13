@@ -22,6 +22,8 @@ export type FiatMarketplaceFixture = Fixture & {
 }
 
 
+export const DEFAULT_USER_BALANCE = 10000000
+
 export async function deployFiatMarketplaceFixture(): Promise<FiatMarketplaceFixture> {
     const [admin, provider, user, anotherUser, providersSigner, voucherSigner] = await ethers.getSigners();
 
@@ -39,9 +41,9 @@ export async function deployFiatMarketplaceFixture(): Promise<FiatMarketplaceFix
     await marketplace.connect(provider).setSigner(providersSigner.address)
 
     //transfer some tokens to user
-    await token.connect(admin).transfer(user.address, '10000000')
-    await token.connect(user).approve(marketplace.address, '10000000')
-    await marketplace.connect(user).depositCoin('10000000')
+    await token.connect(admin).transfer(user.address, DEFAULT_USER_BALANCE)
+    await token.connect(user).approve(marketplace.address, DEFAULT_USER_BALANCE)
+    await marketplace.connect(user).depositCoin(DEFAULT_USER_BALANCE)
 
 
     return { marketplace, token, provider, user, admin, anotherUser, providersSigner, voucherSigner };
@@ -64,9 +66,9 @@ export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
     await marketplace.connect(provider).setSigner(providersSigner.address)
 
     //transfer some tokens to user
-    await token.connect(admin).transfer(user.address, '10000000')
-    await token.connect(user).approve(marketplace.address, '10000000')
-    await marketplace.connect(user).depositCoin('10000000')
+    await token.connect(admin).transfer(user.address, DEFAULT_USER_BALANCE)
+    await token.connect(user).approve(marketplace.address, DEFAULT_USER_BALANCE)
+    await marketplace.connect(user).depositCoin(DEFAULT_USER_BALANCE)
 
 
     return { marketplace, token, provider, user, admin, anotherUser, providersSigner };

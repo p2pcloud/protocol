@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { deployFiatMarketplaceFixture, deployMarketplaceFixture } from './fixtures'
-import { UnsignedVoucher, signVoucher } from "./lib";
+import { DEFAULT_USER_BALANCE, deployFiatMarketplaceFixture, deployMarketplaceFixture } from './fixtures'
+import { UnsignedVoucher, setUserCoinBalance, signVoucher } from "./lib";
 import { ethers } from "ethers";
 
 
@@ -34,9 +34,9 @@ describe("FiatMarketplace", () => {
             }
             const signature = await signVoucher(voucherSigner, voucher, marketplace.address)
 
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
             await marketplace.connect(user).claimVoucher(voucher, signature)
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000 + 100)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE + 100)
         })
         it("should not allow voucher reuse", async () => {
             const { marketplace, admin, user, voucherSigner } = await loadFixture(deployFiatMarketplaceFixture);
@@ -50,9 +50,9 @@ describe("FiatMarketplace", () => {
             }
             const signature1 = await signVoucher(voucherSigner, voucher1, marketplace.address)
 
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
             await marketplace.connect(user).claimVoucher(voucher1, signature1)
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000 + 100)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE + 100)
 
             //voucher 2 
             const voucher2: UnsignedVoucher = {
@@ -61,9 +61,9 @@ describe("FiatMarketplace", () => {
             }
             const signature2 = await signVoucher(voucherSigner, voucher2, marketplace.address)
 
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000 + 100)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE + 100)
             await marketplace.connect(user).claimVoucher(voucher2, signature2)
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000 + 100 + 123456789)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE + 100 + 123456789)
 
             //voucher 2 reuse
             await expect(marketplace.connect(user).claimVoucher(voucher2, signature2)).to.be.revertedWith("Voucher already used")
@@ -107,25 +107,46 @@ describe("FiatMarketplace", () => {
         it("should burn coin", async () => {
             const { marketplace, admin, user, voucherSigner } = await loadFixture(deployFiatMarketplaceFixture);
 
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
 
             await marketplace.connect(admin).burnCoin(1234, user.address)
 
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000 - 1234)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE - 1234)
 
         })
         it("should not burn coin if not owner", async () => {
             const { marketplace, admin, user, voucherSigner, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
 
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
 
             await expect(marketplace.connect(anotherUser).burnCoin(1234, user.address)).to.be.revertedWith("Ownable: caller is not the owner")
 
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(10000000)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
         })
     })
     describe("withdrawCoin", () => {
-        it("should withdraw coin if not a provider")
+        it("should withdraw coin only for provider", async () => {
+            const { marketplace, admin, user, token, voucherSigner, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
+
+            //top up balance
+            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
+            await token.connect(admin).transfer(user.address, fee)
+            await token.connect(user).approve(marketplace.address, fee)
+            await marketplace.connect(user).depositCoin(fee)
+
+            //try to withdraw
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(fee.add(DEFAULT_USER_BALANCE))
+            await expect(marketplace.connect(user).withdrawCoin(1234)).to.be.revertedWith("Only provider can withdraw")
+
+            //register as provider and try again
+            await marketplace.connect(admin).registerFiatProvider(user.address)
+            await marketplace.connect(user).withdrawCoin(1234)
+
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE - 1234)
+        })
+    })
+    describe("depositCoin", () => {
+        it("should not work at all")
     })
     describe("registerProvider", () => {
         it("should not allow anybody to register as a provider")
