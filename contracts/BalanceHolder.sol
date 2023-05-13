@@ -10,8 +10,7 @@ abstract contract BalanceHolder is OwnableUpgradeable {
 
     IERC20 public coin;
 
-    mapping(address => uint256) private _coinBalance;
-    
+    mapping(address => uint256) internal _coinBalance;
 
     function depositCoin(uint256 numTokens) public {
         require(coin.transferFrom(msg.sender, address(this), numTokens), "Failed to transfer tokens");
@@ -19,7 +18,7 @@ abstract contract BalanceHolder is OwnableUpgradeable {
         _coinBalance[msg.sender] = _coinBalance[msg.sender] + numTokens;
     }
 
-    function withdrawCoin(uint256 amt) public {
+    function withdrawCoin(uint256 amt) public virtual {
         require(getFreeBalance(msg.sender) >= amt, "Not enough balance to withdraw");
         _coinBalance[msg.sender] -= amt;
         require(coin.transfer(msg.sender, amt), "ERC20 transfer failed");

@@ -31,17 +31,21 @@ abstract contract ProviderRegistry is BalanceHolder {
         return providerInfo[_user].isRegistered;
     }
 
-    function registerProvider() public {
-        require(!providerInfo[msg.sender].isRegistered, "Provider is already registered");
+    function registerProvider() public virtual {
+        _registerProvider(msg.sender);
+    }
 
-        require(getFreeBalance(msg.sender) >= PROVIDER_REGISTRATION_FEE, "Not enough coin to register ");
+    function _registerProvider(address provider) internal {
+        require(!providerInfo[provider].isRegistered, "Provider is already registered");
 
-        _spendWithComission(msg.sender, owner(), PROVIDER_REGISTRATION_FEE);
+        require(getFreeBalance(provider) >= PROVIDER_REGISTRATION_FEE, "Not enough coin to register ");
 
-        providerInfo[msg.sender].isRegistered = true;
-        providerInfo[msg.sender].feePaid += PROVIDER_REGISTRATION_FEE;
+        _spendWithComission(provider, owner(), PROVIDER_REGISTRATION_FEE);
 
-        providerList.push(msg.sender);
+        providerInfo[provider].isRegistered = true;
+        providerInfo[provider].feePaid += PROVIDER_REGISTRATION_FEE;
+
+        providerList.push(provider);
     }
 
     function getAllProviderURLs() public view returns (address[] memory, bytes32[] memory) {
