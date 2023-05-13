@@ -50,6 +50,11 @@ contract FiatMarketplace is Marketplace {
         require(coin.transfer(msg.sender, amt), "ERC20 transfer failed");
     }
 
+    //deposit is disabled
+    function depositCoin(uint256 amt) public override {
+        require(false, "Not supported");
+    }
+
     //allow clients balance burn for refunds
     function burnCoin(uint256 amt, address client) public onlyOwner {
         _coinBalance[client] -= amt; //no worries about overflow since only owner can burn

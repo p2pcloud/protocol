@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { DEFAULT_USER_BALANCE, deployFiatMarketplaceFixture, deployMarketplaceFixture } from './fixtures'
 import { UnsignedVoucher, setUserCoinBalance, signVoucher } from "./lib";
-import { ethers } from "ethers";
+import { ethers, providers } from "ethers";
 
 
 describe("FiatMarketplace", () => {
@@ -128,14 +128,16 @@ describe("FiatMarketplace", () => {
         it("should withdraw coin only for provider", async () => {
             const { marketplace, admin, user, token, voucherSigner, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
 
+            await token.connect(admin).transfer(marketplace.address, 200000000)
+
             //top up balance
-            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
-            await token.connect(admin).transfer(user.address, fee)
-            await token.connect(user).approve(marketplace.address, fee)
-            await marketplace.connect(user).depositCoin(fee)
+            const fee = (await marketplace.PROVIDER_REGISTRATION_FEE()).toNumber()
+            const voucher = { amount: fee, paymentId: ethers.utils.formatBytes32String("three") }
+            const signature = await signVoucher(voucherSigner, voucher, marketplace.address)
+            await marketplace.connect(user).claimVoucher(voucher, signature)
 
             //try to withdraw
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(fee.add(DEFAULT_USER_BALANCE))
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(fee + DEFAULT_USER_BALANCE)
             await expect(marketplace.connect(user).withdrawCoin(1234)).to.be.revertedWith("Only provider can withdraw")
 
             //register as provider and try again
@@ -146,13 +148,53 @@ describe("FiatMarketplace", () => {
         })
     })
     describe("depositCoin", () => {
-        it("should not work at all")
+        it("should not work at all", async () => {
+            const { marketplace, admin, user, provider, token, voucherSigner, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
+
+            for (let wallet of [admin, user, provider, anotherUser]) {
+                await token.connect(admin).transfer(wallet.address, 12345)
+                await token.connect(wallet).approve(marketplace.address, 12345)
+
+                await expect(marketplace.connect(wallet).depositCoin(1234)).to.be.revertedWith("Not supported")
+            }
+        })
     })
     describe("registerProvider", () => {
-        it("should not allow anybody to register as a provider")
+        it("should be disabled", async () => {
+            const { marketplace, admin, user, provider, token, voucherSigner, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
+
+
+            for (let wallet of [admin, user, anotherUser]) {
+                const fee = (await marketplace.PROVIDER_REGISTRATION_FEE()).toNumber()
+                const voucher = { amount: fee, paymentId: ethers.utils.formatBytes32String(wallet.address.slice(-10)) }
+                const signature = await signVoucher(voucherSigner, voucher, marketplace.address)
+                await marketplace.connect(wallet).claimVoucher(voucher, signature)
+
+                await expect(marketplace.connect(wallet).registerProvider()).to.be.revertedWith("Not supported")
+            }
+        })
     })
-    describe("registerProvider", () => {
-        it("should not work without params")
-        it("should register if owner")
+
+    describe("registerFiatProvider", () => {
+        it("should register if owner", async () => {
+            const { marketplace, admin, user, token, provider, voucherSigner, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
+
+            //top up balance
+            const fee = (await marketplace.PROVIDER_REGISTRATION_FEE()).toNumber()
+            const voucher = { amount: fee, paymentId: ethers.utils.formatBytes32String("three") }
+            const signature = await signVoucher(voucherSigner, voucher, marketplace.address)
+            await marketplace.connect(anotherUser).claimVoucher(voucher, signature)
+
+            expect(await marketplace.isProviderRegistered(anotherUser.address)).to.equal(false)
+
+            await expect(marketplace.connect(anotherUser).registerFiatProvider(anotherUser.address)).to.be.revertedWith("Ownable: caller is not the owner")
+            await expect(marketplace.connect(provider).registerFiatProvider(anotherUser.address)).to.be.revertedWith("Ownable: caller is not the owner")
+
+            expect(await marketplace.isProviderRegistered(anotherUser.address)).to.equal(false)
+
+            await marketplace.connect(admin).registerFiatProvider(anotherUser.address)
+
+            expect(await marketplace.isProviderRegistered(anotherUser.address)).to.equal(true)
+        })
     })
 })

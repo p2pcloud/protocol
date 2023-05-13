@@ -12,7 +12,7 @@ abstract contract BalanceHolder is OwnableUpgradeable {
 
     mapping(address => uint256) internal _coinBalance;
 
-    function depositCoin(uint256 numTokens) public {
+    function depositCoin(uint256 numTokens) public virtual {
         require(coin.transferFrom(msg.sender, address(this), numTokens), "Failed to transfer tokens");
 
         _coinBalance[msg.sender] = _coinBalance[msg.sender] + numTokens;
