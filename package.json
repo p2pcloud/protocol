@@ -11,6 +11,7 @@
         "flat": "hardhat flatten contracts/TestableMarketplace.sol | grep -v \"SPDX-License-Identifier\" > artifacts/flat.sol  ",
         "deploy:dev": "PROXY_ADDRESS='0xCEdbC690EA3F97B91A577138Da5E17de93047be9' COIN_ADDRESS='0xf01f12feb87181cea0edf713cb64fb4beaa4848d' hardhat run scripts/deploy.ts --network fuji_staging",
         "deploy:staging": "PROXY_ADDRESS='0x6a66E81c7B6bAB0AAb3D296cED19CC4FF8ed42Ca' COIN_ADDRESS='0xf01f12feb87181cea0edf713cb64fb4beaa4848d' hardhat run scripts/deploy.ts --network fuji_staging",
+        "deploy:fiat-dev": "PROXY_ADDRESS='0xb2521b4aa4557f0C8B6B195317942E167639C69a' CONTARCT='FiatMarketplace' COIN_ADDRESS='0xf01f12feb87181cea0edf713cb64fb4beaa4848d' hardhat run scripts/deploy.ts --network fuji_testnet",
         "deploy:testnet": "PROXY_ADDRESS='' COIN_ADDRESS='0xf01f12feb87181cea0edf713cb64fb4beaa4848d' hardhat run scripts/deploy.ts --network fuji_testnet",
         "deploy:mainnet": "PROXY_ADDRESS='' COIN_ADDRESS='0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E' hardhat run scripts/deploy.ts --network ava_mainnet"
     },

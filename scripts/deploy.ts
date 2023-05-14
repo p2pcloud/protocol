@@ -7,7 +7,7 @@ if (String(process.env.HARDAT_PRIVATE_KEY).length < 20) {
     process.exit(1);
 }
 
-const CONTRACT_TO_DEPLOY = "Marketplace";
+const CONTRACT_TO_DEPLOY = process.env.CONTARCT || "Marketplace";
 const { COIN_ADDRESS, PROXY_ADDRESS } = process.env;
 
 async function main() {
