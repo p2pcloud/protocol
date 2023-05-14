@@ -24,6 +24,10 @@ contract FiatMarketplace is Marketplace {
         voucherSigner = _voucherSigner;
     }
 
+    function isVoucherAlreadyClaimed(bytes32 paymentId) public view returns (bool) {
+        return usedVouchers[paymentId];
+    }
+
     function claimVoucher(UnsignedVoucher calldata voucher, bytes calldata signature) public {
         require(usedVouchers[voucher.paymentId] == false, "Voucher already used");
 
