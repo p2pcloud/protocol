@@ -47,24 +47,21 @@ contract FiatMarketplace is Marketplace {
     }
 
     //only provider is allowed to withddraw
-    function withdrawCoin(uint256 amt) public override {
-        require(isProviderRegistered(msg.sender), "Only provider can withdraw");
-        require(getFreeBalance(msg.sender) >= amt, "Not enough balance to withdraw");
-        _coinBalance[msg.sender] -= amt;
-        require(coin.transfer(msg.sender, amt), "ERC20 transfer failed");
-    }
-
-    //deposit is disabled
-    function depositCoin(uint256 amt) public override {
+    function withdrawCoin(uint256 amt) public pure override {
         require(false, "Not supported");
     }
 
-    //allow clients balance burn for refunds
+    //deposit is disabled
+    function depositCoin(uint256 amt) public pure override {
+        require(false, "Not supported");
+    }
+
+    //bun coins instead of withdrawals
     function burnCoin(uint256 amt, address client) public onlyOwner {
         _coinBalance[client] -= amt; //no worries about overflow since only owner can burn
     }
 
-    function registerProvider() public override {
+    function registerProvider() public pure override {
         require(false, "Not supported");
     }
 
