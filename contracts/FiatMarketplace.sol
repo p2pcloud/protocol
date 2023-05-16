@@ -66,6 +66,6 @@ contract FiatMarketplace is Marketplace {
     }
 
     function registerFiatProvider(address provider) public onlyOwner {
-        _registerProvider(provider);
+        _registerProvider(provider, 0);
     }
 }

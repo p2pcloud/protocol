@@ -149,12 +149,6 @@ describe("FiatMarketplace", () => {
         it("should register if owner", async () => {
             const { marketplace, admin, provider, voucherSigner, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
 
-            //top up balance
-            const fee = (await marketplace.PROVIDER_REGISTRATION_FEE()).toNumber()
-            const voucher = { amount: fee, paymentId: ethers.utils.formatBytes32String("three") }
-            const signature = await signVoucher(voucherSigner, voucher, marketplace.address)
-            await marketplace.connect(anotherUser).claimVoucher(voucher, signature)
-
             expect(await marketplace.isProviderRegistered(anotherUser.address)).to.equal(false)
 
             await expect(marketplace.connect(anotherUser).registerFiatProvider(anotherUser.address)).to.be.revertedWith("Ownable: caller is not the owner")

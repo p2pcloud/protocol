@@ -32,18 +32,18 @@ abstract contract ProviderRegistry is BalanceHolder {
     }
 
     function registerProvider() public virtual {
-        _registerProvider(msg.sender);
+        _registerProvider(msg.sender, PROVIDER_REGISTRATION_FEE);
     }
 
-    function _registerProvider(address provider) internal {
+    function _registerProvider(address provider, uint64 fee) internal {
         require(!providerInfo[provider].isRegistered, "Provider is already registered");
 
-        require(getFreeBalance(provider) >= PROVIDER_REGISTRATION_FEE, "Not enough coin to register ");
+        require(getFreeBalance(provider) >= fee, "Not enough coin to register ");
 
-        _spendWithComission(provider, owner(), PROVIDER_REGISTRATION_FEE);
+        _spendWithComission(provider, owner(), fee);
 
         providerInfo[provider].isRegistered = true;
-        providerInfo[provider].feePaid += PROVIDER_REGISTRATION_FEE;
+        providerInfo[provider].feePaid += fee;
 
         providerList.push(provider);
     }
