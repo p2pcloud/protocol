@@ -17,6 +17,9 @@ contract FiatMarketplace is Marketplace {
         bytes32 paymentId;
     }
 
+    event VoucherClaimed(address indexed client, uint256 amount, bytes32 paymentId);
+    event CoinBurned(address indexed client, uint256 amount);
+
     mapping(bytes32 => bool) public usedVouchers;
     address public voucherSigner;
 
@@ -44,6 +47,8 @@ contract FiatMarketplace is Marketplace {
 
         usedVouchers[voucher.paymentId] = true;
         _coinBalance[msg.sender] = _coinBalance[msg.sender] + voucher.amount;
+
+        emit VoucherClaimed(msg.sender, voucher.amount, voucher.paymentId);
     }
 
     //only provider is allowed to withddraw
@@ -59,6 +64,7 @@ contract FiatMarketplace is Marketplace {
     //bun coins instead of withdrawals
     function burnCoin(uint256 amt, address client) public onlyOwner {
         _coinBalance[client] -= amt; //no worries about overflow since only owner can burn
+        emit CoinBurned(client, amt);
     }
 
     function registerProvider() public pure override {

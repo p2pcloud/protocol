@@ -102,27 +102,49 @@ describe("FiatMarketplace", () => {
 
             await expect(marketplace.connect(user).claimVoucher(voucher3, signature3)).to.be.revertedWith("Invalid signature")
         })
+
+        it("should emit VoucherClaimed event", async () => {
+            const { marketplace, admin, user, voucherSigner } = await loadFixture(deployFiatMarketplaceFixture);
+
+            await marketplace.connect(admin).setVoucherSigner(voucherSigner.address)
+
+            //voucher 1 
+            const voucher1: UnsignedVoucher = {
+                amount: 100,
+                paymentId: ethers.utils.formatBytes32String("one"),
+            }
+            const signature1 = await signVoucher(voucherSigner, voucher1, marketplace.address)
+
+            await expect(await marketplace.connect(user).claimVoucher(voucher1, signature1)).to.emit(marketplace, "VoucherClaimed").withArgs(user.address, voucher1.amount, voucher1.paymentId)
+        })
     })
-    describe("burnCoin", () => {
-        it("should burn coin", async () => {
-            const { marketplace, admin, user } = await loadFixture(deployFiatMarketplaceFixture);
+})
+describe("burnCoin", () => {
+    it("should burn coin", async () => {
+        const { marketplace, admin, user } = await loadFixture(deployFiatMarketplaceFixture);
 
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
+        expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
 
-            await marketplace.connect(admin).burnCoin(1234, user.address)
+        await marketplace.connect(admin).burnCoin(1234, user.address)
 
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE - 1234)
+        expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE - 1234)
 
-        })
-        it("should not burn coin if not owner", async () => {
-            const { marketplace, user, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
+    })
+    it("should not burn coin if not owner", async () => {
+        const { marketplace, user, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
 
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
+        expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
 
-            await expect(marketplace.connect(anotherUser).burnCoin(1234, user.address)).to.be.revertedWith("Ownable: caller is not the owner")
+        await expect(marketplace.connect(anotherUser).burnCoin(1234, user.address)).to.be.revertedWith("Ownable: caller is not the owner")
 
-            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
-        })
+        expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
+    })
+    it("shoule emit event", async () => {
+        const { marketplace, admin, user } = await loadFixture(deployFiatMarketplaceFixture);
+
+        await expect(marketplace.connect(admin).burnCoin(1234, user.address))
+            .to.emit(marketplace, "CoinBurned")
+            .withArgs(user.address, 1234)
     })
     describe("withdrawCoin", () => {
         it("should be disabled", async () => {
