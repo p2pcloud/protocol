@@ -5,8 +5,6 @@ import "hardhat-contract-sizer"
 import dotenv from "dotenv";
 dotenv.config();
 
-
-
 const config: HardhatUserConfig = {
     solidity: {
         version: "0.8.17",
@@ -27,21 +25,30 @@ const config: HardhatUserConfig = {
     }
 };
 
-if (process.env.HARDAT_PRIVATE_KEY) {
+if (config.networks) {
+    config.networks.ganache = {
+        url: "http://localhost:8545",
+        accounts: ["0x6be878a6ef0718de9c50c3119c18aa71d64028523093c8415edf35e071e0fc34"] // 1st account from ganache
+    }
+}
+
+if (process.env.HARDHAT_PRIVATE_KEY) {
+    if (!config.networks) throw new Error("typescript is ugly");
+
     const fuji = {
         url: "https://api.avax-test.network/ext/bc/C/rpc",
-        accounts: [process.env.HARDAT_PRIVATE_KEY || ""]
+        accounts: [process.env.HARDHAT_PRIVATE_KEY || ""]
     }
-    if (config.networks) {
-        config.networks.fuji_testnet = fuji;
-        config.networks.fuji_staging = fuji;
-
-        config.networks.ava_mainnet = {
-            url: "https://api.avax.network/ext/bc/C/rpc",
-            accounts: [process.env.HARDAT_PRIVATE_KEY || ""]
-        }
+    const private_subnet = {
+        url: "https://subnet.p2pcloud.io",
+        accounts: [process.env.HARDHAT_PRIVATE_KEY || ""]
     }
 
+    config.networks.fiat_dev = private_subnet;
+    config.networks.fiat_staging = private_subnet;
+
+} else {
+    console.log("HARDHAT_PRIVATE_KEY is empty")
 }
 
 export default config;
