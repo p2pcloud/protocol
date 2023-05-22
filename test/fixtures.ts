@@ -5,7 +5,6 @@ import { type TestableMarketplace, type MockERC20, FiatMarketplace__factory, Fia
 import { signVoucher } from "./lib";
 
 type Fixture = {
-    token: MockERC20
     provider: SignerWithAddress,
     providersSigner: SignerWithAddress,
     user: SignerWithAddress,
@@ -15,6 +14,7 @@ type Fixture = {
 
 export type MarketplaceFixture = Fixture & {
     marketplace: TestableMarketplace,
+    token: MockERC20
 }
 
 export type FiatMarketplaceFixture = Fixture & {
@@ -28,11 +28,8 @@ export const DEFAULT_USER_BALANCE = 10000000
 export async function deployFiatMarketplaceFixture(): Promise<FiatMarketplaceFixture> {
     const [admin, provider, user, anotherUser, providersSigner, voucherSigner] = await ethers.getSigners();
 
-    const MockERC20 = await ethers.getContractFactory("MockERC20");
-    const token = await MockERC20.connect(admin).deploy('10000000000000000000000');
-
     const Marketplace = await ethers.getContractFactory("FiatMarketplace");
-    const marketplace = await upgrades.deployProxy(Marketplace, [token.address]) as FiatMarketplace;
+    const marketplace = await upgrades.deployProxy(Marketplace, ["0x0000000000000000000000000000000000000000"]) as FiatMarketplace;
 
     await marketplace.connect(admin).setVoucherSigner(voucherSigner.address)
 
@@ -50,7 +47,7 @@ export async function deployFiatMarketplaceFixture(): Promise<FiatMarketplaceFix
     signature = await signVoucher(voucherSigner, voucher, marketplace.address)
     await marketplace.connect(user).claimVoucher(voucher, signature)
 
-    return { marketplace, token, provider, user, admin, anotherUser, providersSigner, voucherSigner };
+    return { marketplace, provider, user, admin, anotherUser, providersSigner, voucherSigner };
 }
 
 export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
