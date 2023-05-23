@@ -48,7 +48,7 @@ if (process.env.HARDHAT_PRIVATE_KEY) {
     config.networks.fiat_staging = private_subnet;
 
 } else {
-    console.log("HARDHAT_PRIVATE_KEY is empty")
+    console.log("// HARDHAT_PRIVATE_KEY is empty")
 }
 
 export default config;
