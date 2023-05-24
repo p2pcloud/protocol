@@ -11,8 +11,8 @@
         "flat:crypto": "hardhat flatten contracts/TestableMarketplace.sol | grep -v \"SPDX-License-Identifier\" > artifacts/flat.sol  ",
         "flat:fiat": "hardhat flatten contracts/FiatMarketplace.sol | grep -v \"SPDX-License-Identifier\" > artifacts/fiat_flat.sol  ",
         "flat": "npm run flat:crypto && npm run flat:fiat",
-        "deploy:fiat-staging": "PROXY_ADDRESS='0x305fE6Ca48E8A10C35843FC5D1299B31B8895e36' CONTARCT='FiatMarketplace' hardhat run scripts/deploy.ts --network fiat_staging",
-        "deploy:fiat-dev": "PROXY_ADDRESS='0x3c7cc0fB895a86761832B37dbA2bDAcd7fCD7704' CONTARCT='FiatMarketplace' hardhat run scripts/deploy.ts --network fiat_dev",
+        "deploy:fiat-staging": "PROXY_ADDRESS='0x2145BE62CC63860d99E44d9C7CC83556569dd7BB' CONTARCT='FiatMarketplace' hardhat run scripts/deploy.ts --network fiat_staging",
+        "deploy:fiat-dev": "PROXY_ADDRESS='0x67e21Fbc20c7dC60FfFa92bF5436e7eD41De1Efc' CONTARCT='FiatMarketplace' hardhat run scripts/deploy.ts --network fiat_dev",
         "local-network": "docker run -d --net=host --name ganache solohin/ganache-multiarch:7 --accounts 10 --seed 123456789"
     },
     "repository": {
