@@ -31,7 +31,7 @@ contract FiatMarketplace is Marketplace {
         return usedVouchers[paymentId];
     }
 
-    function claimVoucher(UnsignedVoucher calldata voucher, bytes calldata signature, address receiver) public {
+    function claimVoucher(UnsignedVoucher calldata voucher, bytes calldata signature, address receiver) public payable {
         require(usedVouchers[voucher.paymentId] == false, "Voucher already used");
         usedVouchers[voucher.paymentId] = true;
 
@@ -47,6 +47,10 @@ contract FiatMarketplace is Marketplace {
         require(recoveredSigner == voucherSigner, "Invalid signature");
 
         _coinBalance[receiver] = _coinBalance[receiver] + voucher.amount;
+
+        if (msg.value > 0) {
+            payable(receiver).transfer(msg.value);
+        }
 
         emit VoucherClaimed(receiver, voucher.amount, voucher.paymentId);
     }

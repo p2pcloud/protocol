@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { DEFAULT_USER_BALANCE, deployFiatMarketplaceFixture } from './fixtures'
 import { UnsignedVoucher, signVoucher } from "./lib";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 
 describe("FiatMarketplace", () => {
@@ -117,34 +117,58 @@ describe("FiatMarketplace", () => {
 
             await expect(await marketplace.connect(anotherUser).claimVoucher(voucher1, signature1, user.address)).to.emit(marketplace, "VoucherClaimed").withArgs(user.address, voucher1.amount, voucher1.paymentId)
         })
+
+
+        it("should proxy value if provided", async () => {
+            const { marketplace, admin, user, voucherSigner, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
+
+            await marketplace.connect(admin).setVoucherSigner(voucherSigner.address)
+
+            //voucher 1 
+            const voucher1: UnsignedVoucher = {
+                amount: 100,
+                paymentId: ethers.utils.formatBytes32String("one"),
+            }
+            const signature1 = await signVoucher(voucherSigner, voucher1, marketplace.address)
+
+            const balanceBefore = await user.getBalance()
+            const balanceAdded = BigNumber.from("300000")
+
+            await marketplace.connect(anotherUser).claimVoucher(voucher1, signature1, user.address, {
+                value: balanceAdded,
+            })
+
+            const balanceAfter = await user.getBalance()
+            expect(balanceAfter.sub(balanceBefore)).to.equal(balanceAdded)
+        })
     })
-})
-describe("burnCoin", () => {
-    it("should burn coin", async () => {
-        const { marketplace, admin, user } = await loadFixture(deployFiatMarketplaceFixture);
+    describe("burnCoin", () => {
+        it("should burn coin", async () => {
+            const { marketplace, admin, user } = await loadFixture(deployFiatMarketplaceFixture);
 
-        expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
 
-        await marketplace.connect(admin).burnCoin(1234, user.address)
+            await marketplace.connect(admin).burnCoin(1234, user.address)
 
-        expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE - 1234)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE - 1234)
 
-    })
-    it("should not burn coin if not owner", async () => {
-        const { marketplace, user, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
+        })
+        it("should not burn coin if not owner", async () => {
+            const { marketplace, user, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
 
-        expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
 
-        await expect(marketplace.connect(anotherUser).burnCoin(1234, user.address)).to.be.revertedWith("Ownable: caller is not the owner")
+            await expect(marketplace.connect(anotherUser).burnCoin(1234, user.address)).to.be.revertedWith("Ownable: caller is not the owner")
 
-        expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
-    })
-    it("shoule emit event", async () => {
-        const { marketplace, admin, user } = await loadFixture(deployFiatMarketplaceFixture);
+            expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
+        })
+        it("shoule emit event", async () => {
+            const { marketplace, admin, user } = await loadFixture(deployFiatMarketplaceFixture);
 
-        await expect(marketplace.connect(admin).burnCoin(1234, user.address))
-            .to.emit(marketplace, "CoinBurned")
-            .withArgs(user.address, 1234)
+            await expect(marketplace.connect(admin).burnCoin(1234, user.address))
+                .to.emit(marketplace, "CoinBurned")
+                .withArgs(user.address, 1234)
+        })
     })
     describe("withdrawCoin", () => {
         it("should be disabled", async () => {
