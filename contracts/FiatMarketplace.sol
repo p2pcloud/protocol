@@ -31,8 +31,9 @@ contract FiatMarketplace is Marketplace {
         return usedVouchers[paymentId];
     }
 
-    function claimVoucher(UnsignedVoucher calldata voucher, bytes calldata signature) public {
+    function claimVoucher(UnsignedVoucher calldata voucher, bytes calldata signature, address receiver) public {
         require(usedVouchers[voucher.paymentId] == false, "Voucher already used");
+        usedVouchers[voucher.paymentId] = true;
 
         bytes32 digest = keccak256(
             abi.encodePacked(
@@ -45,10 +46,9 @@ contract FiatMarketplace is Marketplace {
         address recoveredSigner = digest.recover(signature);
         require(recoveredSigner == voucherSigner, "Invalid signature");
 
-        usedVouchers[voucher.paymentId] = true;
-        _coinBalance[msg.sender] = _coinBalance[msg.sender] + voucher.amount;
+        _coinBalance[receiver] = _coinBalance[receiver] + voucher.amount;
 
-        emit VoucherClaimed(msg.sender, voucher.amount, voucher.paymentId);
+        emit VoucherClaimed(receiver, voucher.amount, voucher.paymentId);
     }
 
     //only provider is allowed to withddraw
@@ -63,6 +63,7 @@ contract FiatMarketplace is Marketplace {
 
     //bun coins instead of withdrawals
     function burnCoin(uint256 amt, address client) public onlyOwner {
+        require(_coinBalance[client] >= amt, "Not enough balance to burn");
         _coinBalance[client] -= amt; //no worries about overflow since only owner can burn
         emit CoinBurned(client, amt);
     }

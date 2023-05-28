@@ -24,7 +24,7 @@ describe("FiatMarketplace", () => {
     })
     describe("claimVoucher", () => {
         it("should add voucher to balance", async () => {
-            const { marketplace, admin, user, voucherSigner } = await loadFixture(deployFiatMarketplaceFixture);
+            const { marketplace, admin, user, anotherUser, voucherSigner } = await loadFixture(deployFiatMarketplaceFixture);
 
             await marketplace.connect(admin).setVoucherSigner(voucherSigner.address)
 
@@ -35,11 +35,11 @@ describe("FiatMarketplace", () => {
             const signature = await signVoucher(voucherSigner, voucher, marketplace.address)
 
             expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
-            await marketplace.connect(user).claimVoucher(voucher, signature)
+            await marketplace.connect(anotherUser).claimVoucher(voucher, signature, user.address)
             expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE + 100)
         })
         it("should not allow voucher reuse", async () => {
-            const { marketplace, admin, user, voucherSigner } = await loadFixture(deployFiatMarketplaceFixture);
+            const { marketplace, admin, user, anotherUser, voucherSigner } = await loadFixture(deployFiatMarketplaceFixture);
 
             await marketplace.connect(admin).setVoucherSigner(voucherSigner.address)
 
@@ -51,7 +51,7 @@ describe("FiatMarketplace", () => {
             const signature1 = await signVoucher(voucherSigner, voucher1, marketplace.address)
 
             expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE)
-            await marketplace.connect(user).claimVoucher(voucher1, signature1)
+            await marketplace.connect(anotherUser).claimVoucher(voucher1, signature1, user.address)
             expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE + 100)
 
             //voucher 2 
@@ -62,14 +62,14 @@ describe("FiatMarketplace", () => {
             const signature2 = await signVoucher(voucherSigner, voucher2, marketplace.address)
 
             expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE + 100)
-            await marketplace.connect(user).claimVoucher(voucher2, signature2)
+            await marketplace.connect(anotherUser).claimVoucher(voucher2, signature2, user.address)
             expect(await marketplace.getTotalBalance(user.address)).to.equal(DEFAULT_USER_BALANCE + 100 + 123456789)
 
             //voucher 2 reuse
-            await expect(marketplace.connect(user).claimVoucher(voucher2, signature2)).to.be.revertedWith("Voucher already used")
+            await expect(marketplace.connect(anotherUser).claimVoucher(voucher2, signature2, user.address)).to.be.revertedWith("Voucher already used")
         })
         it("should evert if signature is invalid", async () => {
-            const { marketplace, admin, user, voucherSigner } = await loadFixture(deployFiatMarketplaceFixture);
+            const { marketplace, admin, user, voucherSigner, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
 
             await marketplace.connect(admin).setVoucherSigner(voucherSigner.address)
 
@@ -80,7 +80,7 @@ describe("FiatMarketplace", () => {
             }
             const signature1 = await signVoucher(admin, voucher1, marketplace.address)
 
-            await expect(marketplace.connect(user).claimVoucher(voucher1, signature1)).to.be.revertedWith("Invalid signature")
+            await expect(marketplace.connect(anotherUser).claimVoucher(voucher1, signature1, user.address)).to.be.revertedWith("Invalid signature")
 
             //wrong amount
             const voucher2: UnsignedVoucher = {
@@ -90,7 +90,7 @@ describe("FiatMarketplace", () => {
             const signature2 = await signVoucher(voucherSigner, voucher2, marketplace.address)
             voucher2.amount = 200
 
-            await expect(marketplace.connect(user).claimVoucher(voucher2, signature2)).to.be.revertedWith("Invalid signature")
+            await expect(marketplace.connect(anotherUser).claimVoucher(voucher2, signature2, user.address)).to.be.revertedWith("Invalid signature")
 
             //wrong paymentId
             const voucher3: UnsignedVoucher = {
@@ -100,11 +100,11 @@ describe("FiatMarketplace", () => {
             const signature3 = await signVoucher(voucherSigner, voucher3, marketplace.address)
             voucher3.paymentId = ethers.utils.formatBytes32String("four")
 
-            await expect(marketplace.connect(user).claimVoucher(voucher3, signature3)).to.be.revertedWith("Invalid signature")
+            await expect(marketplace.connect(anotherUser).claimVoucher(voucher3, signature3, user.address)).to.be.revertedWith("Invalid signature")
         })
 
         it("should emit VoucherClaimed event", async () => {
-            const { marketplace, admin, user, voucherSigner } = await loadFixture(deployFiatMarketplaceFixture);
+            const { marketplace, admin, user, voucherSigner, anotherUser } = await loadFixture(deployFiatMarketplaceFixture);
 
             await marketplace.connect(admin).setVoucherSigner(voucherSigner.address)
 
@@ -115,7 +115,7 @@ describe("FiatMarketplace", () => {
             }
             const signature1 = await signVoucher(voucherSigner, voucher1, marketplace.address)
 
-            await expect(await marketplace.connect(user).claimVoucher(voucher1, signature1)).to.emit(marketplace, "VoucherClaimed").withArgs(user.address, voucher1.amount, voucher1.paymentId)
+            await expect(await marketplace.connect(anotherUser).claimVoucher(voucher1, signature1, user.address)).to.emit(marketplace, "VoucherClaimed").withArgs(user.address, voucher1.amount, voucher1.paymentId)
         })
     })
 })

@@ -33,19 +33,13 @@ export async function deployFiatMarketplaceFixture(): Promise<FiatMarketplaceFix
 
     await marketplace.connect(admin).setVoucherSigner(voucherSigner.address)
 
-    const fee = (await marketplace.PROVIDER_REGISTRATION_FEE()).toNumber()
-    let voucher = { amount: fee, paymentId: ethers.utils.formatBytes32String("fixtue1") }
-    let signature = await signVoucher(voucherSigner, voucher, marketplace.address)
-    await marketplace.connect(provider).claimVoucher(voucher, signature)
-
-
     await marketplace.connect(admin).registerFiatProvider(provider.address)
     await marketplace.connect(provider).setSigner(providersSigner.address)
 
     //transfer some tokens to user
-    voucher = { amount: DEFAULT_USER_BALANCE, paymentId: ethers.utils.formatBytes32String("fixtue2") }
-    signature = await signVoucher(voucherSigner, voucher, marketplace.address)
-    await marketplace.connect(user).claimVoucher(voucher, signature)
+    const voucher = { amount: DEFAULT_USER_BALANCE, paymentId: ethers.utils.formatBytes32String("fixtue2") }
+    const signature = await signVoucher(voucherSigner, voucher, marketplace.address)
+    await marketplace.connect(anotherUser).claimVoucher(voucher, signature, user.address)
 
     return { marketplace, provider, user, admin, anotherUser, providersSigner, voucherSigner };
 }
