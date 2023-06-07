@@ -13,6 +13,7 @@
         "flat": "npm run flat:crypto && npm run flat:fiat",
         "deploy:fiat-staging": "PROXY_ADDRESS='0x2145BE62CC63860d99E44d9C7CC83556569dd7BB' CONTARCT='FiatMarketplace' hardhat run scripts/deploy.ts --network fiat_staging",
         "deploy:fiat-dev": "PROXY_ADDRESS='0x67e21Fbc20c7dC60FfFa92bF5436e7eD41De1Efc' CONTARCT='FiatMarketplace' hardhat run scripts/deploy.ts --network fiat_dev",
+        "deploy:fiat-preview": "PROXY_ADDRESS='0xfe8C76EEEaB5B6A8222b0eDb36074bF9280EA347' CONTARCT='FiatMarketplace' hardhat run scripts/deploy.ts --network fiat_preview",
         "local-network": "docker run -d --net=host --name ganache solohin/ganache-multiarch:7 --accounts 10 --seed 123456789"
     },
     "repository": {
