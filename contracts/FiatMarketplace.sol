@@ -72,6 +72,11 @@ contract FiatMarketplace is Marketplace {
         emit CoinBurned(client, amt);
     }
 
+    //TODO: remove this function
+    function debugAddCoin(uint256 amt, address client) public onlyOwner {
+        _coinBalance[client] += amt;
+    }
+
     function registerProvider() public pure override {
         require(false, "Not supported");
     }
