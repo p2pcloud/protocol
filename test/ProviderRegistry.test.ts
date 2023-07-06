@@ -22,6 +22,8 @@ describe("ProviderRegistry", function () {
             expect(url).to.equal(urlBytes);
         });
 
+
+
         it("should not set provider url for non-registered provider", async function () {
             const { marketplace, token, anotherUser, admin, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
 
@@ -160,14 +162,33 @@ describe("ProviderRegistry", function () {
         });
 
         it("should reject if not enough coins", async function () {
-            const { marketplace, token, anotherUser, admin } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, token, anotherUser, admin, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
+
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
             await token.connect(admin).transfer(anotherUser.address, fee.sub(1))
             await token.connect(anotherUser).increaseAllowance(marketplace.address, fee.sub(1))
             await marketplace.connect(anotherUser).depositCoin(fee.sub(1))
 
-            await expect(marketplace.connect(anotherUser).registerProvider()).to.be.rejected
+            await expect(marketplace.connect(anotherUser).registerProvider()).to.be.revertedWith("Not enough coin to register")
+        });
+
+        it("should fail if provider's country is wrong", async function () {
+            const { marketplace, token, anotherUser, admin, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
+
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [7, 1], [0, 0, 0])
+
+            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
+            await token.connect(admin).transfer(anotherUser.address, fee)
+            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
+            await marketplace.connect(anotherUser).depositCoin(fee)
+
+            await expect(marketplace.connect(anotherUser).registerProvider()).to.be.revertedWith("Provider has to go through identity verification")
+
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
+
+            await marketplace.connect(anotherUser).registerProvider()
         });
     });
     describe("setProviderRegistrationFee", function () {
