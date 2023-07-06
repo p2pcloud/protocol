@@ -36,6 +36,7 @@ abstract contract ProviderRegistry is BalanceHolder {
     }
 
     function _registerProvider(address provider, uint64 fee) internal {
+        require(isProvidersCountryValid(provider), "Provider has to go through identity verification");
         require(!providerInfo[provider].isRegistered, "Provider is already registered");
 
         require(getFreeBalance(provider) >= fee, "Not enough coin to register ");

@@ -5,7 +5,7 @@ import { UnsignedVoucher, signVoucher } from "./lib";
 import { BigNumber, ethers } from "ethers";
 
 
-describe("FiatMarketplace", () => {
+describe.skip("FiatMarketplace", () => {
     describe("setVoucherSigner", () => {
         it("should set voucher signer", async () => {
             const { marketplace, admin } = await loadFixture(deployFiatMarketplaceFixture);

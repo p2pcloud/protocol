@@ -1,7 +1,7 @@
 import { ethers, upgrades } from "hardhat";
 
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { type TestableMarketplace, type MockERC20, FiatMarketplace__factory, FiatMarketplace } from "../typechain-types";
+import { type TestableMarketplace, type MockERC20, FiatMarketplace__factory, FiatMarketplace, TestableIdentityProvider } from "../typechain-types";
 import { signVoucher } from "./lib";
 
 type Fixture = {
@@ -15,6 +15,7 @@ type Fixture = {
 export type MarketplaceFixture = Fixture & {
     marketplace: TestableMarketplace,
     token: MockERC20
+    testableIdentityProvider: TestableIdentityProvider
 }
 
 export type FiatMarketplaceFixture = Fixture & {
@@ -50,8 +51,16 @@ export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
     const MockERC20 = await ethers.getContractFactory("MockERC20");
     const token = await MockERC20.connect(admin).deploy('10000000000000000000000');
 
+    const TestableIdentityProvider = await ethers.getContractFactory("TestableIdentityProvider");
+    const testableIdentityProvider = await TestableIdentityProvider.connect(admin).deploy() as TestableIdentityProvider;
+
     const Marketplace = await ethers.getContractFactory("TestableMarketplace");
-    const marketplace = await upgrades.deployProxy(Marketplace, [token.address]) as TestableMarketplace;
+    const marketplace = await upgrades.deployProxy(Marketplace, [token.address, testableIdentityProvider.address]) as TestableMarketplace;
+
+
+    await testableIdentityProvider.connect(admin).test__injectVerification(provider.address, [1, 1], [0, 0, 0])
+    await marketplace.connect(admin).setProviderCountries([[1, 1], [2, 2]])
+
 
     const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
     await token.connect(admin).transfer(provider.address, fee)
@@ -66,5 +75,5 @@ export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
     await marketplace.connect(user).depositCoin(DEFAULT_USER_BALANCE)
 
 
-    return { marketplace, token, provider, user, admin, anotherUser, providersSigner };
+    return { marketplace, token, provider, user, admin, anotherUser, providersSigner, testableIdentityProvider };
 }

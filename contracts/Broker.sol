@@ -7,6 +7,7 @@ import "./ProviderRegistry.sol";
 import "./VerifiableOffer.sol";
 import "./Payments.sol";
 import "./AddressBook.sol";
+import "./IdentityConsumer.sol";
 
 abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, AddressBook {
     uint8 public constant CANCEL_REASON_NOT_NEEDED = 0;

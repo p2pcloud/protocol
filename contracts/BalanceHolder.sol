@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./IdentityConsumer.sol";
 
-abstract contract BalanceHolder is OwnableUpgradeable {
+abstract contract BalanceHolder is IdentityConsumer {
     uint16 public constant COMMUNITY_FEE = 2000;
 
     IERC20 public coin;
