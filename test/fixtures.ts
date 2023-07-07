@@ -2,7 +2,7 @@ import { ethers, upgrades } from "hardhat";
 
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { type TestableMarketplace, type MockERC20, FiatMarketplace__factory, FiatMarketplace, TestableIdentityProvider } from "../typechain-types";
-import { signVoucher } from "./lib";
+import { CA_HEX, FL_HEX, US_HEX, signVoucher } from "./lib";
 
 type Fixture = {
     provider: SignerWithAddress,
@@ -57,10 +57,8 @@ export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
     const Marketplace = await ethers.getContractFactory("TestableMarketplace");
     const marketplace = await upgrades.deployProxy(Marketplace, [token.address, testableIdentityProvider.address]) as TestableMarketplace;
 
-
-    await testableIdentityProvider.connect(admin).test__injectVerification(provider.address, [1, 1], [0, 0, 0])
-    await marketplace.connect(admin).setProviderCountries([[1, 1], [2, 2]])
-
+    await testableIdentityProvider.connect(admin).test__injectVerification(provider.address, US_HEX, FL_HEX)
+    await marketplace.connect(admin).setProviderCountries([US_HEX, CA_HEX])
 
     const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
     await token.connect(admin).transfer(provider.address, fee)
@@ -68,6 +66,9 @@ export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
     await marketplace.connect(provider).depositCoin(fee)
     await marketplace.connect(provider).registerProvider()
     await marketplace.connect(provider).setSigner(providersSigner.address)
+
+    await marketplace.connect(provider).setClientCountries([US_HEX, CA_HEX])
+    await testableIdentityProvider.connect(admin).test__injectVerification(user.address, US_HEX, FL_HEX)
 
     //transfer some tokens to user
     await token.connect(admin).transfer(user.address, DEFAULT_USER_BALANCE)

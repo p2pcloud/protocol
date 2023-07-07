@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { deployMarketplaceFixture } from './fixtures'
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
-import { UnsignedOffer, setUserCoinBalance, signOffer } from "./lib";
+import { UK_HEX, US_HEX, UnsignedOffer, setUserCoinBalance, signOffer } from "./lib";
 
 describe("Broker", function () {
     describe("bookResource", function () {
@@ -105,6 +105,24 @@ describe("Broker", function () {
             const signature = await signOffer(providersSigner, offer, marketplace.address);
             await expect(marketplace.connect(user).bookResource(offer, signature)).to.not.be.reverted;
             await expect(marketplace.connect(user).bookResource(offer, signature)).to.be.revertedWith("Invalid offer nonce");
+        })
+        it.only("should fail if user identity belongs to a wrong country", async function () {
+            const { marketplace, user, provider, providersSigner, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
+
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
+            };
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
+
+            await testableIdentityProvider.test__injectVerification(user.address, UK_HEX, "0x000000");
+            await expect(marketplace.connect(user).bookResource(offer, signature)).to.be.revertedWith("Client identity is not verified");
+            await testableIdentityProvider.test__injectVerification(user.address, US_HEX, "0x000000");
+            await expect(marketplace.connect(user).bookResource(offer, signature)).to.not.be.reverted;
+
         })
         it("should fail if not enough balance to cover a new VM booking", async function () {
             const fixture = await loadFixture(deployMarketplaceFixture);

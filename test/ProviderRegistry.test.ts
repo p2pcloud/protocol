@@ -2,13 +2,14 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { deployMarketplaceFixture } from './fixtures'
+import { US_HEX } from "./lib";
 
 describe("ProviderRegistry", function () {
     describe("getProviderUrl", function () {
         it("should set provider url", async function () {
             const { marketplace, token, anotherUser, admin, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
 
-            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, US_HEX, [0, 0, 0])
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
             await token.connect(admin).transfer(anotherUser.address, fee)
@@ -31,7 +32,7 @@ describe("ProviderRegistry", function () {
             const urlBytes = ethers.utils.formatBytes32String("woop.woop/woop");
             expect(marketplace.connect(anotherUser).setProviderUrl(urlBytes)).to.be.revertedWith("Provider must be registered to set url")
 
-            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, US_HEX, [0, 0, 0])
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
             await token.connect(admin).transfer(anotherUser.address, fee)
@@ -46,8 +47,8 @@ describe("ProviderRegistry", function () {
         it("should return all provider urls", async function () {
             const { marketplace, token, anotherUser, admin, provider, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
 
-            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
-            await testableIdentityProvider.connect(admin).test__injectVerification(admin.address, [1, 1], [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, US_HEX, [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(admin.address, US_HEX, [0, 0, 0])
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
             await token.connect(admin).transfer(anotherUser.address, fee)
@@ -76,8 +77,8 @@ describe("ProviderRegistry", function () {
         it("should ignore deleted providers", async function () {
             const { marketplace, token, anotherUser, admin, provider, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
 
-            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
-            await testableIdentityProvider.connect(admin).test__injectVerification(admin.address, [1, 1], [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, US_HEX, [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(admin.address, US_HEX, [0, 0, 0])
 
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
@@ -121,7 +122,7 @@ describe("ProviderRegistry", function () {
         it("should return true for registered and false by default", async function () {
             const { marketplace, token, anotherUser, admin, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
 
-            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, US_HEX, [0, 0, 0])
 
             const isregistered1 = await marketplace.connect(anotherUser).isProviderRegistered(anotherUser.address)
             expect(isregistered1).to.equal(false)
@@ -142,7 +143,7 @@ describe("ProviderRegistry", function () {
         it("should use exactly PROVIDER_REGISTRATION_FEE coins", async function () {
             const { marketplace, token, anotherUser, admin, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
 
-            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, US_HEX, [0, 0, 0])
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
             await token.connect(admin).transfer(anotherUser.address, fee.add(123))
@@ -164,7 +165,7 @@ describe("ProviderRegistry", function () {
         it("should reject if not enough coins", async function () {
             const { marketplace, token, anotherUser, admin, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
 
-            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, US_HEX, [0, 0, 0])
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
             await token.connect(admin).transfer(anotherUser.address, fee.sub(1))
@@ -186,7 +187,7 @@ describe("ProviderRegistry", function () {
 
             await expect(marketplace.connect(anotherUser).registerProvider()).to.be.revertedWith("Provider has to go through identity verification")
 
-            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, US_HEX, [0, 0, 0])
 
             await marketplace.connect(anotherUser).registerProvider()
         });
@@ -199,7 +200,7 @@ describe("ProviderRegistry", function () {
         it("can be called by provdier", async () => {
             const { marketplace, token, anotherUser, admin, user, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
 
-            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, US_HEX, [0, 0, 0])
 
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
@@ -223,7 +224,7 @@ describe("ProviderRegistry", function () {
         it("can be called by community", async () => {
             const { marketplace, token, anotherUser, admin, user, testableIdentityProvider } = await loadFixture(deployMarketplaceFixture);
 
-            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, [1, 1], [0, 0, 0])
+            await testableIdentityProvider.connect(admin).test__injectVerification(anotherUser.address, US_HEX, [0, 0, 0])
 
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()

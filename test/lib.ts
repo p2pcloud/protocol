@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { MarketplaceFixture } from "./fixtures";
-import { BigNumber, BigNumberish } from "ethers";
+import { BigNumber, BigNumberish, ethers } from "ethers";
 
 export async function getEvent<T>(tx: Promise<any>, eventName: string): Promise<T> {
     const receipt = await tx;
@@ -85,3 +85,13 @@ export async function setUserCoinBalance(fixture: MarketplaceFixture, amt: BigNu
         await marketplace.connect(user).withdrawCoin(diff.mul(-1))
     }
 }
+
+export async function utf8StringToFixedLengthHex(s: string, length: number) {
+    if (s.length > length) throw new Error("String too long")
+    return ethers.utils.formatBytes32String(s).slice(0, 2 + length * 2)
+}
+
+export const US_HEX = utf8StringToFixedLengthHex("US", 2)
+export const CA_HEX = utf8StringToFixedLengthHex("CA", 2)
+export const FL_HEX = utf8StringToFixedLengthHex("FL", 3)
+export const UK_HEX = utf8StringToFixedLengthHex("UK", 2)

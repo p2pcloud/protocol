@@ -43,6 +43,18 @@ abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, Address
         address provider = _getOfferProvider(offer, signature);
         require(isProviderRegistered(provider), "Provider is not registered");
         _executeClaimPayment(provider, offer.client);
+        require(msg.sender == offer.client, "Only client can book a resource");
+
+        require(
+            getFreeBalance(msg.sender) >= offer.pricePerMinute * MONEY_LOCK_MINUTES,
+            "Not enough balance to add a new the booking"
+        );
+
+        //if client doesn't have any bookings with this provider, check identity
+        uint256 existingSpending = userProviderAccounting[provider][offer.client].pricePerMinute;
+        if (existingSpending == 0) {
+            require(checkClientsIdentity(offer.client, provider), "Client identity is not verified");
+        }
 
         uint32 providerId = idByAddress(provider);
         uint32 clientId = idByAddress(offer.client);
@@ -54,11 +66,6 @@ abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, Address
             providerId: providerId,
             startTime: uint32(block.timestamp)
         });
-
-        require(
-            getFreeBalance(msg.sender) >= offer.pricePerMinute * MONEY_LOCK_MINUTES,
-            "Not enough balance to add a new the booking"
-        );
 
         userProviderAccounting[provider][msg.sender].pricePerMinute += offer.pricePerMinute;
         _totalSpendingPerMinute[msg.sender] += offer.pricePerMinute;
