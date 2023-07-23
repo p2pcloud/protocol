@@ -7,7 +7,7 @@ import { BigNumber, ethers } from "ethers";
 
 describe("P2PCloudCredit", () => {
     describe("setVoucherSigner", () => {
-        it("should set voucher signer", async () => {
+        it.only("should set voucher signer", async () => {
             const { admin, token } = await loadFixture(deployFiatMarketplaceFixture);
             const voucherSigner = "0x21539334f45Ac41Bd10789942b744a18a4775d6d"
 

@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /// @custom:security-contact security@p2pcloud.io
-abstract contract P2PCloudCreditBaseERC20 is
+abstract contract BaseERC20 is
     Initializable,
     ERC20Upgradeable,
     ERC20BurnableUpgradeable,
@@ -21,7 +21,7 @@ abstract contract P2PCloudCreditBaseERC20 is
         _disableInitializers();
     }
 
-    function __P2PCloudCreditBaseERC20_init() internal {
+    function __BaseERC20_init() internal {
         __ERC20_init("P2PCloud Credit", "PPC");
         __ERC20Burnable_init();
         __Pausable_init();
@@ -40,80 +40,38 @@ abstract contract P2PCloudCreditBaseERC20 is
         _mint(to, amount);
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override whenNotPaused {
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override whenNotPaused {
         super._beforeTokenTransfer(from, to, amount);
     }
 }
 
-contract P2PCloudCredit is P2PCloudCreditBaseERC20 {
+contract P2PCloudCredit is BaseERC20 {
     using ECDSA for bytes32;
+    address allowedRecipient;
+    address trustedMinter;
 
-    bytes32 public constant DOMAIN_TYPEHASH =
-        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-
-    bytes32 public DOMAIN_SEPARATOR;
-
-    //voucher logic
-    bytes32 public constant VOUCHER_TYPEHASH = keccak256("UnsignedVoucher(uint256 amount,bytes32 paymentId)");
-
-    struct UnsignedVoucher {
-        uint256 amount;
-        bytes32 paymentId;
+    function initialize(address _trustedMinter, address _allowedRecipient) public initializer {
+        require(_trustedMinter != address(0), "Invalid trustedMinter address");
+        require(_allowedRecipient != address(0), "Invalid allowedRecipient address");
+        __BaseERC20_init();
+        allowedRecipient = _allowedRecipient;
+        trustedMinter = _trustedMinter;
     }
 
-    event VoucherClaimed(address indexed client, uint256 amount, bytes32 paymentId);
-    event CoinBurned(address indexed client, uint256 amount);
+    mapping(bytes12 => bool) public mintedIds;
 
-    mapping(bytes32 => bool) public usedVouchers;
-    address public voucherSigner;
-
-    function __P2PCloudCredit_init() internal onlyInitializing {
-        uint256 chainId;
-        assembly {
-            chainId := chainid()
-        }
-
-        DOMAIN_SEPARATOR = keccak256(
-            abi.encode(DOMAIN_TYPEHASH, keccak256(bytes("p2pcloud.io")), keccak256(bytes("2")), chainId, address(this))
-        );
+    //mint with idempotency
+    function idemopotentMint(address to, bytes12 mintId, uint256 amount) public {
+        require(msg.sender == trustedMinter, "Only trustedMinter can mint");
+        require(mintId != 0, "Mint id cannot be zero");
+        require(!mintedIds[mintId], "Mint id already used");
+        mintedIds[mintId] = true;
+        _mint(to, amount);
     }
 
-    function initialize(address _voucherSigner) public initializer {
-        __P2PCloudCreditBaseERC20_init();
-        __P2PCloudCredit_init();
-        voucherSigner = _voucherSigner;
-        //TODO: check if second init is possible
-    }
-
-    function setVoucherSigner(address _voucherSigner) public onlyOwner {
-        voucherSigner = _voucherSigner;
-    }
-
-    function isVoucherAlreadyClaimed(bytes32 paymentId) public view returns (bool) {
-        return usedVouchers[paymentId];
-    }
-
-    function claimVoucher(UnsignedVoucher calldata voucher, bytes calldata signature, address receiver) public payable {
-        require(usedVouchers[voucher.paymentId] == false, "Voucher already used");
-        usedVouchers[voucher.paymentId] = true;
-
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(VOUCHER_TYPEHASH, voucher.amount, voucher.paymentId))
-            )
-        );
-
-        address recoveredSigner = digest.recover(signature);
-        require(recoveredSigner == voucherSigner, "Invalid signature");
-
-        _mint(receiver, voucher.amount);
-
-        if (msg.value > 0) {
-            payable(receiver).transfer(msg.value);
-        }
-
-        emit VoucherClaimed(receiver, voucher.amount, voucher.paymentId);
+    //restrict token transfers to only allowedRecipient
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal override whenNotPaused {
+        require(to == allowedRecipient || to == address(this), "Only allowedRecipient can receive tokens");
+        super._beforeTokenTransfer(from, to, amount);
     }
 }
