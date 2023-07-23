@@ -5,21 +5,21 @@ import { UnsignedVoucher, signVoucher } from "./lib";
 import { BigNumber, ethers } from "ethers";
 
 
-describe("FiatMarketplace", () => {
+describe.only("FiatMarketplace", () => {
     describe("setVoucherSigner", () => {
         it("should set voucher signer", async () => {
-            const { marketplace, admin } = await loadFixture(deployFiatMarketplaceFixture);
+            const { marketplace, admin, token } = await loadFixture(deployFiatMarketplaceFixture);
             const voucherSigner = "0x21539334f45Ac41Bd10789942b744a18a4775d6d"
 
-            await marketplace.connect(admin).setVoucherSigner(voucherSigner)
+            await token.connect(admin).setVoucherSigner(voucherSigner)
 
-            expect(await marketplace.voucherSigner()).to.equal(voucherSigner)
+            expect(await token.voucherSigner()).to.equal(voucherSigner)
         })
         it("should not set voucher signer if not owner", async () => {
-            const { marketplace, user } = await loadFixture(deployFiatMarketplaceFixture);
+            const { marketplace, user, token } = await loadFixture(deployFiatMarketplaceFixture);
             const voucherSigner = "0x21539334f45Ac41Bd10789942b744a18a4775d6d"
 
-            await expect(marketplace.connect(user).setVoucherSigner(voucherSigner)).to.be.revertedWith("Ownable: caller is not the owner")
+            await expect(token.connect(user).setVoucherSigner(voucherSigner)).to.be.revertedWith("Ownable: caller is not the owner")
         })
     })
     describe("claimVoucher", () => {
