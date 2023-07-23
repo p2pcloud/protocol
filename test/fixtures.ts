@@ -19,13 +19,14 @@ export type MarketplaceFixture = Fixture & {
 
 export type FiatMarketplaceFixture = Fixture & {
     token: P2PCloudCredit,
+    voucherSigner: SignerWithAddress,
 }
 
 
 export const DEFAULT_USER_BALANCE = 10000000
 
 export async function deployFiatMarketplaceFixture(): Promise<FiatMarketplaceFixture> {
-    const [admin, provider, user, anotherUser, providersSigner] = await ethers.getSigners();
+    const [admin, provider, user, anotherUser, providersSigner, voucherSigner] = await ethers.getSigners();
 
     const P2PCloudCredit = await ethers.getContractFactory("P2PCloudCredit");
     const token = await upgrades.deployProxy(P2PCloudCredit, [admin.address]) as P2PCloudCredit;
@@ -48,7 +49,7 @@ export async function deployFiatMarketplaceFixture(): Promise<FiatMarketplaceFix
     await marketplace.connect(user).depositCoin(DEFAULT_USER_BALANCE)
 
 
-    return { marketplace, token, provider, user, admin, anotherUser, providersSigner };
+    return { marketplace, token, provider, user, admin, anotherUser, providersSigner, voucherSigner };
 }
 
 export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
