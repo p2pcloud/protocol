@@ -36,10 +36,6 @@ abstract contract BaseERC20 is
         _unpause();
     }
 
-    function mint(address to, uint256 amount) public onlyOwner {
-        _mint(to, amount);
-    }
-
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override whenNotPaused {
         super._beforeTokenTransfer(from, to, amount);
     }
@@ -47,31 +43,46 @@ abstract contract BaseERC20 is
 
 contract P2PCloudCredit is BaseERC20 {
     using ECDSA for bytes32;
-    address allowedRecipient;
-    address trustedMinter;
+    //allowedRecipient is the address of marketplace to make sure the tokens are only used for the intended purpose
+    address public allowedRecipient;
+    address public trustedMinter;
 
-    function initialize(address _trustedMinter, address _allowedRecipient) public initializer {
-        require(_trustedMinter != address(0), "Invalid trustedMinter address");
-        require(_allowedRecipient != address(0), "Invalid allowedRecipient address");
+    function initialize() public initializer {
         __BaseERC20_init();
-        allowedRecipient = _allowedRecipient;
-        trustedMinter = _trustedMinter;
     }
 
     mapping(bytes12 => bool) public mintedIds;
 
+    function setAllowedRecipient(address _allowedRecipient) public onlyOwner {
+        require(_allowedRecipient != address(0), "Invalid allowedRecipient address");
+        allowedRecipient = _allowedRecipient;
+    }
+
+    function setTrustedMinter(address _trustedMinter) public onlyOwner {
+        require(_trustedMinter != address(0), "Invalid trustedMinter address");
+        trustedMinter = _trustedMinter;
+    }
+
     //mint with idempotency
-    function idemopotentMint(address to, bytes12 mintId, uint256 amount) public {
+    function idemopotentMint(address payable to, uint256 amount, bytes12 mintId) public payable {
         require(msg.sender == trustedMinter, "Only trustedMinter can mint");
         require(mintId != 0, "Mint id cannot be zero");
         require(!mintedIds[mintId], "Mint id already used");
         mintedIds[mintId] = true;
         _mint(to, amount);
+
+        // Transfer any ether sent with the transaction to the 'to' address.
+        if (msg.value > 0) {
+            to.transfer(msg.value);
+        }
     }
 
     //restrict token transfers to only allowedRecipient
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal override whenNotPaused {
-        require(to == allowedRecipient || to == address(this), "Only allowedRecipient can receive tokens");
+        require(
+            to == allowedRecipient || from == allowedRecipient || from == address(0) || to == address(0),
+            "ERC20: Recipient not allowed"
+        );
         super._beforeTokenTransfer(from, to, amount);
     }
 }
