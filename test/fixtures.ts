@@ -22,7 +22,7 @@ export type FiatMarketplaceFixture = Fixture & {
     trustedMinter: SignerWithAddress,
 }
 
-function randomBytes12() {
+export function randomBytes12() {
     return ethers.utils.hexlify(ethers.utils.randomBytes(12))
 }
 

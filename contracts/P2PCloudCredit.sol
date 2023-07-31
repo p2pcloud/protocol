@@ -9,13 +9,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /// @custom:security-contact security@p2pcloud.io
-abstract contract BaseERC20 is
-    Initializable,
-    ERC20Upgradeable,
-    ERC20BurnableUpgradeable,
-    PausableUpgradeable,
-    OwnableUpgradeable
-{
+abstract contract BaseERC20 is Initializable, ERC20BurnableUpgradeable, PausableUpgradeable, OwnableUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -65,9 +59,9 @@ contract P2PCloudCredit is BaseERC20 {
 
     //mint with idempotency
     function idemopotentMint(address payable to, uint256 amount, bytes12 mintId) public payable {
-        require(msg.sender == trustedMinter, "Only trustedMinter can mint");
+        require(msg.sender == trustedMinter, "P2PCloudCredit: Not authorized minter");
         require(mintId != 0, "Mint id cannot be zero");
-        require(!mintedIds[mintId], "Mint id already used");
+        require(!mintedIds[mintId], "P2PCloudCredit: Already minted");
         mintedIds[mintId] = true;
         _mint(to, amount);
 
@@ -81,7 +75,7 @@ contract P2PCloudCredit is BaseERC20 {
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal override whenNotPaused {
         require(
             to == allowedRecipient || from == allowedRecipient || from == address(0) || to == address(0),
-            "ERC20: Recipient not allowed"
+            "P2PCloudCredit: Recipient not allowed"
         );
         super._beforeTokenTransfer(from, to, amount);
     }
