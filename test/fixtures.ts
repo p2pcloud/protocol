@@ -78,11 +78,6 @@ export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
     )
 
     //register provider
-    const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
-    await token.connect(admin).transfer(provider.address, fee)
-    await token.connect(provider).increaseAllowance(marketplace.address, fee)
-    await marketplace.connect(provider).depositCoin(fee)
-
     await marketplace.connect(provider).submitKYC(
         provider.address,
         US_HEX,
@@ -90,7 +85,7 @@ export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
     )
 
     //TODO: generate signature and set user KYC
-    await marketplace.connect(provider).registerProvider()
+    await marketplace.connect(admin).registerProviderByCommunity(provider.address)
 
     await marketplace.connect(provider).setSigner(providersSigner.address)
 

@@ -1,7 +1,6 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { deployMarketplaceFixture } from './fixtures'
-import { token } from "../typechain-types/@openzeppelin/contracts";
 import { NZ_HEX, signKYC } from "./lib";
 
 describe("BalanceHolder", function () {

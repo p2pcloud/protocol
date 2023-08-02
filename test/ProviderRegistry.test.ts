@@ -7,17 +7,13 @@ import { NZ_HEX, US_HEX, signKYC } from "./lib";
 describe("ProviderRegistry", function () {
     describe("getProviderUrl", function () {
         it("should set provider url", async function () {
-            const { marketplace, token, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
 
             const sig = await signKYC(anotherUser.address, US_HEX, kycSigner)
             await marketplace.connect(anotherUser).submitKYC(anotherUser.address, US_HEX, sig)
 
 
-            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
-            await token.connect(admin).transfer(anotherUser.address, fee)
-            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
-            await marketplace.connect(anotherUser).depositCoin(fee)
-            await marketplace.connect(anotherUser).registerProvider()
+            await marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
 
             const urlBytes = ethers.utils.formatBytes32String("woop.woop/woop");
             await marketplace.connect(anotherUser).setProviderUrl(urlBytes)
@@ -26,7 +22,7 @@ describe("ProviderRegistry", function () {
         });
 
         it("should not set provider url for non-registered provider", async function () {
-            const { marketplace, token, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
 
             const sig = await signKYC(anotherUser.address, US_HEX, kycSigner)
             await marketplace.connect(anotherUser).submitKYC(anotherUser.address, US_HEX, sig)
@@ -34,18 +30,14 @@ describe("ProviderRegistry", function () {
             const urlBytes = ethers.utils.formatBytes32String("woop.woop/woop");
             expect(marketplace.connect(anotherUser).setProviderUrl(urlBytes)).to.be.revertedWith("Provider must be registered to set url")
 
-            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
-            await token.connect(admin).transfer(anotherUser.address, fee)
-            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
-            await marketplace.connect(anotherUser).depositCoin(fee)
-            await marketplace.connect(anotherUser).registerProvider()
+            await marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
 
             await marketplace.connect(anotherUser).setProviderUrl(urlBytes)
         });
     })
     describe("getAllProviderURLs", function () {
         it("should return all provider urls", async function () {
-            const { marketplace, token, anotherUser, admin, provider, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, provider, kycSigner } = await loadFixture(deployMarketplaceFixture);
 
             await marketplace.connect(anotherUser).submitKYC(
                 anotherUser.address, US_HEX,
@@ -57,19 +49,14 @@ describe("ProviderRegistry", function () {
                 await signKYC(admin.address, US_HEX, kycSigner)
             )
 
-            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
-            await token.connect(admin).transfer(anotherUser.address, fee)
-            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
-            await marketplace.connect(anotherUser).depositCoin(fee)
-            await marketplace.connect(anotherUser).registerProvider()
+            await marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
+
 
             const urlBytes = ethers.utils.formatBytes32String("another.example.com");
             await marketplace.connect(anotherUser).setProviderUrl(urlBytes)
 
             // Register admin as another provider
-            await token.connect(admin).increaseAllowance(marketplace.address, fee)
-            await marketplace.connect(admin).depositCoin(fee)
-            await marketplace.connect(admin).registerProvider()
+            await marketplace.connect(admin).registerProviderByCommunity(admin.address)
 
             const anotherUrlBytes = ethers.utils.formatBytes32String("admin.com");
             await marketplace.connect(admin).setProviderUrl(anotherUrlBytes)
@@ -82,7 +69,7 @@ describe("ProviderRegistry", function () {
                 .to.deep.equal(["", "another.example.com", "admin.com"]);
         });
         it("should ignore deleted providers", async function () {
-            const { marketplace, token, anotherUser, admin, provider, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, provider, kycSigner } = await loadFixture(deployMarketplaceFixture);
 
 
             await marketplace.connect(anotherUser).submitKYC(
@@ -95,19 +82,14 @@ describe("ProviderRegistry", function () {
                 await signKYC(admin.address, US_HEX, kycSigner)
             )
 
-            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
-            await token.connect(admin).transfer(anotherUser.address, fee)
-            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
-            await marketplace.connect(anotherUser).depositCoin(fee)
-            await marketplace.connect(anotherUser).registerProvider()
+            await marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
+
 
             const urlBytes = ethers.utils.formatBytes32String("another.example.com");
             await marketplace.connect(anotherUser).setProviderUrl(urlBytes)
 
             // Register admin as another provider
-            await token.connect(admin).increaseAllowance(marketplace.address, fee)
-            await marketplace.connect(admin).depositCoin(fee)
-            await marketplace.connect(admin).registerProvider()
+            await marketplace.connect(admin).registerProviderByCommunity(admin.address)
 
             const anotherUrlBytes = ethers.utils.formatBytes32String("admin.com");
             await marketplace.connect(admin).setProviderUrl(anotherUrlBytes)
@@ -133,7 +115,7 @@ describe("ProviderRegistry", function () {
 
     describe("isProviderRegistered", function () {
         it("should return true for registered and false by default", async function () {
-            const { marketplace, token, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
 
             const sig = await signKYC(anotherUser.address, US_HEX, kycSigner)
             await marketplace.connect(anotherUser).submitKYC(anotherUser.address, US_HEX, sig)
@@ -141,11 +123,7 @@ describe("ProviderRegistry", function () {
             const isregistered1 = await marketplace.connect(anotherUser).isProviderRegistered(anotherUser.address)
             expect(isregistered1).to.equal(false)
 
-            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
-            await token.connect(admin).transfer(anotherUser.address, fee)
-            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
-            await marketplace.connect(anotherUser).depositCoin(fee)
-            await marketplace.connect(anotherUser).registerProvider()
+            await marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
 
             const isregistered2 = await marketplace.connect(anotherUser).isProviderRegistered(anotherUser.address)
             expect(isregistered2).to.equal(true)
@@ -153,67 +131,24 @@ describe("ProviderRegistry", function () {
     })
 
     describe("registerProvider", function () {
-        it("should use exactly PROVIDER_REGISTRATION_FEE coins", async function () {
-            const { marketplace, token, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
-
-            const sig = await signKYC(anotherUser.address, US_HEX, kycSigner)
-            await marketplace.connect(anotherUser).submitKYC(anotherUser.address, US_HEX, sig)
-
-            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
-            await token.connect(admin).transfer(anotherUser.address, fee.add(123))
-            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee.add(123))
-            await marketplace.connect(anotherUser).depositCoin(fee.add(123))
-
-            const balance1 = await marketplace.connect(anotherUser).getBalance(anotherUser.address)
-            expect(balance1[0]).to.equal(fee.add(123))
-            expect(balance1[1]).to.equal(0)
-
-            await marketplace.connect(anotherUser).registerProvider()
-
-            const balance2 = await marketplace.connect(anotherUser).getBalance(anotherUser.address)
-            expect(balance2[0]).to.equal(123)
-            expect(balance2[1]).to.equal(0)
-        });
-
-        it("should reject if not enough coins", async function () {
-            const { marketplace, token, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
-
-            await marketplace.connect(anotherUser).submitKYC(
-                anotherUser.address, US_HEX,
-                await signKYC(anotherUser.address, US_HEX, kycSigner)
-            )
-
-            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
-            await token.connect(admin).transfer(anotherUser.address, fee.sub(1))
-            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee.sub(1))
-            await marketplace.connect(anotherUser).depositCoin(fee.sub(1))
-
-            await expect(marketplace.connect(anotherUser).registerProvider()).to.be.rejected
-        });
-
         it("should require KYC", async function () {
-            const { marketplace, token, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
 
-            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
-            await token.connect(admin).transfer(anotherUser.address, fee)
-            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
-
-            await expect(marketplace.connect(anotherUser).registerProvider()).to.be.rejectedWith("No KYC or country is not allowed")
+            await expect(
+                marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
+            ).to.be.rejectedWith("No KYC or country is not allowed")
 
             await marketplace.connect(anotherUser).submitKYC(
                 anotherUser.address, US_HEX,
                 await signKYC(anotherUser.address, US_HEX, kycSigner)
             )
 
-            await marketplace.connect(anotherUser).depositCoin(fee)
-
-
-            await marketplace.connect(anotherUser).registerProvider()
+            await marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
 
         })
 
         it("should enforce provider's country", async function () {
-            const { marketplace, token, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
             await marketplace.connect(admin).allowUserCountry(NZ_HEX)
 
 
@@ -222,18 +157,31 @@ describe("ProviderRegistry", function () {
                 await signKYC(anotherUser.address, NZ_HEX, kycSigner)
             )
 
-            const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
-            await token.connect(admin).transfer(anotherUser.address, fee)
-            await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
-            await marketplace.connect(anotherUser).depositCoin(fee)
-
-
-            await expect(marketplace.connect(anotherUser).registerProvider()).to.be.rejectedWith("No KYC or country is not allowed")
+            await expect(
+                marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
+            ).to.be.rejectedWith("No KYC or country is not allowed")
 
             await marketplace.connect(admin).allowProviderCountry(NZ_HEX)
 
-            await marketplace.connect(anotherUser).registerProvider()
+            await marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
+        })
+        it("should be called only by admin", async function () {
+            const { marketplace, provider, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
 
+            await marketplace.connect(anotherUser).submitKYC(
+                anotherUser.address, US_HEX,
+                await signKYC(anotherUser.address, US_HEX, kycSigner)
+            )
+
+            await expect(
+                marketplace.connect(provider).registerProviderByCommunity(anotherUser.address)
+            ).to.be.rejectedWith("Ownable: caller is not the owner")
+
+            await expect(
+                marketplace.connect(anotherUser).registerProviderByCommunity(anotherUser.address)
+            ).to.be.rejectedWith("Ownable: caller is not the owner")
+
+            await marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
         })
     });
     describe("setProviderRegistrationFee", function () {
@@ -242,7 +190,7 @@ describe("ProviderRegistry", function () {
 
     describe("deleteProvider", function () {
         it("can be called by provdier", async () => {
-            const { marketplace, token, provider, anotherUser, admin, user } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, provider } = await loadFixture(deployMarketplaceFixture);
 
             let isRegistered
             isRegistered = await marketplace.isProviderRegistered(provider.address)
@@ -253,7 +201,7 @@ describe("ProviderRegistry", function () {
             expect(isRegistered).to.equal(false)
         })
         it("can be called by community", async () => {
-            const { marketplace, token, provider, anotherUser, admin, user } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, provider, admin, user } = await loadFixture(deployMarketplaceFixture);
 
             await expect(marketplace.connect(user).deleteProvider(provider.address)).to.be.revertedWith("Provider or community only")
             let isRegistered

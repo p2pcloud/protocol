@@ -5,7 +5,9 @@ pragma solidity ^0.8.17;
 import "./BalanceHolder.sol";
 
 abstract contract ProviderRegistry is BalanceHolder {
-    uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
+    // uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
+
+    // bool public providerRegistrationEnabled;
 
     struct ProviderInfo {
         //slot 1
@@ -31,23 +33,30 @@ abstract contract ProviderRegistry is BalanceHolder {
         return providerInfo[_user].isRegistered;
     }
 
-    function registerProvider() public virtual {
-        _registerProvider(msg.sender, PROVIDER_REGISTRATION_FEE);
+    // function registerProvider() public virtual {
+    //     require(providerRegistrationEnabled, "Provider registration is disabled");
+    //     _registerProvider(msg.sender, PROVIDER_REGISTRATION_FEE);
+    // }
+
+    function registerProviderByCommunity(address _provider) public virtual onlyOwner {
+        require(checkProviderKYC(_provider), "No KYC or country is not allowed");
+        providerInfo[_provider].isRegistered = true;
+        providerList.push(_provider);
     }
 
-    function _registerProvider(address provider, uint64 fee) internal {
-        require(checkProviderKYC(provider), "No KYC or country is not allowed");
-        require(!providerInfo[provider].isRegistered, "Provider is already registered");
+    // function _registerProvider(address provider, uint64 fee) internal {
+    //     require(checkProviderKYC(provider), "No KYC or country is not allowed");
+    //     require(!providerInfo[provider].isRegistered, "Provider is already registered");
 
-        require(getFreeBalance(provider) >= fee, "Not enough coin to register ");
+    //     require(getFreeBalance(provider) >= fee, "Not enough coin to register ");
 
-        _spendWithComission(provider, owner(), fee);
+    //     _spendWithComission(provider, owner(), fee);
 
-        providerInfo[provider].isRegistered = true;
-        providerInfo[provider].feePaid += fee;
+    //     providerInfo[provider].isRegistered = true;
+    //     providerInfo[provider].feePaid += fee;
 
-        providerList.push(provider);
-    }
+    //     providerList.push(provider);
+    // }
 
     function getAllProviderURLs() public view returns (address[] memory, bytes32[] memory) {
         uint256 providerCount = 0;
