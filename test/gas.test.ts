@@ -6,7 +6,6 @@ import { ethers } from "ethers";
 
 const GAS_TEST_RUNS = parseInt(process.env.GAS_TEST_RUNS || "100")
 
-
 if (process.env.REPORT_GAS === "true") {
     describe("Gas", function () {
         it("books many VMs", async function () {

@@ -26,7 +26,6 @@ describe("DelegatedSigner", function () {
         const signerAddress1 = "0x1111111111111111111111111111111111111111"
         const signerAddress2 = "0x2222222222222222222222222222222222222222"
 
-
         await marketplace.connect(user).setSigner(signerAddress1);
         expect(await marketplace.connect(anotherUser).getSigner(user.address)).to.equal(signerAddress1);
 

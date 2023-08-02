@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.17;
 
-import "./BalanceHolder.sol";
+import "./VerifiableKYC.sol";
 
-abstract contract ProviderRegistry is BalanceHolder {
+abstract contract ProviderRegistry is VerifiableKYC {
     uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
 
     struct ProviderInfo {
@@ -36,6 +36,7 @@ abstract contract ProviderRegistry is BalanceHolder {
     }
 
     function _registerProvider(address provider, uint64 fee) internal {
+        require(checkProviderKYC(provider), "No KYC or country is not allowed");
         require(!providerInfo[provider].isRegistered, "Provider is already registered");
 
         require(getFreeBalance(provider) >= fee, "Not enough coin to register ");

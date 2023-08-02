@@ -2,7 +2,6 @@ import { ethers, upgrades } from "hardhat";
 import prompt from "prompt";
 
 
-
 const CONTRACT_TO_DEPLOY = process.env.CONTARCT || "Marketplace";
 const { COIN_ADDRESS, PROXY_ADDRESS } = process.env;
 

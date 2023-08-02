@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { deployMarketplaceFixture } from './fixtures'
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
-import { UnsignedOffer, setUserCoinBalance, signOffer } from "./lib";
+import { US_HEX, UnsignedOffer, setUserCoinBalance, signKYC, signOffer } from "./lib";
 
 describe("Broker", function () {
     describe("bookResource", function () {
@@ -18,7 +18,6 @@ describe("Broker", function () {
                 nonce: await marketplace.getNonce(user.address),
             };
             const signature = await signOffer(providersSigner, offer, marketplace.address);
-
 
             const tx = await marketplace.connect(user).bookResource(offer, signature);
             const rc = await tx.wait();
@@ -56,6 +55,34 @@ describe("Broker", function () {
             const locked2 = await marketplace.connect(user).getLockedBalance(user.address)
             expect(locked2).to.equal(100 * 60 * 24 * 7);
         })
+
+        it("should not work if user was not KYC'd", async function () {
+            const { marketplace, providersSigner, anotherUser, kycSigner, admin, token } = await loadFixture(deployMarketplaceFixture);
+
+            const amt = '10000000000'
+            await token.connect(admin).transfer(anotherUser.address, amt)
+            await token.connect(anotherUser).increaseAllowance(marketplace.address, amt)
+            await marketplace.connect(anotherUser).depositCoin(amt)
+
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: anotherUser.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(anotherUser.address),
+            };
+
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
+            await expect(await marketplace.connect(anotherUser).bookResource(offer, signature)).to.be.revertedWith("KYC: user is not KYC'd");
+
+            await marketplace.connect(anotherUser).submitKYC(
+                anotherUser.address, US_HEX,
+                await signKYC(anotherUser.address, US_HEX, kycSigner)
+            )
+
+            await expect(await marketplace.connect(anotherUser).bookResource(offer, signature)).to.not.be.reverted;
+        })
+
         it("should execute claim payment", async function () {
             const { marketplace, user, provider, providersSigner } = await loadFixture(deployMarketplaceFixture);
 
