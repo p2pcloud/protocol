@@ -1,6 +1,8 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { deployMarketplaceFixture } from './fixtures'
+import { token } from "../typechain-types/@openzeppelin/contracts";
+import { NZ_HEX, signKYC } from "./lib";
 
 describe("BalanceHolder", function () {
     describe("depositCoin", function () {
@@ -24,6 +26,26 @@ describe("BalanceHolder", function () {
         it("should revert if transfer fails", async function () {
             const { marketplace, user } = await loadFixture(deployMarketplaceFixture);
             await expect(marketplace.connect(user).depositCoin('123')).to.be.reverted
+        });
+
+        it("should require user's KYC", async function () {
+            const { marketplace, admin, token, anotherUser, kycSigner } = await loadFixture(deployMarketplaceFixture);
+
+            await token.connect(admin).transfer(anotherUser.address, '123456')
+            await token.connect(anotherUser).approve(marketplace.address, '123456')
+
+            await expect(marketplace.connect(anotherUser).depositCoin('123456')).to.be.revertedWith('No KYC or country is not allowed')
+
+            await marketplace.connect(anotherUser).submitKYC(
+                anotherUser.address, NZ_HEX,
+                await signKYC(anotherUser.address, NZ_HEX, kycSigner)
+            )
+
+            await expect(marketplace.connect(anotherUser).depositCoin('123456')).to.be.revertedWith('No KYC or country is not allowed')
+
+            await marketplace.connect(admin).allowUserCountry(NZ_HEX)
+
+            await marketplace.connect(anotherUser).depositCoin('123456')
         });
     })
     describe("WithdrawCoin", function () {

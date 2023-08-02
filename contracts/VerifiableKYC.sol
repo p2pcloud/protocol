@@ -3,9 +3,9 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "./BalanceHolder.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-abstract contract VerifiableKYC is BalanceHolder {
+abstract contract VerifiableKYC is OwnableUpgradeable {
     address public KYCSigner;
 
     // Mapping from address to ISO 3166-1 alpha-2 country code as bytes2
@@ -18,16 +18,6 @@ abstract contract VerifiableKYC is BalanceHolder {
     function _validSignature(address _address, bytes2 country, bytes memory signature) private view returns (bool) {
         bytes32 data = keccak256(abi.encodePacked(_address, country));
         return data.toEthSignedMessageHash().recover(signature) == KYCSigner;
-    }
-
-    //TODO: remove
-    function test__recoverSignerByHash(bytes32 hash, bytes memory signature) public pure returns (address) {
-        return hash.recover(signature);
-    }
-
-    //TODO: remove
-    function test__hashMessage(address _address, bytes2 country) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(_address, country));
     }
 
     // Submit KYC

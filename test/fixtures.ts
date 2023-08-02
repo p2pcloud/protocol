@@ -53,14 +53,35 @@ export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
     const Marketplace = await ethers.getContractFactory("TestableMarketplace");
     const marketplace = await upgrades.deployProxy(Marketplace, [token.address]) as TestableMarketplace;
 
+    //KYC quirks
+    await marketplace.connect(admin).allowProviderCountry(US_HEX)
+    await marketplace.connect(admin).allowUserCountry(US_HEX)
+    await marketplace.connect(admin).setKYCSigner(kycSigner.address)
+
+    //KYC user, admin and provider
+    await marketplace.connect(admin).submitKYC(
+        admin.address,
+        US_HEX,
+        await signKYC(admin.address, US_HEX, kycSigner)
+    )
+
+    await marketplace.connect(provider).submitKYC(
+        provider.address,
+        US_HEX,
+        await signKYC(provider.address, US_HEX, kycSigner)
+    )
+
+    await marketplace.connect(user).submitKYC(
+        user.address,
+        US_HEX,
+        await signKYC(user.address, US_HEX, kycSigner)
+    )
+
+    //register provider
     const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
     await token.connect(admin).transfer(provider.address, fee)
     await token.connect(provider).increaseAllowance(marketplace.address, fee)
     await marketplace.connect(provider).depositCoin(fee)
-
-    await marketplace.connect(admin).allowProviderCountry(US_HEX)
-    await marketplace.connect(admin).allowUserCountry(US_HEX)
-    await marketplace.connect(admin).setKYCSigner(kycSigner.address)
 
     await marketplace.connect(provider).submitKYC(
         provider.address,

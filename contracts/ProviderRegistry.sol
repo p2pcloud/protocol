@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.17;
 
-import "./VerifiableKYC.sol";
+import "./BalanceHolder.sol";
 
-abstract contract ProviderRegistry is VerifiableKYC {
+abstract contract ProviderRegistry is BalanceHolder {
     uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
 
     struct ProviderInfo {

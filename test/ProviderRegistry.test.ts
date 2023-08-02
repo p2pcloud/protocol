@@ -156,13 +156,13 @@ describe("ProviderRegistry", function () {
         it("should use exactly PROVIDER_REGISTRATION_FEE coins", async function () {
             const { marketplace, token, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
 
+            const sig = await signKYC(anotherUser.address, US_HEX, kycSigner)
+            await marketplace.connect(anotherUser).submitKYC(anotherUser.address, US_HEX, sig)
+
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
             await token.connect(admin).transfer(anotherUser.address, fee.add(123))
             await token.connect(anotherUser).increaseAllowance(marketplace.address, fee.add(123))
             await marketplace.connect(anotherUser).depositCoin(fee.add(123))
-
-            const sig = await signKYC(anotherUser.address, US_HEX, kycSigner)
-            await marketplace.connect(anotherUser).submitKYC(anotherUser.address, US_HEX, sig)
 
             const balance1 = await marketplace.connect(anotherUser).getBalance(anotherUser.address)
             expect(balance1[0]).to.equal(fee.add(123))
@@ -176,7 +176,12 @@ describe("ProviderRegistry", function () {
         });
 
         it("should reject if not enough coins", async function () {
-            const { marketplace, token, anotherUser, admin } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, token, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+
+            await marketplace.connect(anotherUser).submitKYC(
+                anotherUser.address, US_HEX,
+                await signKYC(anotherUser.address, US_HEX, kycSigner)
+            )
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
             await token.connect(admin).transfer(anotherUser.address, fee.sub(1))
@@ -192,12 +197,16 @@ describe("ProviderRegistry", function () {
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
             await token.connect(admin).transfer(anotherUser.address, fee)
             await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
-            await marketplace.connect(anotherUser).depositCoin(fee)
 
             await expect(marketplace.connect(anotherUser).registerProvider()).to.be.rejectedWith("No KYC or country is not allowed")
 
-            const sig = await signKYC(anotherUser.address, US_HEX, kycSigner)
-            await marketplace.connect(anotherUser).submitKYC(anotherUser.address, US_HEX, sig)
+            await marketplace.connect(anotherUser).submitKYC(
+                anotherUser.address, US_HEX,
+                await signKYC(anotherUser.address, US_HEX, kycSigner)
+            )
+
+            await marketplace.connect(anotherUser).depositCoin(fee)
+
 
             await marketplace.connect(anotherUser).registerProvider()
 
@@ -205,16 +214,19 @@ describe("ProviderRegistry", function () {
 
         it("should enforce provider's country", async function () {
             const { marketplace, token, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            await marketplace.connect(admin).allowUserCountry(NZ_HEX)
+
+
+            await marketplace.connect(anotherUser).submitKYC(
+                anotherUser.address, NZ_HEX,
+                await signKYC(anotherUser.address, NZ_HEX, kycSigner)
+            )
 
             const fee = await marketplace.PROVIDER_REGISTRATION_FEE()
             await token.connect(admin).transfer(anotherUser.address, fee)
             await token.connect(anotherUser).increaseAllowance(marketplace.address, fee)
             await marketplace.connect(anotherUser).depositCoin(fee)
 
-            await expect(marketplace.connect(anotherUser).registerProvider()).to.be.rejectedWith("No KYC or country is not allowed")
-
-            const sig = await signKYC(anotherUser.address, NZ_HEX, kycSigner)
-            await marketplace.connect(anotherUser).submitKYC(anotherUser.address, NZ_HEX, sig)
 
             await expect(marketplace.connect(anotherUser).registerProvider()).to.be.rejectedWith("No KYC or country is not allowed")
 

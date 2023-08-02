@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./VerifiableKYC.sol";
 
-abstract contract BalanceHolder is OwnableUpgradeable {
+abstract contract BalanceHolder is VerifiableKYC {
     uint16 public constant COMMUNITY_FEE = 2000;
 
     IERC20 public coin;
@@ -13,12 +13,14 @@ abstract contract BalanceHolder is OwnableUpgradeable {
     mapping(address => uint256) internal _coinBalance;
 
     function depositCoin(uint256 numTokens) public virtual {
+        require(checkUserKYC(msg.sender), "No KYC or country is not allowed");
         require(coin.transferFrom(msg.sender, address(this), numTokens), "Failed to transfer tokens");
 
         _coinBalance[msg.sender] = _coinBalance[msg.sender] + numTokens;
     }
 
     function withdrawCoin(uint256 amt) public virtual {
+        require(checkUserKYC(msg.sender), "No KYC or country is not allowed");
         require(getFreeBalance(msg.sender) >= amt, "Not enough balance to withdraw");
         _coinBalance[msg.sender] -= amt;
         require(coin.transfer(msg.sender, amt), "ERC20 transfer failed");
