@@ -8,7 +8,7 @@ import "./VerifiableOffer.sol";
 import "./Payments.sol";
 import "./AddressBook.sol";
 
-abstract contract Broker is VerifiableOffer, ProviderRegistry, Payments, AddressBook {
+abstract contract BrokerV3 is VerifiableOfferV3, ProviderRegistryV3, PaymentsV3, AddressBookV3 {
     uint8 public constant CANCEL_REASON_NOT_NEEDED = 0;
     uint8 public constant CANCEL_REASON_NOT_SATISFIED = 1;
     uint8 public constant CANCEL_REASON_PROVIDER = 2;

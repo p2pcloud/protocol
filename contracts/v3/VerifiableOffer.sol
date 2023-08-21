@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./DelegatedSigner.sol";
 
-abstract contract VerifiableOffer is Initializable, DelegatedSigner {
+abstract contract VerifiableOfferV3 is Initializable, DelegatedSignerV3 {
     using ECDSA for bytes32;
 
     bytes32 public constant DOMAIN_TYPEHASH =
@@ -25,7 +25,6 @@ abstract contract VerifiableOffer is Initializable, DelegatedSigner {
     }
 
     mapping(address => uint32) internal nonce;
-    
 
     function getNonce(address client) external view returns (uint32) {
         return nonce[client];
@@ -41,7 +40,6 @@ abstract contract VerifiableOffer is Initializable, DelegatedSigner {
             abi.encode(DOMAIN_TYPEHASH, keccak256(bytes("p2pcloud.io")), keccak256(bytes("2")), chainId, address(this))
         );
     }
-    
 
     function _getOfferProvider(UnsignedOffer calldata offer, bytes calldata signature) internal view returns (address) {
         require(offer.expiresAt > block.timestamp, "Offer expired");

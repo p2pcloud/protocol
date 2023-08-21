@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-contract DelegatedSigner {
+contract DelegatedSignerV3 {
     mapping(address => address) private _walletToSigner;
     mapping(address => address) private _signerToWallet;
 

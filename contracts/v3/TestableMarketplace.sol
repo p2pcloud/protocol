@@ -5,7 +5,7 @@ pragma solidity ^0.8.17;
 import "./Marketplace.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-contract TestableMarketplace is Marketplace {
+contract TestableMarketplaceV3 is MarketplaceV3 {
     using ECDSA for bytes32;
 
     function test__getTime() public view returns (uint256) {

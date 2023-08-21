@@ -5,7 +5,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./VerifiableKYC.sol";
 
-abstract contract BalanceHolder is VerifiableKYC {
+abstract contract BalanceHolderV3 is VerifiableKYCV3 {
     uint16 public constant COMMUNITY_FEE = 2000;
 
     IERC20 public coin;

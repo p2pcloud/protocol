@@ -47,7 +47,7 @@ if (process.env.HARDHAT_PRIVATE_KEY) {
     config.networks.fiat_dev = private_subnet;
     config.networks.fiat_staging = private_subnet;
     config.networks.fiat_preview = private_subnet;
-
+    config.networks.v3_dev = private_subnet;
 } else {
     console.log("HARDHAT_PRIVATE_KEY is empty")
 }

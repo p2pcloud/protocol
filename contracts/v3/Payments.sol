@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 
 import "./BalanceHolder.sol";
 
-abstract contract Payments is BalanceHolder {
+abstract contract PaymentsV3 is BalanceHolderV3 {
     uint256 public constant MONEY_LOCK_MINUTES = 60 * 24 * 7; // 7 days
 
     struct UserProviderAccounting {
@@ -29,7 +29,7 @@ abstract contract Payments is BalanceHolder {
         }
 
         uint256 usedTime = (block.timestamp - userProviderAccounting[provider][client].lastPaymentTs);
-        uint256 minutesPassed;        
+        uint256 minutesPassed;
         assembly {
             minutesPassed := div(usedTime, 60)
         }

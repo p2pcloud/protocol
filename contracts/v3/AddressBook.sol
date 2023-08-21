@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-abstract contract AddressBook {
+abstract contract AddressBookV3 {
     mapping(address => uint32) private addressToID;
     mapping(uint32 => address) private idToAddress;
     uint32 private nextID;

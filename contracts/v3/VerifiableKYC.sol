@@ -5,7 +5,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-abstract contract VerifiableKYC is OwnableUpgradeable {
+abstract contract VerifiableKYCV3 is OwnableUpgradeable {
     address public KYCSigner;
 
     // Mapping from address to ISO 3166-1 alpha-2 country code as bytes2

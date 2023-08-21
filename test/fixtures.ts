@@ -1,8 +1,8 @@
 import { ethers, upgrades } from "hardhat";
 
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { type TestableMarketplace, type MockERC20, FiatMarketplace__factory, FiatMarketplace } from "../typechain-types";
 import { US_HEX, signKYC, signVoucher } from "./lib";
+import { MockERC20, TestableMarketplaceV3 } from "../typechain-types";
 
 type Fixture = {
     provider: SignerWithAddress,
@@ -14,35 +14,35 @@ type Fixture = {
 }
 
 export type MarketplaceFixture = Fixture & {
-    marketplace: TestableMarketplace,
+    marketplace: TestableMarketplaceV3,
     token: MockERC20
 }
 
-export type FiatMarketplaceFixture = Fixture & {
-    marketplace: FiatMarketplace,
-    voucherSigner: SignerWithAddress,
-}
+// export type FiatMarketplaceFixture = Fixture & {
+//     marketplace: FiatMarketplaceV3,
+//     voucherSigner: SignerWithAddress,
+// }
 
 export const DEFAULT_USER_BALANCE = 10000000
 
-export async function deployFiatMarketplaceFixture(): Promise<FiatMarketplaceFixture> {
-    const [admin, provider, user, anotherUser, providersSigner, voucherSigner, kycSigner] = await ethers.getSigners();
+// export async function deployFiatMarketplaceFixture(): Promise<FiatMarketplaceFixture> {
+//     const [admin, provider, user, anotherUser, providersSigner, voucherSigner, kycSigner] = await ethers.getSigners();
 
-    const Marketplace = await ethers.getContractFactory("FiatMarketplace");
-    const marketplace = await upgrades.deployProxy(Marketplace, ["0x0000000000000000000000000000000000000000"]) as FiatMarketplace;
+//     const Marketplace = await ethers.getContractFactory("FiatMarketplace");
+//     const marketplace = await upgrades.deployProxy(Marketplace, ["0x0000000000000000000000000000000000000000"]) as FiatMarketplace;
 
-    await marketplace.connect(admin).setVoucherSigner(voucherSigner.address)
+//     await marketplace.connect(admin).setVoucherSigner(voucherSigner.address)
 
-    await marketplace.connect(admin).registerFiatProvider(provider.address)
-    await marketplace.connect(provider).setSigner(providersSigner.address)
+//     await marketplace.connect(admin).registerFiatProvider(provider.address)
+//     await marketplace.connect(provider).setSigner(providersSigner.address)
 
-    //transfer some tokens to user
-    const voucher = { amount: DEFAULT_USER_BALANCE, paymentId: ethers.utils.formatBytes32String("fixtue2") }
-    const signature = await signVoucher(voucherSigner, voucher, marketplace.address)
-    await marketplace.connect(anotherUser).claimVoucher(voucher, signature, user.address)
+//     //transfer some tokens to user
+//     const voucher = { amount: DEFAULT_USER_BALANCE, paymentId: ethers.utils.formatBytes32String("fixtue2") }
+//     const signature = await signVoucher(voucherSigner, voucher, marketplace.address)
+//     await marketplace.connect(anotherUser).claimVoucher(voucher, signature, user.address)
 
-    return { marketplace, provider, user, admin, anotherUser, providersSigner, voucherSigner, kycSigner };
-}
+//     return { marketplace, provider, user, admin, anotherUser, providersSigner, voucherSigner, kycSigner };
+// }
 
 export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
     const [admin, provider, user, anotherUser, providersSigner, kycSigner] = await ethers.getSigners();
@@ -50,8 +50,8 @@ export async function deployMarketplaceFixture(): Promise<MarketplaceFixture> {
     const MockERC20 = await ethers.getContractFactory("MockERC20");
     const token = await MockERC20.connect(admin).deploy('10000000000000000000000');
 
-    const Marketplace = await ethers.getContractFactory("TestableMarketplace");
-    const marketplace = await upgrades.deployProxy(Marketplace, [token.address]) as TestableMarketplace;
+    const Marketplace = await ethers.getContractFactory("TestableMarketplaceV3");
+    const marketplace = await upgrades.deployProxy(Marketplace, [token.address]) as TestableMarketplaceV3;
 
     //KYC quirks
     await marketplace.connect(admin).allowProviderCountry(US_HEX)

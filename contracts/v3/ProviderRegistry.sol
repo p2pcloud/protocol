@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 
 import "./BalanceHolder.sol";
 
-abstract contract ProviderRegistry is BalanceHolder {
+abstract contract ProviderRegistryV3 is BalanceHolderV3 {
     // uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
 
     // bool public providerRegistrationEnabled;
