@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-import "./Storage.sol";
+import "./StorageV3.sol";
 
 contract DelegatedSignerV3 is StorageV3 {
     function setSigner(address signer) public {

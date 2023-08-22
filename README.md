@@ -2,12 +2,14 @@
 Smart conracts for distributed confidential computing platform. Website: [https://p2pcloud.io](https://p2pcloud.io)
 
 ## Contract inheritance
-
-Marketplace     -> Broker   -> VerifiableOffer  -> DelegatedSigner      -> Storage  
-                            -> ProviderRegistry -> VerifiableKYC        -> Storage  
-                            -> Payments         -> BalanceHolder        -> VerifiableKYC    -> Storage  
-                            -> AddressBook      -> Storage  
-
+```
+Marketplace
+  V
+Broker  -> VerifiableOffer  -> DelegatedSigner  -> Storage  
+        -> ProviderRegistry -> VerifiableKYC    -> Storage  
+        -> Payments         -> BalanceHolder    -> VerifiableKYC -> Storage  
+        -> AddressBook      -> Storage  
+```
 ## Contract Descriptions
 
 - **Broker**: The primary contract that encompasses all logic, excluding migration.

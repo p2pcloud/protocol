@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-import "./VerifiableKYC.sol";
+import "./VerifiableKYCV3.sol";
 
 abstract contract ProviderRegistryV3 is VerifiableKYCV3 {
     function setProviderUrl(bytes32 url) public {

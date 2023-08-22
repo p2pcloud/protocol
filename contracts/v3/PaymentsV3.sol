@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-import "./BalanceHolder.sol";
+import "./BalanceHolderV3.sol";
 
 abstract contract PaymentsV3 is BalanceHolderV3 {
     function getLockedBalance(address user) public view override returns (uint256) {

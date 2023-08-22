@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.17;
 
-import "./ProviderRegistry.sol";
-import "./VerifiableOffer.sol";
-import "./Payments.sol";
-import "./AddressBook.sol";
+import "./ProviderRegistryV3.sol";
+import "./VerifiableOfferV3.sol";
+import "./PaymentsV3.sol";
+import "./AddressBookV3.sol";
 
 abstract contract BrokerV3 is VerifiableOfferV3, ProviderRegistryV3, PaymentsV3, AddressBookV3 {
     function bookResource(UnsignedOffer calldata offer, bytes calldata signature) external {

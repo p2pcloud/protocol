@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-import "./Broker.sol";
+import "./BrokerV3.sol";
 import "../v2/FiatMarketplace.sol";
 
 contract MarketplaceV3 is BrokerV3 {

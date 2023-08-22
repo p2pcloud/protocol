@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-import "./Marketplace.sol";
+import "./MarketplaceV3.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract TestableMarketplaceV3 is MarketplaceV3 {

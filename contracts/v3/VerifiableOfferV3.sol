@@ -3,7 +3,7 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "./DelegatedSigner.sol";
+import "./DelegatedSignerV3.sol";
 
 abstract contract VerifiableOfferV3 is DelegatedSignerV3 {
     using ECDSA for bytes32;

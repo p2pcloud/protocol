@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-import "./Storage.sol";
+import "./StorageV3.sol";
 
 abstract contract AddressBookV3 is StorageV3 {
     function idByAddress(address _address) internal returns (uint32) {

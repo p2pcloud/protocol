@@ -3,7 +3,7 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "./Storage.sol";
+import "./StorageV3.sol";
 
 abstract contract VerifiableKYCV3 is StorageV3 {
     using ECDSA for bytes32;
