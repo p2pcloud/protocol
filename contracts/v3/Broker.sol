@@ -9,35 +9,6 @@ import "./Payments.sol";
 import "./AddressBook.sol";
 
 abstract contract BrokerV3 is VerifiableOfferV3, ProviderRegistryV3, PaymentsV3, AddressBookV3 {
-    uint8 public constant CANCEL_REASON_NOT_NEEDED = 0;
-    uint8 public constant CANCEL_REASON_NOT_SATISFIED = 1;
-    uint8 public constant CANCEL_REASON_PROVIDER = 2;
-    uint8 public constant CANCEL_REASON_NON_PAYMENT = 3;
-
-    uint32 public bookingCount;
-
-    struct Booking {
-        bytes32 specs;
-        uint64 pricePerMinute;
-        uint32 clientId;
-        uint32 providerId;
-        uint32 startTime;
-    }
-
-    struct BookingFull {
-        uint32 id;
-        bytes32 specs;
-        uint64 pricePerMinute;
-        address client;
-        address provider;
-        uint32 startTime;
-    }
-
-    mapping(uint32 => Booking) public bookings;
-
-    event BookingCreated(uint256 bookingId, uint64 pricePerMinute, address client, address provider);
-    event BookingCancelled(uint256 bookingId, uint8 reason);
-
     function bookResource(UnsignedOffer calldata offer, bytes calldata signature) external {
         address provider = _getOfferProvider(offer, signature);
         require(isProviderRegistered(provider), "Provider is not registered");

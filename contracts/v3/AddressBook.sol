@@ -2,11 +2,9 @@
 
 pragma solidity ^0.8.17;
 
-abstract contract AddressBookV3 {
-    mapping(address => uint32) private addressToID;
-    mapping(uint32 => address) private idToAddress;
-    uint32 private nextID;
+import "./Storage.sol";
 
+abstract contract AddressBookV3 is StorageV3 {
     function idByAddress(address _address) internal returns (uint32) {
         uint32 existingID = addressToID[_address];
         if (existingID != 0) {

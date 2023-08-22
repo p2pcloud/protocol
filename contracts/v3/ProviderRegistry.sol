@@ -2,24 +2,9 @@
 
 pragma solidity ^0.8.17;
 
-import "./BalanceHolder.sol";
+import "./VerifiableKYC.sol";
 
-abstract contract ProviderRegistryV3 is BalanceHolderV3 {
-    // uint64 public constant PROVIDER_REGISTRATION_FEE = 100 * 1000000;
-
-    // bool public providerRegistrationEnabled;
-
-    struct ProviderInfo {
-        //slot 1
-        bytes32 url;
-        //slot 2
-        bool isRegistered;
-        uint128 feePaid;
-    }
-
-    mapping(address => ProviderInfo) providerInfo;
-    address[] public providerList;
-
+abstract contract ProviderRegistryV3 is VerifiableKYCV3 {
     function setProviderUrl(bytes32 url) public {
         require(providerInfo[msg.sender].isRegistered, "Provider must be registered to set url");
         providerInfo[msg.sender].url = url;

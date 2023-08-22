@@ -2,10 +2,9 @@
 
 pragma solidity ^0.8.17;
 
-contract DelegatedSignerV3 {
-    mapping(address => address) private _walletToSigner;
-    mapping(address => address) private _signerToWallet;
+import "./Storage.sol";
 
+contract DelegatedSignerV3 is StorageV3 {
     function setSigner(address signer) public {
         if (_signerToWallet[signer] != address(0)) {
             revert("Signer already in use");

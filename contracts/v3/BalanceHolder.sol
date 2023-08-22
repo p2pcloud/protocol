@@ -4,14 +4,9 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./VerifiableKYC.sol";
+import "./Storage.sol";
 
 abstract contract BalanceHolderV3 is VerifiableKYCV3 {
-    uint16 public constant COMMUNITY_FEE = 2000;
-
-    IERC20 public coin;
-
-    mapping(address => uint256) internal _coinBalance;
-
     function depositCoin(uint256 numTokens) public virtual {
         require(checkUserKYC(msg.sender), "No KYC or country is not allowed");
         require(coin.transferFrom(msg.sender, address(this), numTokens), "Failed to transfer tokens");

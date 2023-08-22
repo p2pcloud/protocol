@@ -3,28 +3,11 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./DelegatedSigner.sol";
+import "./Storage.sol";
 
-abstract contract VerifiableOfferV3 is Initializable, DelegatedSignerV3 {
+abstract contract VerifiableOfferV3 is DelegatedSignerV3 {
     using ECDSA for bytes32;
-
-    bytes32 public constant DOMAIN_TYPEHASH =
-        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-    bytes32 public constant OFFER_TYPEHASH =
-        keccak256("UnsignedOffer(address client,uint64 pricePerMinute,uint32 nonce,bytes32 specs,uint256 expiresAt)");
-
-    bytes32 public DOMAIN_SEPARATOR;
-
-    struct UnsignedOffer {
-        address client; //20
-        uint64 pricePerMinute; //8
-        uint32 nonce; //4
-        bytes32 specs; //32
-        uint256 expiresAt; //32
-    }
-
-    mapping(address => uint32) internal nonce;
 
     function getNonce(address client) external view returns (uint32) {
         return nonce[client];

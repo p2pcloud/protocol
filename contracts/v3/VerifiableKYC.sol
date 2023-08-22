@@ -3,16 +3,9 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "./Storage.sol";
 
-abstract contract VerifiableKYCV3 is OwnableUpgradeable {
-    address public KYCSigner;
-
-    // Mapping from address to ISO 3166-1 alpha-2 country code as bytes2
-    mapping(address => bytes2) public KYCStatus;
-    mapping(bytes2 => bool) public AllowedUserCountries;
-    mapping(bytes2 => bool) public AllowedProviderCountries;
-
+abstract contract VerifiableKYCV3 is  StorageV3 {
     using ECDSA for bytes32;
 
     function _validSignature(address _address, bytes2 country, bytes memory signature) private view returns (bool) {

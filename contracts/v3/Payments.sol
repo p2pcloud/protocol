@@ -5,16 +5,6 @@ pragma solidity ^0.8.17;
 import "./BalanceHolder.sol";
 
 abstract contract PaymentsV3 is BalanceHolderV3 {
-    uint256 public constant MONEY_LOCK_MINUTES = 60 * 24 * 7; // 7 days
-
-    struct UserProviderAccounting {
-        uint128 lastPaymentTs;
-        uint128 pricePerMinute;
-    }
-
-    mapping(address => mapping(address => UserProviderAccounting)) public userProviderAccounting;
-    mapping(address => uint256) internal _totalSpendingPerMinute;
-
     function getLockedBalance(address user) public view override returns (uint256) {
         return _totalSpendingPerMinute[user] * MONEY_LOCK_MINUTES;
     }
