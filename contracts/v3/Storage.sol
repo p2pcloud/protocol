@@ -118,4 +118,10 @@ abstract contract StorageV3 is OwnableUpgradeable {
 
     mapping(address => mapping(address => UserProviderAccounting)) public userProviderAccounting;
     mapping(address => uint256) internal _totalSpendingPerMinute;
+
+    // ----------------------
+    // Marketplace V2->V3 migration
+    // ----------------------
+    address public V2migrationSource;
+    mapping(address => bool) V2balanceMigrationComplete;
 }

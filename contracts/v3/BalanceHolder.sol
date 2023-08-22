@@ -4,7 +4,6 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./VerifiableKYC.sol";
-import "./Storage.sol";
 
 abstract contract BalanceHolderV3 is VerifiableKYCV3 {
     function depositCoin(uint256 numTokens) public virtual {

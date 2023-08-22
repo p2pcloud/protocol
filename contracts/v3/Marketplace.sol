@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.17;
 
-import "./BalanceHolder.sol";
 import "./Broker.sol";
 import "../v2/FiatMarketplace.sol";
 
@@ -18,7 +17,6 @@ contract MarketplaceV3 is BrokerV3 {
 
     //one-off migration logic
     //needed, because upgrade is not possible
-    address public V2migrationSource;
 
     function performMigration() public onlyOwner {
         require(V2migrationSource != address(0), "Migration source is not set or migration already performed");
@@ -50,8 +48,6 @@ contract MarketplaceV3 is BrokerV3 {
             nonce[msg.sender]++;
         }
     }
-
-    mapping(address => bool) V2balanceMigrationComplete;
 
     function migrateBalance(address addr) private {
         if (V2balanceMigrationComplete[addr]) {

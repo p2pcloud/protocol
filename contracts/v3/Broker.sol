@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.17;
 
-import "./BalanceHolder.sol";
 import "./ProviderRegistry.sol";
 import "./VerifiableOffer.sol";
 import "./Payments.sol";
