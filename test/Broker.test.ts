@@ -1,6 +1,6 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
-import { deployMarketplaceFixture } from './fixtures'
+import { deployMarketplaceV3Fixture } from './fixtures'
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
 import { US_HEX, UnsignedOffer, setUserCoinBalance, signKYC, signOffer } from "./lib";
@@ -8,7 +8,7 @@ import { US_HEX, UnsignedOffer, setUserCoinBalance, signKYC, signOffer } from ".
 describe("Broker", function () {
     describe("bookResource", function () {
         it("should create a new Booking", async function () {
-            const { marketplace, user, provider, providersSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, provider, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -36,7 +36,7 @@ describe("Broker", function () {
         })
 
         it("should increase locked balance", async function () {
-            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -57,7 +57,7 @@ describe("Broker", function () {
         })
 
         it("should execute claim payment", async function () {
-            const { marketplace, user, provider, providersSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, provider, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -89,7 +89,7 @@ describe("Broker", function () {
             expect(balance2).to.equal(offer.pricePerMinute * wholeMinutesPassed * payoutPercent);//pricePerMinute * wholeMinutesPassed
         })
         it("should fail if user tries to reuse the same offer", async function () {
-            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -107,7 +107,7 @@ describe("Broker", function () {
             await expect(marketplace.connect(user).bookResource(offer, signature)).to.be.revertedWith("Invalid offer nonce");
         })
         it("should fail if not enough balance to cover a new VM booking", async function () {
-            const fixture = await loadFixture(deployMarketplaceFixture);
+            const fixture = await loadFixture(deployMarketplaceV3Fixture);
             const { marketplace, user, providersSigner } = fixture
 
             //remove default balance and deposit some tokens
@@ -145,7 +145,7 @@ describe("Broker", function () {
             await expect(marketplace.connect(user).bookResource(offer, signature)).to.not.be.reverted;
         })
         it("should fail if provider is not registered", async function () {
-            const { marketplace, user, anotherUser } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, anotherUser } = await loadFixture(deployMarketplaceV3Fixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -164,7 +164,7 @@ describe("Broker", function () {
     })
     describe("cancelBooking", function () {
         it("should remove a booking and decrease locked balance", async function () {
-            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -191,13 +191,16 @@ describe("Broker", function () {
             //check deleted
             bookingFromChain = await marketplace.getBooking(0);
             expect(bookingFromChain.specs).to.equal(ethers.utils.formatBytes32String(""));
+            expect(bookingFromChain.pricePerMinute).to.equal(0);
+            expect(bookingFromChain.client).to.equal(ethers.constants.AddressZero);
+            expect(bookingFromChain.provider).to.equal(ethers.constants.AddressZero);
 
             //check locked balance
             const locked2 = await marketplace.connect(user).getLockedBalance(user.address)
             expect(locked2).to.equal(0);
         })
         it("should fail if booking is already cancelled", async function () {
-            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -216,7 +219,7 @@ describe("Broker", function () {
             await expect(marketplace.connect(user).cancelBooking(0, true)).to.be.revertedWith("Only client or provider can cancel the booking");
         })
         it("should create an event with reason = 0 or 1 depending on client's selection", async function () {
-            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             //book vm 0
             const offer: UnsignedOffer = {
@@ -243,7 +246,7 @@ describe("Broker", function () {
             await expect(tx2).to.emit(marketplace, "BookingCancelled").withArgs(1, await marketplace.CANCEL_REASON_NOT_NEEDED());
         })
         it("should create an event with reason = 2 if provider cancelled or reason = 3 if client defauled", async function () {
-            const fixture = await loadFixture(deployMarketplaceFixture);
+            const fixture = await loadFixture(deployMarketplaceV3Fixture);
             const { marketplace, user, provider, providersSigner } = fixture;
 
             //book vm 0
