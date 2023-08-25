@@ -110,7 +110,7 @@ export async function deployMarketplaceV2Fixture(): Promise<V2V3MigrationFixture
     //book vm 2
     const offer2: UnsignedOffer = {
         specs: ethers.utils.formatBytes32String("hello world"),
-        pricePerMinute: 2,
+        pricePerMinute: 3,
         client: user.address,
         expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
         nonce: await marketplace.getNonce(user.address),
@@ -121,7 +121,7 @@ export async function deployMarketplaceV2Fixture(): Promise<V2V3MigrationFixture
     //book vm 3
     const offer3: UnsignedOffer = {
         specs: ethers.utils.formatBytes32String("hello world"),
-        pricePerMinute: 3,
+        pricePerMinute: 2,
         client: user.address,
         expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
         nonce: await marketplace.getNonce(user.address),
@@ -134,13 +134,13 @@ export async function deployMarketplaceV2Fixture(): Promise<V2V3MigrationFixture
     await time.increase(3600);
     await marketplace.connect(provider).claimPayment(user.address)
 
-    await marketplace.connect(user).cancelBooking(2, true);
+    await marketplace.connect(user).cancelBooking(1, true);
 
-    const booking2 = await marketplace.getBooking(2);
-    expect(booking2.specs).to.equal(ethers.utils.formatBytes32String(""), "booking2 specs in fixture");
-    expect(booking2.pricePerMinute).to.equal(0, "booking2 pricePerMinute in fixture");
+    const booking1 = await marketplace.getBooking(1);
+    expect(booking1.specs).to.equal(ethers.utils.formatBytes32String(""), "booking1 specs in fixture");
+    expect(booking1.pricePerMinute).to.equal(0, "booking1 pricePerMinute in fixture");
 
-    // There is a bug that leaves the provider and client address in the booking
+    // There is a bug in V2 that leaves the provider and client address in the booking
     // expect(booking2.provider).to.equal(ethers.constants.AddressZero, "booking2 provider in fixture");
     // expect(booking2.client).to.equal(ethers.constants.AddressZero, "booking2 client in fixture");
 
@@ -185,15 +185,15 @@ describe("V2_V3_Migration", () => {
         expect(booking0.pricePerMinute).to.equal(1);
 
         const booking1 = await marketplaceV3.getBooking(1);
-        expect(booking1.provider).to.equal(provider.address);
-        expect(booking1.client).to.equal(user.address);
-        expect(booking1.specs).to.equal(ethers.utils.formatBytes32String("hello world"));
-        expect(booking1.pricePerMinute).to.equal(2);
+        expect(booking1.provider).to.equal(ethers.constants.AddressZero);
+        expect(booking1.client).to.equal(ethers.constants.AddressZero);
+        expect(booking1.specs).to.equal(ethers.utils.formatBytes32String(""));
+        expect(booking1.pricePerMinute).to.equal(0);
 
         const booking2 = await marketplaceV3.getBooking(2);
-        expect(booking2.specs).to.equal(ethers.utils.formatBytes32String(""));
-        expect(booking2.pricePerMinute).to.equal(0);
-        expect(booking2.provider).to.equal(ethers.constants.AddressZero);
-        expect(booking2.client).to.equal(ethers.constants.AddressZero);
+        expect(booking2.specs).to.equal(ethers.utils.formatBytes32String("hello world"));
+        expect(booking2.pricePerMinute).to.equal(2);
+        expect(booking2.provider).to.equal(provider.address);
+        expect(booking2.client).to.equal(user.address);
     })
 })
