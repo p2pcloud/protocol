@@ -1,11 +1,11 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { deployMarketplaceFixture } from './fixtures'
+import { deployMarketplaceV3Fixture } from './fixtures'
 
 describe("DelegatedSigner", function () {
     it("should set trusted address", async function () {
-        const { marketplace, user, anotherUser } = await loadFixture(deployMarketplaceFixture);
+        const { marketplace, user, anotherUser } = await loadFixture(deployMarketplaceV3Fixture);
         const signerAddress = "0x2352D20fC81225c8ECD8f6FaA1B37F24FEd450c9"
 
         await marketplace.connect(user).setSigner(signerAddress);
@@ -14,7 +14,7 @@ describe("DelegatedSigner", function () {
     });
 
     it("should not allow reusing signerAddress", async function () {
-        const { marketplace, user, anotherUser } = await loadFixture(deployMarketplaceFixture);
+        const { marketplace, user, anotherUser } = await loadFixture(deployMarketplaceV3Fixture);
         const trustedAddress = "0x2352D20fC81225c8ECD8f6FaA1B37F24FEd450c9"
 
         await marketplace.connect(user).setSigner(trustedAddress);
@@ -22,7 +22,7 @@ describe("DelegatedSigner", function () {
     });
 
     it("should allow changing signing key and back", async function () {
-        const { marketplace, user, anotherUser } = await loadFixture(deployMarketplaceFixture);
+        const { marketplace, user, anotherUser } = await loadFixture(deployMarketplaceV3Fixture);
         const signerAddress1 = "0x1111111111111111111111111111111111111111"
         const signerAddress2 = "0x2222222222222222222222222222222222222222"
 

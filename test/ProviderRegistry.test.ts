@@ -1,13 +1,13 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { deployMarketplaceFixture } from './fixtures'
+import { deployMarketplaceV3Fixture } from './fixtures'
 import { NZ_HEX, US_HEX, signKYC } from "./lib";
 
 describe("ProviderRegistry", function () {
     describe("getProviderUrl", function () {
         it("should set provider url", async function () {
-            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             const sig = await signKYC(anotherUser.address, US_HEX, kycSigner)
             await marketplace.connect(anotherUser).submitKYC(anotherUser.address, US_HEX, sig)
@@ -22,7 +22,7 @@ describe("ProviderRegistry", function () {
         });
 
         it("should not set provider url for non-registered provider", async function () {
-            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             const sig = await signKYC(anotherUser.address, US_HEX, kycSigner)
             await marketplace.connect(anotherUser).submitKYC(anotherUser.address, US_HEX, sig)
@@ -37,7 +37,7 @@ describe("ProviderRegistry", function () {
     })
     describe("getAllProviderURLs", function () {
         it("should return all provider urls", async function () {
-            const { marketplace, anotherUser, admin, provider, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, provider, kycSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             await marketplace.connect(anotherUser).submitKYC(
                 anotherUser.address, US_HEX,
@@ -69,7 +69,7 @@ describe("ProviderRegistry", function () {
                 .to.deep.equal(["", "another.example.com", "admin.com"]);
         });
         it("should ignore deleted providers", async function () {
-            const { marketplace, anotherUser, admin, provider, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, provider, kycSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
 
             await marketplace.connect(anotherUser).submitKYC(
@@ -115,7 +115,7 @@ describe("ProviderRegistry", function () {
 
     describe("isProviderRegistered", function () {
         it("should return true for registered and false by default", async function () {
-            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             const sig = await signKYC(anotherUser.address, US_HEX, kycSigner)
             await marketplace.connect(anotherUser).submitKYC(anotherUser.address, US_HEX, sig)
@@ -132,7 +132,7 @@ describe("ProviderRegistry", function () {
 
     describe("registerProvider", function () {
         it("should require KYC", async function () {
-            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             await expect(
                 marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
@@ -148,7 +148,7 @@ describe("ProviderRegistry", function () {
         })
 
         it("should enforce provider's country", async function () {
-            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceV3Fixture);
             await marketplace.connect(admin).allowUserCountry(NZ_HEX)
 
 
@@ -166,7 +166,7 @@ describe("ProviderRegistry", function () {
             await marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
         })
         it("should be called only by admin", async function () {
-            const { marketplace, provider, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, provider, anotherUser, admin, kycSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             await marketplace.connect(anotherUser).submitKYC(
                 anotherUser.address, US_HEX,
@@ -190,7 +190,7 @@ describe("ProviderRegistry", function () {
 
     describe("deleteProvider", function () {
         it("can be called by provdier", async () => {
-            const { marketplace, provider } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, provider } = await loadFixture(deployMarketplaceV3Fixture);
 
             let isRegistered
             isRegistered = await marketplace.isProviderRegistered(provider.address)
@@ -201,7 +201,7 @@ describe("ProviderRegistry", function () {
             expect(isRegistered).to.equal(false)
         })
         it("can be called by community", async () => {
-            const { marketplace, provider, admin, user } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, provider, admin, user } = await loadFixture(deployMarketplaceV3Fixture);
 
             await expect(marketplace.connect(user).deleteProvider(provider.address)).to.be.revertedWith("Provider or community only")
             let isRegistered

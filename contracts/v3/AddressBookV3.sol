@@ -18,6 +18,10 @@ abstract contract AddressBookV3 is StorageV3 {
         return newID;
     }
 
+    function __AddressBook_init() internal onlyInitializing {
+        nextID++;
+    }
+
     function idByAddressReadOnly(address _address) internal view returns (uint32) {
         return addressToID[_address];
     }

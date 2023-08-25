@@ -1,12 +1,12 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
-import { deployMarketplaceFixture } from './fixtures'
+import { deployMarketplaceV3Fixture } from './fixtures'
 import { NZ_HEX, signKYC } from "./lib";
 
 describe("BalanceHolder", function () {
     describe("depositCoin", function () {
         it("should incrase balance", async function () {
-            const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceV3Fixture);
 
             //remove default balance
             const [defaultBalance] = await marketplace.connect(user).getBalance(user.address)
@@ -23,12 +23,12 @@ describe("BalanceHolder", function () {
         });
 
         it("should revert if transfer fails", async function () {
-            const { marketplace, user } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, user } = await loadFixture(deployMarketplaceV3Fixture);
             await expect(marketplace.connect(user).depositCoin('123')).to.be.reverted
         });
 
         it("should require user's KYC", async function () {
-            const { marketplace, admin, token, anotherUser, kycSigner } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, admin, token, anotherUser, kycSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             await token.connect(admin).transfer(anotherUser.address, '123456')
             await token.connect(anotherUser).approve(marketplace.address, '123456')
@@ -49,7 +49,7 @@ describe("BalanceHolder", function () {
     })
     describe("WithdrawCoin", function () {
         it("should not withdraw locked balance", async function () {
-            const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceV3Fixture);
 
             //remove default balance
             const [defaultBalance] = await marketplace.connect(user).getBalance(user.address)
@@ -73,7 +73,7 @@ describe("BalanceHolder", function () {
         });
         it("should revert if transfer fails", async function () {
             //TODO: modify coin contract to make this test pass
-            const { marketplace, token, user } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, token, user } = await loadFixture(deployMarketplaceV3Fixture);
 
             const [userBalance1] = await marketplace.connect(user).getBalance(user.address)
 
@@ -87,7 +87,7 @@ describe("BalanceHolder", function () {
     })
     describe("getBalance", function () {
         it("should return locked and free balance", async function () {
-            const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceFixture);
+            const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceV3Fixture);
 
             //remove default balance
             const defaultBalance = await marketplace.connect(user).getFreeBalance(user.address)

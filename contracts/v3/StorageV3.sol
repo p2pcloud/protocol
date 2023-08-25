@@ -122,6 +122,6 @@ abstract contract StorageV3 is OwnableUpgradeable {
     // ----------------------
     // Marketplace V2->V3 migration
     // ----------------------
-    address public V2migrationSource;
+    bool public v2MigrationComplete;
     mapping(address => bool) V2balanceMigrationComplete;
 }

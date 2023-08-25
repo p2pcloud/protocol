@@ -1,5 +1,5 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
-import { deployMarketplaceFixture } from './fixtures'
+import { deployMarketplaceV3Fixture } from './fixtures'
 import { randomBytes } from 'crypto'
 import { UnsignedOffer, setUserCoinBalance, signOffer } from "./lib";
 import { ethers } from "ethers";
@@ -9,7 +9,7 @@ const GAS_TEST_RUNS = parseInt(process.env.GAS_TEST_RUNS || "100")
 if (process.env.REPORT_GAS === "true") {
     describe("Gas", function () {
         it("books many VMs", async function () {
-            const fixture = await loadFixture(deployMarketplaceFixture);
+            const fixture = await loadFixture(deployMarketplaceV3Fixture);
             const { marketplace, provider, user, providersSigner } = fixture;
 
             await setUserCoinBalance(fixture, '100000000000')
