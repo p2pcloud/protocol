@@ -261,7 +261,7 @@ describe("Broker", function () {
             await marketplace.connect(user).bookResource(offer, signature);
 
             //set user balance to have enough to book 2 vms
-            await setUserCoinBalance(fixture, offer.pricePerMinute * await marketplace.MONEY_LOCK_MINUTES() * 2);
+            await setUserCoinBalance(fixture, offer.pricePerMinute * (await marketplace.MONEY_LOCK_MINUTES()).toNumber() * 2);
 
             //book vm 1
             offer.nonce++
@@ -273,7 +273,7 @@ describe("Broker", function () {
             await expect(tx).to.emit(marketplace, "BookingCancelled").withArgs(0, await marketplace.CANCEL_REASON_PROVIDER());
 
             //skip 10 weeks
-            await time.increase(60 * await marketplace.MONEY_LOCK_MINUTES() * 2);
+            await time.increase(60 * (await marketplace.MONEY_LOCK_MINUTES()).toNumber() * 2);
 
             //delete CANCEL_REASON_NON_PAYMENT
             const tx2 = await marketplace.connect(user).cancelBooking(1, false);//doesn't matter what client selects

@@ -1,14 +1,12 @@
 import { ethers, upgrades } from "hardhat";
 import { FiatMarketplaceV2, MarketplaceV2, MarketplaceV3 } from "../typechain-types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { BigNumber, BigNumberish } from "ethers";
 import { expect } from "chai";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { MarketplaceFixture } from "./fixtures";
+import { balanceHolderSol } from "../typechain-types/contracts/v2";
 
 const HARDHAT_NETWORK_ID = 31337;
 
-const DEFAULT_USER_BALANCE = 100000
 type UnsignedOffer = {
     specs: string;
     pricePerMinute: number;
@@ -81,6 +79,8 @@ type V2V3MigrationFixture = {
 }
 
 export async function deployMarketplaceV2Fixture(): Promise<V2V3MigrationFixture> {
+    const DEFAULT_USER_BALANCE = 100000000000
+
     const [admin, provider, user, anotherUser, providersSigner, voucherSigner] = await ethers.getSigners();
 
     const Marketplace = await ethers.getContractFactory("FiatMarketplaceV2");
@@ -110,7 +110,7 @@ export async function deployMarketplaceV2Fixture(): Promise<V2V3MigrationFixture
     //book vm 2
     const offer2: UnsignedOffer = {
         specs: ethers.utils.formatBytes32String("hello world"),
-        pricePerMinute: 3,
+        pricePerMinute: 2,
         client: user.address,
         expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
         nonce: await marketplace.getNonce(user.address),
@@ -121,7 +121,7 @@ export async function deployMarketplaceV2Fixture(): Promise<V2V3MigrationFixture
     //book vm 3
     const offer3: UnsignedOffer = {
         specs: ethers.utils.formatBytes32String("hello world"),
-        pricePerMinute: 2,
+        pricePerMinute: 3,
         client: user.address,
         expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
         nonce: await marketplace.getNonce(user.address),
@@ -132,31 +132,32 @@ export async function deployMarketplaceV2Fixture(): Promise<V2V3MigrationFixture
     //wait for 1 hour
     await time.latest();
     await time.increase(3600);
-    await marketplace.connect(provider).claimPayment(user.address)
+    // await marketplace.connect(provider).claimPayment(user.address)
 
     await marketplace.connect(user).cancelBooking(1, true);
 
-    const booking1 = await marketplace.getBooking(1);
-    expect(booking1.specs).to.equal(ethers.utils.formatBytes32String(""), "booking1 specs in fixture");
-    expect(booking1.pricePerMinute).to.equal(0, "booking1 pricePerMinute in fixture");
-
-    // There is a bug in V2 that leaves the provider and client address in the booking
-    // expect(booking2.provider).to.equal(ethers.constants.AddressZero, "booking2 provider in fixture");
-    // expect(booking2.client).to.equal(ethers.constants.AddressZero, "booking2 client in fixture");
-
     //remember balances
-    const userbalance1 = await marketplace.getBalance(user.address);
-    expect(userbalance1.free).to.equal('69400');
-    expect(userbalance1.locked).to.equal('30240');
-
+    const PAYMENT = (3 + 1 + 2) * 60
     const providerBalance1 = await marketplace.getBalance(provider.address);
-    expect(providerBalance1.free).to.equal('288');
+    expect(providerBalance1.free).to.equal(PAYMENT * 0.8, "provider balance in fixture");
     expect(providerBalance1.locked).to.equal('0');
+
+    const userbalance1 = await marketplace.getBalance(user.address);
+    const locked = (1 + 3) * 60 * 24 * 7
+    expect(userbalance1.locked).to.equal(locked);
+    expect(userbalance1.free).to.equal(DEFAULT_USER_BALANCE - PAYMENT - locked);
 
     const MarketplaceV3 = await ethers.getContractFactory("MarketplaceV3");
     const marketplaceV3 = await upgrades.deployProxy(MarketplaceV3, ["0x0000000000000000000000000000000000000000"]) as MarketplaceV3;
 
     await marketplaceV3.connect(admin).performMigration(marketplace.address);
+
+    const booking1 = await marketplace.getBooking(1);
+    expect(booking1.specs).to.equal(ethers.utils.formatBytes32String(""), "booking1 specs in fixture");
+    expect(booking1.pricePerMinute).to.equal(0, "booking1 pricePerMinute in fixture");
+    // There is a bug in V2 that leaves the provider and client address in the booking
+    // expect(booking2.provider).to.equal(ethers.constants.AddressZero, "booking2 provider in fixture");
+    // expect(booking2.client).to.equal(ethers.constants.AddressZero, "booking2 client in fixture");
 
     return { marketplace, provider, user, admin, anotherUser, providersSigner, voucherSigner, marketplaceV3 };
 }
@@ -168,8 +169,8 @@ describe("V2_V3_Migration", () => {
 
         //check balances staid the same
         const userbalance1 = await marketplace.getBalance(user.address);
-        expect(userbalance1.free).to.equal('69400');
-        expect(userbalance1.locked).to.equal('30240');
+        expect(userbalance1.free).to.equal('99999959320');
+        expect(userbalance1.locked).to.equal('40320');
 
         const providerBalance1 = await marketplace.getBalance(provider.address);
         expect(providerBalance1.free).to.equal('288');
@@ -192,8 +193,29 @@ describe("V2_V3_Migration", () => {
 
         const booking2 = await marketplaceV3.getBooking(2);
         expect(booking2.specs).to.equal(ethers.utils.formatBytes32String("hello world"));
-        expect(booking2.pricePerMinute).to.equal(2);
+        expect(booking2.pricePerMinute).to.equal(3);
         expect(booking2.provider).to.equal(provider.address);
         expect(booking2.client).to.equal(user.address);
+    })
+    it('should allow to continue bookings', async () => {
+        const { provider, user, marketplaceV3, providersSigner } = await deployMarketplaceV2Fixture();
+
+        await marketplaceV3.connect(provider).setSigner(providersSigner.address)
+
+        const newOffer: UnsignedOffer = {
+            specs: ethers.utils.formatBytes32String("hello world"),
+            pricePerMinute: 4,
+            client: user.address,
+            expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+            nonce: await marketplaceV3.getNonce(user.address),
+        };
+        const newSignature = await signOffer(providersSigner, newOffer, marketplaceV3.address);
+        await marketplaceV3.connect(user).bookResource(newOffer, newSignature);
+
+        const booking3 = await marketplaceV3.getBooking(3);
+        expect(booking3.specs).to.equal(ethers.utils.formatBytes32String("hello world"));
+        expect(booking3.pricePerMinute).to.equal(4);
+        expect(booking3.provider).to.equal(provider.address);
+        expect(booking3.client).to.equal(user.address);
     })
 })

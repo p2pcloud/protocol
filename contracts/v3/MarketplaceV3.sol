@@ -22,11 +22,11 @@ contract MarketplaceV3 is BrokerV3 {
         require(v2MigrationComplete == false, "MGRTN_COMPLETE");
         v2MigrationComplete = true;
 
-        uint32 totalBookings = MarketplaceV2(V2migrationSource).bookingCount();
+        uint32 totalBookings = V2migrationSource.bookingCount();
         bookingCount = totalBookings;
 
         for (uint32 i = 0; i < totalBookings; i++) {
-            MarketplaceV2.BookingFull memory oldBooking = MarketplaceV2(V2migrationSource).getBooking(i);
+            MarketplaceV2.BookingFull memory oldBooking = V2migrationSource.getBooking(i);
 
             if (oldBooking.pricePerMinute == 0) {
                 continue;
@@ -45,18 +45,21 @@ contract MarketplaceV3 is BrokerV3 {
 
             emit BookingCreated(i, oldBooking.pricePerMinute, oldBooking.client, oldBooking.provider);
 
-            migrateBalance(oldBooking.client, V2migrationSource);
-            migrateBalance(oldBooking.provider, V2migrationSource);
+            migrateUser(oldBooking.client, V2migrationSource);
+            migrateUser(oldBooking.provider, V2migrationSource);
 
             nonce[oldBooking.client]++;
         }
     }
 
-    function migrateBalance(address addr, MarketplaceV2 V2migrationSource) private {
+    function migrateUser(address addr, MarketplaceV2 V2migrationSource) private {
         if (V2balanceMigrationComplete[addr]) {
             return;
         }
         V2balanceMigrationComplete[addr] = true;
         _coinBalance[addr] = V2migrationSource.getTotalBalance(addr);
+        if (V2migrationSource.isProviderRegistered(addr)) {
+            _addProviderToDB(addr);
+        }
     }
 }

@@ -25,6 +25,10 @@ abstract contract ProviderRegistryV3 is VerifiableKYCV3 {
 
     function registerProviderByCommunity(address _provider) public virtual onlyOwner {
         require(checkProviderKYC(_provider), "No KYC or country is not allowed");
+        _addProviderToDB(_provider);
+    }
+
+    function _addProviderToDB(address _provider) internal {
         providerInfo[_provider].isRegistered = true;
         providerList.push(_provider);
     }
