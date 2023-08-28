@@ -6,7 +6,7 @@ import { NZ_HEX, signKYC } from "./lib";
 describe("BalanceHolder", function () {
     describe("depositCoin", function () {
         it("should incrase balance", async function () {
-            const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceV3Fixture);
+            const { marketplace, stablecoin, user, admin } = await loadFixture(deployMarketplaceV3Fixture);
 
             //remove default balance
             const [defaultBalance] = await marketplace.connect(user).getBalance(user.address)
@@ -15,7 +15,7 @@ describe("BalanceHolder", function () {
             const [userBalance1] = await marketplace.connect(user).getBalance(user.address)
             expect(userBalance1.toString()).is.equal('0')
 
-            await token.connect(user).approve(marketplace.address, '123456')
+            await stablecoin.connect(user).approve(marketplace.address, '123456')
             await marketplace.connect(user).depositCoin('123')
 
             const [userBalance2] = await marketplace.connect(user).getBalance(user.address)
@@ -28,10 +28,10 @@ describe("BalanceHolder", function () {
         });
 
         it("should require user's KYC", async function () {
-            const { marketplace, admin, token, anotherUser, kycSigner } = await loadFixture(deployMarketplaceV3Fixture);
+            const { marketplace, admin, stablecoin, anotherUser, kycSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
-            await token.connect(admin).transfer(anotherUser.address, '123456')
-            await token.connect(anotherUser).approve(marketplace.address, '123456')
+            await stablecoin.connect(admin).transfer(anotherUser.address, '123456')
+            await stablecoin.connect(anotherUser).approve(marketplace.address, '123456')
 
             await expect(marketplace.connect(anotherUser).depositCoin('123456')).to.be.revertedWith('No KYC or country is not allowed')
 
@@ -49,14 +49,14 @@ describe("BalanceHolder", function () {
     })
     describe("WithdrawCoin", function () {
         it("should not withdraw locked balance", async function () {
-            const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceV3Fixture);
+            const { marketplace, stablecoin, user, admin } = await loadFixture(deployMarketplaceV3Fixture);
 
             //remove default balance
             const [defaultBalance] = await marketplace.connect(user).getBalance(user.address)
             await marketplace.connect(user).withdrawCoin(defaultBalance)
 
             //deposit 123456 tokens
-            await token.connect(user).approve(marketplace.address, '123456')
+            await stablecoin.connect(user).approve(marketplace.address, '123456')
             await marketplace.connect(user).depositCoin('123456')
 
             //lock 1 * 60 * 24 * 7 tokens
@@ -73,11 +73,11 @@ describe("BalanceHolder", function () {
         });
         it("should revert if transfer fails", async function () {
             //TODO: modify coin contract to make this test pass
-            const { marketplace, token, user } = await loadFixture(deployMarketplaceV3Fixture);
+            const { marketplace, stablecoin, user } = await loadFixture(deployMarketplaceV3Fixture);
 
             const [userBalance1] = await marketplace.connect(user).getBalance(user.address)
 
-            await token.transferShouldFail(true)
+            await stablecoin.transferShouldFail(true)
             await expect(marketplace.connect(user).withdrawCoin(1)).to.be.reverted
 
             const [userBalance2] = await marketplace.connect(user).getBalance(user.address)
@@ -87,14 +87,14 @@ describe("BalanceHolder", function () {
     })
     describe("getBalance", function () {
         it("should return locked and free balance", async function () {
-            const { marketplace, token, user, admin } = await loadFixture(deployMarketplaceV3Fixture);
+            const { marketplace, stablecoin, user, admin } = await loadFixture(deployMarketplaceV3Fixture);
 
             //remove default balance
             const defaultBalance = await marketplace.connect(user).getFreeBalance(user.address)
             await marketplace.connect(user).withdrawCoin(defaultBalance)
 
             //deposit 123 tokens
-            await token.connect(user).approve(marketplace.address, '123456')
+            await stablecoin.connect(user).approve(marketplace.address, '123456')
             await marketplace.connect(user).depositCoin('123456')
 
             //lock 1 * 60 * 24 * 7 tokens

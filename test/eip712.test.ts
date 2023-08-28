@@ -3,7 +3,7 @@ import { ethers, upgrades } from "hardhat";
 import { signOffer } from "./lib";
 import { expect } from "chai";
 
-describe("EIP712", () => {
+describe("EIP712 for offers", () => {
     it("should sign an offer", async () => {
         //not really a test, just a way to track changes in the signature
         const privateKey = "0x4db495c188a75e74f70235e318b458d4e5fc16090d1f9583c226e5365508a724"

@@ -71,15 +71,15 @@ export async function signVoucher(
 }
 
 export async function setUserCoinBalance(fixture: MarketplaceFixture, amt: BigNumberish) {
-    const { marketplace, token, user, admin } = fixture;
+    const { marketplace, stablecoin, user, admin } = fixture;
 
     const total = await marketplace.connect(user).getTotalBalance(user.address)
 
     const diff = BigNumber.from(amt).sub(total)
 
     if (diff.gt(0)) {
-        await token.connect(admin).transfer(user.address, diff)
-        await token.connect(user).approve(marketplace.address, diff)
+        await stablecoin.connect(admin).transfer(user.address, diff)
+        await stablecoin.connect(user).approve(marketplace.address, diff)
         await marketplace.connect(user).depositCoin(diff)
     } else {
         await marketplace.connect(user).withdrawCoin(diff.mul(-1))
@@ -105,4 +105,7 @@ export async function signKYC(userAddress: string, countryHex: string, wallet: S
     const signature = await wallet.signMessage(ethers.utils.arrayify(messageHash));
 
     return signature;
+}
+export function randomBytes12() {
+    return ethers.utils.hexlify(ethers.utils.randomBytes(12))
 }
