@@ -8,14 +8,17 @@ import "./StorageV3.sol";
 abstract contract VerifiableKYCV3 is StorageV3 {
     using ECDSA for bytes32;
 
-    function _validSignature(address _address, bytes2 country, bytes memory signature) private view returns (bool) {
+    function _validateSignature(address _address, bytes2 country, bytes memory signature) private view {
         bytes32 data = keccak256(abi.encodePacked(_address, country));
-        return data.toEthSignedMessageHash().recover(signature) == KYCSigner;
+        address actualSigner = data.toEthSignedMessageHash().recover(signature);
+        if (actualSigner != KYCSigner) {
+            revert InvalidKYCSigner(KYCSigner, actualSigner);
+        }
     }
 
     // Submit KYC
     function submitKYC(address _address, bytes2 country, bytes memory signature) public {
-        require(_validSignature(_address, country, signature), "Invalid signature");
+        _validateSignature(_address, country, signature);
         KYCStatus[_address] = country;
     }
 
@@ -40,12 +43,16 @@ abstract contract VerifiableKYCV3 is StorageV3 {
         AllowedProviderCountries[country] = false;
     }
 
-    function checkUserKYC(address _address) public view returns (bool) {
-        return (AllowedUserCountries[KYCStatus[_address]]);
+    function checkUserKYC(address _address) public view {
+        if (!(AllowedUserCountries[KYCStatus[_address]])) {
+            revert KYCProblem(_address, KYCStatus[_address]);
+        }
     }
 
-    function checkProviderKYC(address _address) public view returns (bool) {
-        return (AllowedProviderCountries[KYCStatus[_address]]);
+    function checkProviderKYC(address _address) public view {
+        if (!(AllowedProviderCountries[KYCStatus[_address]])) {
+            revert KYCProblem(_address, KYCStatus[_address]);
+        }
     }
 
     function setKYCSigner(address _KYCSigner) public onlyOwner {

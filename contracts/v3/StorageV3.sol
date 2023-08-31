@@ -5,6 +5,17 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+error ProviderIsNotRegistered();
+error KYCProblem(address addr, bytes2 country);
+error OfferExpired(uint256 expiresAt, uint256 now);
+error OfferUserInvalid(address expected, address actual);
+error OfferWrongNonce(uint32 currentNonce, uint32 offerNonce);
+error ERC20TransferFailed();
+error InsufficientBalance(uint256 requested, uint256 available);
+error InvalidKYCSigner(address expected, address actual);
+error NotAuthorized();
+error MigrationComplete(uint8);
+
 abstract contract StorageV3 is OwnableUpgradeable {
     // ----------------------
     // addressBook

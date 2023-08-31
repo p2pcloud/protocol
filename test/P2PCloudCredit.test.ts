@@ -61,7 +61,8 @@ describe("P2PCloudCredit", () => {
         it("should not mint coins if not authorized minter", async () => {
             const { user, creditToken, anotherUser } = await loadFixture(deployFiatMarketplaceV3Fixture);
 
-            await expect(creditToken.connect(user).idemopotentMint(anotherUser.address, 100, randomBytes12())).to.be.revertedWith("P2PCloudCredit: Not authorized minter")
+            await expect(creditToken.connect(user).idemopotentMint(anotherUser.address, 100, randomBytes12()))
+                .to.be.revertedWithCustomError(creditToken, "NotAuthorized")
         })
         it("should not mint coins if already minted", async () => {
             const { creditToken, anotherUser, trustedMinter } = await loadFixture(deployFiatMarketplaceV3Fixture);
@@ -69,7 +70,8 @@ describe("P2PCloudCredit", () => {
             const mintId = randomBytes12()
             await creditToken.connect(trustedMinter).idemopotentMint(anotherUser.address, 100, mintId)
 
-            await expect(creditToken.connect(trustedMinter).idemopotentMint(anotherUser.address, 100, mintId)).to.be.revertedWith("P2PCloudCredit: Already minted")
+            await expect(creditToken.connect(trustedMinter).idemopotentMint(anotherUser.address, 100, mintId))
+                .to.be.revertedWithCustomError(creditToken, "AlreadyMinted")
         })
         it("should transfer value to recipient", async () => {
             const { creditToken, anotherUser, trustedMinter } = await loadFixture(deployFiatMarketplaceV3Fixture);

@@ -8,6 +8,11 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
+error NotAuthorized();
+error EmptyMintId();
+error AlreadyMinted();
+error EmptyInput();
+
 /// @custom:security-contact security@p2pcloud.io
 abstract contract BaseERC20 is Initializable, ERC20BurnableUpgradeable, PausableUpgradeable, OwnableUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -16,7 +21,7 @@ abstract contract BaseERC20 is Initializable, ERC20BurnableUpgradeable, Pausable
     }
 
     function __BaseERC20_init() internal {
-        __ERC20_init("P2PCloud Credit", "PPC");
+        __ERC20_init("P2PCloud Credit", "P2PC");
         __ERC20Burnable_init();
         __Pausable_init();
         __Ownable_init();
@@ -48,20 +53,32 @@ contract P2PCloudCredit is BaseERC20 {
     mapping(bytes12 => bool) public mintedIds;
 
     function setAllowedRecipient(address _allowedRecipient) public onlyOwner {
-        require(_allowedRecipient != address(0), "Invalid allowedRecipient address");
+        if (_allowedRecipient == address(0)) {
+            revert EmptyInput();
+        }
         allowedRecipient = _allowedRecipient;
     }
 
     function setTrustedMinter(address _trustedMinter) public onlyOwner {
-        require(_trustedMinter != address(0), "Invalid trustedMinter address");
+        if (_trustedMinter == address(0)) {
+            revert EmptyInput();
+        }
         trustedMinter = _trustedMinter;
     }
 
     //mint with idempotency
     function idemopotentMint(address payable to, uint256 amount, bytes12 mintId) public payable {
-        require(msg.sender == trustedMinter, "P2PCloudCredit: Not authorized minter");
-        require(mintId != 0, "Mint id cannot be zero");
-        require(!mintedIds[mintId], "P2PCloudCredit: Already minted");
+        // require(msg.sender == trustedMinter, "P2PCloudCredit: Not authorized minter");
+        if (msg.sender != trustedMinter) {
+            revert NotAuthorized();
+        }
+        if (mintId == 0) {
+            revert EmptyMintId();
+        }
+        if (mintedIds[mintId]) {
+            revert AlreadyMinted();
+        }
+
         mintedIds[mintId] = true;
         _mint(to, amount);
 

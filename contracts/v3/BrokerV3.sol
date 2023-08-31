@@ -10,7 +10,9 @@ import "./AddressBookV3.sol";
 abstract contract BrokerV3 is VerifiableOfferV3, ProviderRegistryV3, PaymentsV3, AddressBookV3 {
     function bookResource(UnsignedOffer calldata offer, bytes calldata signature) external {
         address provider = _getOfferProvider(offer, signature);
-        require(isProviderRegistered(provider), "Provider is not registered");
+        if (!isProviderRegistered(provider)) {
+            revert ProviderIsNotRegistered();
+        }
         _executeClaimPayment(provider, offer.client);
 
         uint32 providerId = idByAddress(provider);
@@ -24,10 +26,9 @@ abstract contract BrokerV3 is VerifiableOfferV3, ProviderRegistryV3, PaymentsV3,
             startTime: uint32(block.timestamp)
         });
 
-        require(
-            getFreeBalance(msg.sender) >= offer.pricePerMinute * MONEY_LOCK_MINUTES,
-            "Not enough balance to add a new the booking"
-        );
+        if (getFreeBalance(msg.sender) < offer.pricePerMinute * MONEY_LOCK_MINUTES) {
+            revert InsufficientBalance(offer.pricePerMinute * MONEY_LOCK_MINUTES, getFreeBalance(msg.sender));
+        }
 
         userProviderAccounting[provider][msg.sender].pricePerMinute += offer.pricePerMinute;
         _totalSpendingPerMinute[msg.sender] += offer.pricePerMinute;

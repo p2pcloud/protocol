@@ -28,7 +28,9 @@ describe("ProviderRegistry", function () {
             await marketplace.connect(anotherUser).submitKYC(anotherUser.address, US_HEX, sig)
 
             const urlBytes = ethers.utils.formatBytes32String("woop.woop/woop");
-            expect(marketplace.connect(anotherUser).setProviderUrl(urlBytes)).to.be.revertedWith("Provider must be registered to set url")
+            expect(marketplace.connect(anotherUser).setProviderUrl(urlBytes))
+                .to.be.revertedWithCustomError(marketplace, "ProviderIsNotRegistered")
+
 
             await marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
 
@@ -136,7 +138,8 @@ describe("ProviderRegistry", function () {
 
             await expect(
                 marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
-            ).to.be.rejectedWith("No KYC or country is not allowed")
+            ).to.be.revertedWithCustomError(marketplace, "KYCProblem")
+                .withArgs(anotherUser.address, "0x0000")
 
             await marketplace.connect(anotherUser).submitKYC(
                 anotherUser.address, US_HEX,
@@ -159,7 +162,8 @@ describe("ProviderRegistry", function () {
 
             await expect(
                 marketplace.connect(admin).registerProviderByCommunity(anotherUser.address)
-            ).to.be.rejectedWith("No KYC or country is not allowed")
+            ).to.be.revertedWithCustomError(marketplace, "KYCProblem")
+                .withArgs(anotherUser.address, NZ_HEX)
 
             await marketplace.connect(admin).allowProviderCountry(NZ_HEX)
 
@@ -203,7 +207,8 @@ describe("ProviderRegistry", function () {
         it("can be called by community", async () => {
             const { marketplace, provider, admin, user } = await loadFixture(deployMarketplaceV3Fixture);
 
-            await expect(marketplace.connect(user).deleteProvider(provider.address)).to.be.revertedWith("Provider or community only")
+            await expect(marketplace.connect(user).deleteProvider(provider.address))
+                .to.be.revertedWithCustomError(marketplace, "NotAuthorized")
             let isRegistered
             isRegistered = await marketplace.isProviderRegistered(provider.address)
             expect(isRegistered).to.equal(true)

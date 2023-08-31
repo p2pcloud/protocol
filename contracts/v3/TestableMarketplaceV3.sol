@@ -41,3 +41,9 @@ contract TestableMarketplaceV3 is MarketplaceV3 {
         return resolveSigner(recoveredSigner);
     }
 }
+
+contract TestableMarketplaceV3Upgraded is TestableMarketplaceV3 {
+    function hello() public pure returns (uint256) {
+        return 123;
+    }
+}

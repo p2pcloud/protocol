@@ -6,7 +6,9 @@ import "./VerifiableKYCV3.sol";
 
 abstract contract ProviderRegistryV3 is VerifiableKYCV3 {
     function setProviderUrl(bytes32 url) public {
-        require(providerInfo[msg.sender].isRegistered, "Provider must be registered to set url");
+        if (!isProviderRegistered(msg.sender)) {
+            revert ProviderIsNotRegistered();
+        }
         providerInfo[msg.sender].url = url;
     }
 
@@ -24,7 +26,7 @@ abstract contract ProviderRegistryV3 is VerifiableKYCV3 {
     // }
 
     function registerProviderByCommunity(address _provider) public virtual onlyOwner {
-        require(checkProviderKYC(_provider), "No KYC or country is not allowed");
+        checkProviderKYC(_provider);
         _addProviderToDB(_provider);
     }
 
@@ -69,7 +71,9 @@ abstract contract ProviderRegistryV3 is VerifiableKYCV3 {
     }
 
     function deleteProvider(address _user) public {
-        require(_user == msg.sender || owner() == msg.sender, "Provider or community only");
+        if (_user != msg.sender && owner() != msg.sender) {
+            revert NotAuthorized();
+        }
         providerInfo[_user].isRegistered = false;
     }
 }

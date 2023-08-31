@@ -24,9 +24,15 @@ abstract contract VerifiableOfferV3 is DelegatedSignerV3 {
     }
 
     function _getOfferProvider(UnsignedOffer calldata offer, bytes calldata signature) internal view returns (address) {
-        require(offer.expiresAt > block.timestamp, "Offer expired");
-        require(offer.client == msg.sender, "Invalid offer client");
-        require(offer.nonce == nonce[offer.client], "Invalid offer nonce");
+        if (offer.expiresAt < block.timestamp) {
+            revert OfferExpired(offer.expiresAt, block.timestamp);
+        }
+        if (offer.client != msg.sender) {
+            revert OfferUserInvalid(offer.client, msg.sender);
+        }
+        if (offer.nonce != nonce[offer.client]) {
+            revert OfferWrongNonce(nonce[offer.client], offer.nonce);
+        }
 
         bytes32 digest = keccak256(
             abi.encodePacked(

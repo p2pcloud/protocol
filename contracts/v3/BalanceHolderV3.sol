@@ -7,17 +7,23 @@ import "./VerifiableKYCV3.sol";
 
 abstract contract BalanceHolderV3 is VerifiableKYCV3 {
     function depositCoin(uint256 numTokens) public virtual {
-        require(checkUserKYC(msg.sender), "No KYC or country is not allowed");
-        require(coin.transferFrom(msg.sender, address(this), numTokens), "Failed to transfer tokens");
+        checkUserKYC(msg.sender);
+        if (!coin.transferFrom(msg.sender, address(this), numTokens)) {
+            revert ERC20TransferFailed();
+        }
 
         _coinBalance[msg.sender] = _coinBalance[msg.sender] + numTokens;
     }
 
     function withdrawCoin(uint256 amt) public virtual {
-        require(checkUserKYC(msg.sender), "No KYC or country is not allowed");
-        require(getFreeBalance(msg.sender) >= amt, "Not enough balance to withdraw");
+        checkUserKYC(msg.sender);
+        if (getFreeBalance(msg.sender) < amt) {
+            revert InsufficientBalance(amt, getFreeBalance(msg.sender));
+        }
         _coinBalance[msg.sender] -= amt;
-        require(coin.transfer(msg.sender, amt), "ERC20 transfer failed");
+        if (!coin.transfer(msg.sender, amt)) {
+            revert ERC20TransferFailed();
+        }
     }
 
     function _spendWithComission(address spender, address receiver, uint256 amt) internal returns (bool defaulted) {

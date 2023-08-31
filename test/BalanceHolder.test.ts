@@ -33,14 +33,18 @@ describe("BalanceHolder", function () {
             await stablecoin.connect(admin).transfer(anotherUser.address, '123456')
             await stablecoin.connect(anotherUser).approve(marketplace.address, '123456')
 
-            await expect(marketplace.connect(anotherUser).depositCoin('123456')).to.be.revertedWith('No KYC or country is not allowed')
+            await expect(marketplace.connect(anotherUser).depositCoin('123456'))
+                .to.be.revertedWithCustomError(marketplace, "KYCProblem")
+                .withArgs(anotherUser.address, "0x0000")
 
             await marketplace.connect(anotherUser).submitKYC(
                 anotherUser.address, NZ_HEX,
                 await signKYC(anotherUser.address, NZ_HEX, kycSigner)
             )
 
-            await expect(marketplace.connect(anotherUser).depositCoin('123456')).to.be.revertedWith('No KYC or country is not allowed')
+            await expect(marketplace.connect(anotherUser).depositCoin('123456'))
+                .to.be.revertedWithCustomError(marketplace, "KYCProblem")
+                .withArgs(anotherUser.address, NZ_HEX)
 
             await marketplace.connect(admin).allowUserCountry(NZ_HEX)
 
@@ -66,7 +70,9 @@ describe("BalanceHolder", function () {
             expect(free1.toString()).is.equal(String(123456 - 10080))
 
             //fail to withdraw free+1
-            await expect(marketplace.connect(user).withdrawCoin(123456 - 10080 + 1)).to.be.reverted
+            await expect(marketplace.connect(user).withdrawCoin(123456 - 10080 + 1))
+                .to.be.revertedWithCustomError(marketplace, "InsufficientBalance")
+                .withArgs(123456 - 10080 + 1, 123456 - 10080)
 
             //withdraw excatly free
             await marketplace.connect(user).withdrawCoin(123456 - 10080)

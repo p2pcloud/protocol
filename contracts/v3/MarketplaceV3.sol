@@ -18,8 +18,13 @@ contract MarketplaceV3 is BrokerV3 {
     //needed, because upgrade is not possible
 
     function performMigration(MarketplaceV2 V2migrationSource) public onlyOwner {
-        require(bookingCount == 0, "MGRTN_BOOK_EX");
-        require(v2MigrationComplete == false, "MGRTN_COMPLETE");
+        if (bookingCount != 0) {
+            revert MigrationComplete(0);
+        }
+        if (v2MigrationComplete != false) {
+            revert MigrationComplete(1);
+        }
+
         v2MigrationComplete = true;
 
         uint32 totalBookings = V2migrationSource.bookingCount();

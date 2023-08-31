@@ -4,6 +4,7 @@ import { deployMarketplaceV3Fixture } from './fixtures'
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
 import { US_HEX, UnsignedOffer, setUserCoinBalance, signKYC, signOffer } from "./lib";
+import { MockERC20V3, P2PCloudCredit, } from "../typechain-types";
 
 describe("Broker", function () {
     describe("bookResource", function () {
@@ -104,7 +105,11 @@ describe("Broker", function () {
 
             const signature = await signOffer(providersSigner, offer, marketplace.address);
             await expect(marketplace.connect(user).bookResource(offer, signature)).to.not.be.reverted;
-            await expect(marketplace.connect(user).bookResource(offer, signature)).to.be.revertedWith("Invalid offer nonce");
+            await expect(marketplace.connect(user).bookResource(offer, signature))
+                .to.be.revertedWithCustomError(marketplace, "OfferWrongNonce")
+                .withArgs(offer.nonce + 1, offer.nonce);
+            //TODO: test test invalid user
+            //TODO: test expired offer
         })
         it("should fail if not enough balance to cover a new VM booking", async function () {
             const fixture = await loadFixture(deployMarketplaceV3Fixture);
@@ -130,16 +135,19 @@ describe("Broker", function () {
             const moneyToBePaid = offer.pricePerMinute * wholeMinutesPassed;
             const lockedBalance = await marketplace.connect(user).getLockedBalance(user.address)
 
+            const sevenDaysCost = offer.pricePerMinute * 60 * 24 * 7
             const minBalanceToBook = lockedBalance
                 .add(moneyToBePaid)
-                .add(offer.pricePerMinute * 60 * 24 * 7);
+                .add(sevenDaysCost);
 
             //prepeare a new offer
             offer.nonce++
             signature = await signOffer(providersSigner, offer, marketplace.address);
 
             await setUserCoinBalance(fixture, minBalanceToBook.sub(1));
-            await expect(marketplace.connect(user).bookResource(offer, signature)).to.be.revertedWith("Not enough balance to add a new the booking");
+            await expect(marketplace.connect(user).bookResource(offer, signature))
+                .to.be.revertedWithCustomError(marketplace, "InsufficientBalance")
+                .withArgs(sevenDaysCost, sevenDaysCost - 1);
 
             await setUserCoinBalance(fixture, minBalanceToBook);
             await expect(marketplace.connect(user).bookResource(offer, signature)).to.not.be.reverted;
@@ -159,7 +167,9 @@ describe("Broker", function () {
             expect(locked1).to.equal(0);
 
             const signature = await signOffer(anotherUser, offer, marketplace.address);
-            await expect(marketplace.connect(user).bookResource(offer, signature)).to.be.revertedWith("Provider is not registered");
+            await expect(marketplace.connect(user).bookResource(offer, signature))
+                .to.be.revertedWithCustomError(marketplace, "ProviderIsNotRegistered")
+                .withArgs();
         })
     })
     describe("cancelBooking", function () {
