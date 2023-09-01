@@ -5,6 +5,9 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./VerifiableKYCV3.sol";
 
+error DirectMintBurnNotAllowed();
+error AlreadyMinted(bytes12 mintId);
+
 abstract contract BalanceHolderV3 is VerifiableKYCV3 {
     function depositCoin(uint256 numTokens) public virtual {
         checkUserKYC(msg.sender);
@@ -63,5 +66,40 @@ abstract contract BalanceHolderV3 is VerifiableKYCV3 {
             return a;
         }
         return b;
+    }
+
+    function mint(address payable to, uint256 amount, bytes12 mintId) public payable onlyOwner {
+        checkUserKYC(to);
+
+        if (address(coin) != address(0)) {
+            revert DirectMintBurnNotAllowed();
+        }
+
+        if (mintBurnIdempotency[mintId]) {
+            revert AlreadyMinted(mintId);
+        }
+
+        mintBurnIdempotency[mintId] = true;
+
+        _coinBalance[to] = _coinBalance[to] + amount;
+
+        // Transfer any ether sent with the transaction to the 'to' address.
+        if (msg.value > 0) {
+            to.transfer(msg.value);
+        }
+    }
+
+    function burn(address payable to, uint256 amount, bytes12 mintId) public onlyOwner {
+        if (address(coin) != address(0)) {
+            revert DirectMintBurnNotAllowed();
+        }
+
+        if (mintBurnIdempotency[mintId]) {
+            revert AlreadyMinted(mintId);
+        }
+
+        mintBurnIdempotency[mintId] = true;
+
+        _coinBalance[to] = _coinBalance[to] - amount;
     }
 }

@@ -16,6 +16,11 @@ error InvalidKYCSigner(address expected, address actual);
 error NotAuthorized();
 error MigrationComplete(uint8);
 
+/*
+    We have to keep all variables in one place.
+    This way we can easily add variables or change order of inheritance without __gap problems.
+*/
+
 abstract contract StorageV3 is OwnableUpgradeable {
     // ----------------------
     // addressBook
@@ -48,6 +53,7 @@ abstract contract StorageV3 is OwnableUpgradeable {
     IERC20 public coin;
 
     mapping(address => uint256) internal _coinBalance;
+    mapping(bytes12 => bool) public mintBurnIdempotency;
 
     // ----------------------
     // VerifiableOffer
