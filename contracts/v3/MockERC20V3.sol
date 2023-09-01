@@ -11,7 +11,9 @@ contract MockERC20V3 is ERC20 {
     }
 
     function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
-        require(!transferWillFail, "Transfer from failed becuase test wanted it");
+        if (transferWillFail) {
+            return false;
+        }
 
         address spender = _msgSender();
         _spendAllowance(from, spender, amount);
@@ -20,7 +22,9 @@ contract MockERC20V3 is ERC20 {
     }
 
     function transfer(address to, uint256 amount) public virtual override returns (bool) {
-        require(!transferWillFail, "Transfer from failed becuase test wanted it");
+        if (transferWillFail) {
+            return false;
+        }
 
         address owner = _msgSender();
         _transfer(owner, to, amount);

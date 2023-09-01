@@ -1,6 +1,5 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { deployMarketplaceV3Fixture } from './fixtures'
-import { randomBytes } from 'crypto'
 import { UnsignedOffer, setUserCoinBalance, signOffer } from "./lib";
 import { ethers } from "ethers";
 

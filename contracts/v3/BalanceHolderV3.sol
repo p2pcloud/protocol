@@ -6,11 +6,19 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./VerifiableKYCV3.sol";
 
 error DirectMintBurnNotAllowed();
-error AlreadyMinted(bytes12 mintId);
+error DirectMintBurnOnly();
+error MintBurnIdReused(bytes12 mintId);
 
 abstract contract BalanceHolderV3 is VerifiableKYCV3 {
     function depositCoin(uint256 numTokens) public virtual {
-        checkUserKYC(msg.sender);
+        if (address(coin) == address(0)) {
+            revert DirectMintBurnOnly();
+        }
+
+        if (!isUserKYCPassed(msg.sender)) {
+            revert KYCProblem(msg.sender, KYCStatus[msg.sender]);
+        }
+
         if (!coin.transferFrom(msg.sender, address(this), numTokens)) {
             revert ERC20TransferFailed();
         }
@@ -19,7 +27,14 @@ abstract contract BalanceHolderV3 is VerifiableKYCV3 {
     }
 
     function withdrawCoin(uint256 amt) public virtual {
-        checkUserKYC(msg.sender);
+        if (address(coin) == address(0)) {
+            revert DirectMintBurnOnly();
+        }
+
+        if (!isUserKYCPassed(msg.sender)) {
+            revert KYCProblem(msg.sender, KYCStatus[msg.sender]);
+        }
+
         if (getFreeBalance(msg.sender) < amt) {
             revert InsufficientBalance(amt, getFreeBalance(msg.sender));
         }
@@ -68,15 +83,21 @@ abstract contract BalanceHolderV3 is VerifiableKYCV3 {
         return b;
     }
 
-    function mint(address payable to, uint256 amount, bytes12 mintId) public payable onlyOwner {
-        checkUserKYC(to);
+    function mint(address payable to, uint256 amount, bytes12 mintId) public payable {
+        if (!isUserKYCPassed(to)) {
+            revert KYCProblem(to, KYCStatus[to]);
+        }
+
+        if (msg.sender != KYCSigner) {
+            revert NotAuthorized();
+        }
 
         if (address(coin) != address(0)) {
             revert DirectMintBurnNotAllowed();
         }
 
         if (mintBurnIdempotency[mintId]) {
-            revert AlreadyMinted(mintId);
+            revert MintBurnIdReused(mintId);
         }
 
         mintBurnIdempotency[mintId] = true;
@@ -89,13 +110,17 @@ abstract contract BalanceHolderV3 is VerifiableKYCV3 {
         }
     }
 
-    function burn(address payable to, uint256 amount, bytes12 mintId) public onlyOwner {
+    function burn(address payable to, uint256 amount, bytes12 mintId) public {
         if (address(coin) != address(0)) {
             revert DirectMintBurnNotAllowed();
         }
 
         if (mintBurnIdempotency[mintId]) {
-            revert AlreadyMinted(mintId);
+            revert MintBurnIdReused(mintId);
+        }
+
+        if (msg.sender != KYCSigner) {
+            revert NotAuthorized();
         }
 
         mintBurnIdempotency[mintId] = true;

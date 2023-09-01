@@ -20,13 +20,10 @@ abstract contract ProviderRegistryV3 is VerifiableKYCV3 {
         return providerInfo[_user].isRegistered;
     }
 
-    // function registerProvider() public virtual {
-    //     require(providerRegistrationEnabled, "Provider registration is disabled");
-    //     _registerProvider(msg.sender, PROVIDER_REGISTRATION_FEE);
-    // }
-
     function registerProviderByCommunity(address _provider) public virtual onlyOwner {
-        checkProviderKYC(_provider);
+        if (!isProviderKYCPassed(_provider)) {
+            revert KYCProblem(_provider, KYCStatus[_provider]);
+        }
         _addProviderToDB(_provider);
     }
 
@@ -34,20 +31,6 @@ abstract contract ProviderRegistryV3 is VerifiableKYCV3 {
         providerInfo[_provider].isRegistered = true;
         providerList.push(_provider);
     }
-
-    // function _registerProvider(address provider, uint64 fee) internal {
-    //     require(checkProviderKYC(provider), "No KYC or country is not allowed");
-    //     require(!providerInfo[provider].isRegistered, "Provider is already registered");
-
-    //     require(getFreeBalance(provider) >= fee, "Not enough coin to register ");
-
-    //     _spendWithComission(provider, owner(), fee);
-
-    //     providerInfo[provider].isRegistered = true;
-    //     providerInfo[provider].feePaid += fee;
-
-    //     providerList.push(provider);
-    // }
 
     function getAllProviderURLs() public view returns (address[] memory, bytes32[] memory) {
         uint256 providerCount = 0;

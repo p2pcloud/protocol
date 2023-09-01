@@ -1,10 +1,8 @@
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { deployMarketplaceV3Fixture } from './fixtures'
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
-import { US_HEX, UnsignedOffer, setUserCoinBalance, signKYC, signOffer } from "./lib";
-import { MockERC20V3, P2PCloudCredit, } from "../typechain-types";
+import { UnsignedOffer, setUserCoinBalance, signOffer } from "./lib";
 
 describe("Broker", function () {
     describe("bookResource", function () {

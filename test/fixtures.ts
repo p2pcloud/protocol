@@ -1,8 +1,8 @@
 import { ethers, upgrades } from "hardhat";
 
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { US_HEX, randomBytes12, signKYC, signVoucher } from "./lib";
-import { MockERC20V3, P2PCloudCredit, TestableMarketplaceV3 } from "../typechain-types";
+import { US_HEX, randomBytes12, signKYC } from "./lib";
+import { MockERC20V3, TestableMarketplaceV3 } from "../typechain-types";
 
 type BaseFixture = {
     provider: SignerWithAddress,
@@ -18,9 +18,7 @@ export type MarketplaceFixture = BaseFixture & {
     stablecoin: MockERC20V3,
 }
 
-export type FiatMarketplaceFixture = BaseFixture & {
-    creditToken: P2PCloudCredit,
-    trustedMinter: SignerWithAddress,
+export type CreditMarketplaceFixture = BaseFixture & {
 }
 
 export const DEFAULT_USER_BALANCE = 10000000
@@ -31,16 +29,15 @@ export async function deployMarketplaceV3Fixture(): Promise<MarketplaceFixture> 
     return fixture
 }
 
-export async function deployFiatMarketplaceV3Fixture(): Promise<FiatMarketplaceFixture> {
-    const fixture = await fixtureFactory("credits") as FiatMarketplaceFixture
+export async function deployCreditMarketplaceV3Fixture(): Promise<CreditMarketplaceFixture> {
+    const fixture = await fixtureFactory("credits") as CreditMarketplaceFixture
     return fixture
 }
 
-async function fixtureFactory(fixtureVariant: "credits" | "stablecoin"): Promise<MarketplaceFixture | FiatMarketplaceFixture> {
-    const [admin, provider, user, anotherUser, providersSigner, kycSigner, trustedMinter] = await ethers.getSigners();
+async function fixtureFactory(fixtureVariant: "credits" | "stablecoin"): Promise<MarketplaceFixture | CreditMarketplaceFixture> {
+    const [admin, provider, user, anotherUser, providersSigner, kycSigner] = await ethers.getSigners();
 
     let stablecoin: MockERC20V3 | null = null
-    let creditToken: P2PCloudCredit | null = null
     let coinAddress: string = ""
 
     if (fixtureVariant === "stablecoin") {
@@ -48,21 +45,13 @@ async function fixtureFactory(fixtureVariant: "credits" | "stablecoin"): Promise
         stablecoin = await MockERC20V3.connect(admin).deploy('10000000000000000000000')
         coinAddress = stablecoin.address
     } else if (fixtureVariant === "credits") {
-        const P2PCloudCredit = await ethers.getContractFactory("P2PCloudCredit")
-        creditToken = await upgrades.deployProxy(P2PCloudCredit, []) as P2PCloudCredit
-        coinAddress = creditToken.address
-
-        await creditToken.connect(admin).setTrustedMinter(trustedMinter.address)
+        coinAddress = ethers.constants.AddressZero
     } else {
         throw "Unknown fixture variant"
     }
 
     const Marketplace = await ethers.getContractFactory("TestableMarketplaceV3");
     const marketplace = await upgrades.deployProxy(Marketplace, [coinAddress]) as TestableMarketplaceV3;
-
-    if (creditToken !== null) {
-        await creditToken.connect(admin).setAllowedRecipient(marketplace.address)
-    }
 
     //KYC quirks
     await marketplace.connect(admin).allowProviderCountry(US_HEX)
@@ -104,22 +93,16 @@ async function fixtureFactory(fixtureVariant: "credits" | "stablecoin"): Promise
     if (stablecoin !== null) {
         await stablecoin.connect(admin).transfer(user.address, DEFAULT_USER_BALANCE)
         await stablecoin.connect(user).approve(marketplace.address, DEFAULT_USER_BALANCE)
-    } else if (creditToken !== null) {
-        await creditToken.connect(trustedMinter).idemopotentMint(user.address, DEFAULT_USER_BALANCE, randomBytes12())
-        await creditToken.connect(user).approve(marketplace.address, DEFAULT_USER_BALANCE)
+        await marketplace.connect(user).depositCoin(DEFAULT_USER_BALANCE)
     } else {
-        throw "Was not really expected lol"
+        await marketplace.connect(kycSigner).mint(user.address, DEFAULT_USER_BALANCE, randomBytes12())
     }
-
-    await marketplace.connect(user).depositCoin(DEFAULT_USER_BALANCE)
 
     const baseFixture: BaseFixture = { marketplace, provider, user, admin, anotherUser, providersSigner, kycSigner };
 
     if (stablecoin !== null) {
         return { ...baseFixture, stablecoin } as MarketplaceFixture
-    } else if (coinAddress !== null) {
-        return { ...baseFixture, creditToken, trustedMinter } as FiatMarketplaceFixture
     } else {
-        throw "Was not really expected lol"
+        return { ...baseFixture } as CreditMarketplaceFixture
     }
 }

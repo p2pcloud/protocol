@@ -22,37 +22,20 @@ abstract contract VerifiableKYCV3 is StorageV3 {
         KYCStatus[_address] = country;
     }
 
-    // // Check KYC status
-    // function isKYCCompleted(address _address) public view returns (bool) {
-    //     return (KYCStatus[_address] != bytes2(0x0000));
-    // }
-
     function allowUserCountry(bytes2 country) public onlyOwner {
         AllowedUserCountries[country] = true;
     }
-
-    // function disallowUserCountry(bytes2 country) public onlyOwner {
-    //     AllowedUserCountries[country] = false;
-    // }
 
     function allowProviderCountry(bytes2 country) public onlyOwner {
         AllowedProviderCountries[country] = true;
     }
 
-    // function disallowProviderCountry(bytes2 country) public onlyOwner {
-    //     AllowedProviderCountries[country] = false;
-    // }
-
-    function checkUserKYC(address _address) public view {
-        if (!(AllowedUserCountries[KYCStatus[_address]])) {
-            revert KYCProblem(_address, KYCStatus[_address]);
-        }
+    function isUserKYCPassed(address _address) public view returns (bool) {
+        return AllowedUserCountries[KYCStatus[_address]];
     }
 
-    function checkProviderKYC(address _address) public view {
-        if (!(AllowedProviderCountries[KYCStatus[_address]])) {
-            revert KYCProblem(_address, KYCStatus[_address]);
-        }
+    function isProviderKYCPassed(address _address) public view returns (bool) {
+        return AllowedProviderCountries[KYCStatus[_address]];
     }
 
     function setKYCSigner(address _KYCSigner) public onlyOwner {
