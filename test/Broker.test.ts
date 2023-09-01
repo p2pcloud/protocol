@@ -89,7 +89,7 @@ describe("Broker", function () {
             const payoutPercent = (10000 - await marketplace.COMMUNITY_FEE()) / 10000
             expect(balance2).to.equal(offer.pricePerMinute * wholeMinutesPassed * payoutPercent);//pricePerMinute * wholeMinutesPassed
         })
-        it("should fail if user tries to reuse the same offer", async function () {
+        it("should fail if user tries to reuse the same offer ", async function () {
             const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
 
             const offer: UnsignedOffer = {
@@ -108,6 +108,32 @@ describe("Broker", function () {
             await expect(marketplace.connect(user).bookResource(offer, signature))
                 .to.be.revertedWithCustomError(marketplace, "OfferWrongNonce")
                 .withArgs(offer.nonce + 1, offer.nonce);
+            //TODO: test test invalid user
+            //TODO: test expired offer
+        })
+        it("should fail if offer is expired", async function () {
+            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
+
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
+            };
+
+            const locked1 = await marketplace.connect(user).getLockedBalance(user.address)
+            expect(locked1).to.equal(0);
+
+            const now = await time.latest();
+            const timeLeft = offer.expiresAt - now;
+            await time.increase(timeLeft + 1);
+
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
+
+            await expect(marketplace.connect(user).bookResource(offer, signature))
+                .to.be.revertedWithCustomError(marketplace, "OfferExpired")
+                .withArgs(offer.expiresAt, offer.expiresAt + 2);
             //TODO: test test invalid user
             //TODO: test expired offer
         })
