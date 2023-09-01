@@ -219,7 +219,7 @@ describe("Broker", function () {
     })
     describe("cancelBooking", function () {
         it("should remove a booking and decrease locked balance", async function () {
-            const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
+            const { marketplace, user, providersSigner, provider } = await loadFixture(deployMarketplaceV3Fixture);
 
             const offer: UnsignedOffer = {
                 specs: ethers.utils.formatBytes32String("hello world"),
@@ -236,6 +236,9 @@ describe("Broker", function () {
             let bookingFromChain = await marketplace.getBooking(0);
             expect(bookingFromChain.specs).to.equal(offer.specs);
 
+            expect(await marketplace.listProvidersBookings(provider.address)).to.have.lengthOf(1);
+            expect(await marketplace.listClientBookings(user.address)).to.have.lengthOf(1);
+
             //check locked balance
             const locked1 = await marketplace.connect(user).getLockedBalance(user.address)
             expect(locked1).to.equal(offer.pricePerMinute * 60 * 24 * 7);
@@ -249,6 +252,9 @@ describe("Broker", function () {
             expect(bookingFromChain.pricePerMinute).to.equal(0);
             expect(bookingFromChain.client).to.equal(ethers.constants.AddressZero);
             expect(bookingFromChain.provider).to.equal(ethers.constants.AddressZero);
+
+            expect(await marketplace.listProvidersBookings(provider.address)).to.have.lengthOf(0);
+            expect(await marketplace.listClientBookings(user.address)).to.have.lengthOf(0);
 
             //check locked balance
             const locked2 = await marketplace.connect(user).getLockedBalance(user.address)
@@ -337,7 +343,36 @@ describe("Broker", function () {
         })
     })
     describe("claimPayment", function () {
-        it("should increase provider's balance")
+        it("should increase provider's balance", async () => {
+            const { marketplace, user, provider, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
+
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 2,
+                client: user.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
+            };
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
+            await marketplace.connect(user).bookResource(offer, signature);
+
+            //wait for 1 day
+            const initialTime = await time.latest();
+            await time.increase(3600 * 24);
+
+            //balance is still 0
+            const balance1 = await marketplace.connect(provider).getFreeBalance(provider.address);
+            expect(balance1).to.equal(0);
+
+            //claim
+            await marketplace.connect(provider).claimPayment(user.address);
+
+            //check balance
+            const wholeMinutesPassed = Math.floor((await time.latest() - initialTime) / 60);
+            const balance2 = await marketplace.connect(provider).getFreeBalance(provider.address);
+            const payoutPercent = (10000 - await marketplace.COMMUNITY_FEE()) / 10000
+            expect(balance2).to.equal(offer.pricePerMinute * wholeMinutesPassed * payoutPercent);//pricePerMinute * wholeMinutesPassed
+        })
         it("should transfer not more than user's balance")
     });
 

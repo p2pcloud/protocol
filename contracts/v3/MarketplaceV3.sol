@@ -18,10 +18,10 @@ contract MarketplaceV3 is BrokerV3 {
     //needed, because upgrade is not possible
 
     function performMigration(MarketplaceV2 V2migrationSource) public onlyOwner {
-        if (bookingCount != 0) {
+        if (v2MigrationComplete != false) {
             revert MigrationComplete(0);
         }
-        if (v2MigrationComplete != false) {
+        if (bookingCount != 0) {
             revert MigrationComplete(1);
         }
 
