@@ -108,8 +108,7 @@ describe("Broker", function () {
             await expect(marketplace.connect(user).bookResource(offer, signature))
                 .to.be.revertedWithCustomError(marketplace, "OfferWrongNonce")
                 .withArgs(offer.nonce + 1, offer.nonce);
-            //TODO: test test invalid user
-            //TODO: test expired offer
+
         })
         it("should fail if offer is expired", async function () {
             const { marketplace, user, providersSigner } = await loadFixture(deployMarketplaceV3Fixture);
@@ -136,6 +135,26 @@ describe("Broker", function () {
                 .withArgs(offer.expiresAt, offer.expiresAt + 2);
             //TODO: test test invalid user
             //TODO: test expired offer
+        })
+        it("should fail if offer is signed for another user", async function () {
+            const { marketplace, user, providersSigner, anotherUser } = await loadFixture(deployMarketplaceV3Fixture);
+
+            const offer: UnsignedOffer = {
+                specs: ethers.utils.formatBytes32String("hello world"),
+                pricePerMinute: 100,
+                client: anotherUser.address,
+                expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
+                nonce: await marketplace.getNonce(user.address),
+            };
+
+            const locked1 = await marketplace.connect(user).getLockedBalance(user.address)
+            expect(locked1).to.equal(0);
+
+            const signature = await signOffer(providersSigner, offer, marketplace.address);
+
+            await expect(marketplace.connect(user).bookResource(offer, signature))
+                .to.be.revertedWithCustomError(marketplace, "OfferUserInvalid")
+                .withArgs(anotherUser.address, user.address);
         })
         it("should fail if not enough balance to cover a new VM booking", async function () {
             const fixture = await loadFixture(deployMarketplaceV3Fixture);
